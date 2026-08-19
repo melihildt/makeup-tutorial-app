@@ -90,10 +90,10 @@
   --letter-spacing-shade: -0.12px;  /* V2: shade line */
 
   /* ---------- Fixed component sizes ---------- */
-  --size-product-image-w: 64px;  /* V2 (was 80px) */
-  --size-product-image-h: 72px;  /* V2 (was 90px) */
+  --size-product-image-w: 56px;  /* V3 (was 64px, before that 80px) — node 615:3037, tighter mobile spacing pass */
+  --size-product-image-h: 63px;  /* V3 (was 72px, before that 90px) */
   --size-check-indicator: 36px;
-  --height-action-button: 48px;
+  --height-action-button: 40px;  /* V3 (was 48px, unused until now) — node 615:3037 */
 
   /* ---------- Home screen ----------
      V1, pulled via get_design_context on node 572:3666 (Tech-Experimentation,
@@ -107,10 +107,12 @@
   --font-size-home-description: 12px;
   --color-look-card-bg: rgba(75, 116, 209, 0.08); /* look card container tint */
   --color-look-card-text: #133991; /* look card title/meta text */
-  --color-filter-chip-bg: #f5f5f5; /* Day/Night/Glam chip background, selected and not */
+  --color-filter-chip-bg: #f5f5f5; /* chip background, selected and not — confirmed still current per node 615:2884 */
   --color-filter-chip-border-selected: rgba(0, 0, 0, 0.7);
   --radius-look-card: 16px;
-  --radius-filter-chip: 16px;
+  --radius-filter-chip: 12px; /* V2 (was 16px) — node 572:3875/615:2884, smaller filter sheet */
+  --shadow-filter-chip: 0px 0px 8px rgba(14, 11, 6, 0.03); /* also used on the look card, see node 615:2884 */
+  --shadow-filter-chip-selected: 0 0 0 1.5px rgba(14, 11, 6, 0.25), 0px 0px 8px rgba(14, 11, 6, 0.03); /* deprecated: a shadow-ring selection state was tried against an isolated pull (572:3875) that turned out to omit the sheet's real border/bg — node 615:2884 (fuller context) confirmed selection is still --color-filter-chip-border-selected */
 
   /* ---------- Page frame (desktop) ----------
      Mobile viewports fill edge-to-edge (h-dvh on each screen's own root,

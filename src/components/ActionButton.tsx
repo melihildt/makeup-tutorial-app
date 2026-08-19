@@ -23,7 +23,7 @@ export function ActionButton({ label, variant, onClick }: ActionButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className="action-button flex w-full items-center justify-center gap-2 rounded-[--radius-button] border-[0.5px] px-3 py-4"
+      className="action-button flex h-[--height-action-button] w-full items-center justify-center gap-2 rounded-[--radius-button] border-[0.5px] px-3"
       style={{
         fontSize: 'var(--font-size-button)',
         fontWeight: 'var(--font-weight-semibold)',

@@ -146,20 +146,31 @@ export function StepScreen({
     // fit (natural page scroll), shifting the card's position relative
     // to the viewport bottom by however much taller that step's content
     // was — which is exactly the inconsistency this fixes.
-    // overflow-hidden: not fixing a visible bug here (the py-6 below
-    // happens to keep the header inset from the edges already, so
-    // rounded-2xl was already showing), but added to match AllStepsView's
-    // root — see its own comment on the same property for the actual
-    // problem it solves there. Genuine consistency, not just papering over
-    // one symptom: both screens should clip to their rounded shape the
-    // same way, not rely on one of them getting it right by coincidence.
+    // overflow-hidden: not fixing a visible bug here (md:py-6 below happens
+    // to keep the header inset from the edges on desktop already, so
+    // rounded-2xl was already showing there), but added to match
+    // AllStepsView's root — see its own comment on the same property for
+    // the actual problem it solves there. Genuine consistency, not just
+    // papering over one symptom: both screens should clip to their rounded
+    // shape the same way, not rely on one of them getting it right by
+    // coincidence.
     // md:h-full: at the md breakpoint, App.tsx's wrapper switches this
     // frame from tracking the real browser viewport to a fixed 874px
     // desktop height (so it reads as a floating card, not a full-window
     // page) — h-full just means "fill whatever height that wrapper gives
     // me" instead of overriding it with another viewport-relative unit.
+    // pt-4, not py-6: matches node 615:3037's Content wrapper (pt-[16px],
+    // no bottom padding) — the mobile-real numbers this whole file was
+    // re-tuned against. md:pt-6 md:pb-6 restores the old py-6 but desktop-
+    // only, same reasoning as HomeScreen's root: that inset only earns its
+    // keep on desktop, where it keeps the rounded corners visible against
+    // the page backdrop; on mobile the frame fills the real viewport edge-
+    // to-edge (those corners are clipped by the device edges regardless),
+    // so unconditional py-6 was just costing ~48px of real content height
+    // for nothing — concretely part of why the eye illustration was
+    // crowding the product card on a real device.
     <div
-      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden rounded-2xl py-6 md:h-full"
+      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden rounded-2xl pt-4 md:h-full md:pb-6 md:pt-6"
       style={{ background: 'var(--gradient-bg-screen)' }}
     >
       <ScreenHeader
@@ -176,13 +187,15 @@ export function StepScreen({
           than that leftover space scrolls internally instead of growing
           the outer frame — the card's position never moves either way. */}
       <div className="relative flex-1 overflow-y-auto">
-        {/* Paper-texture mask above the illustration — position confirmed
-            against a full-page Step_1 SVG export (402x874 viewBox): the
-            mask's filter box sits at x=40,y=178,w=322,h=273 there
-            (relative to the whole frame, header included). Relative to
-            *this* div (which starts right after the header) that's
-            114px — x=40 is still just this box centered (left-1/2
-            -translate-x-1/2) in the 402px-wide frame, same as here.
+        {/* Paper-texture mask above the illustration — originally
+            positioned at top-[114px] (see the old V1 874px-canvas
+            derivation this replaced), computed from mt-[40px] + gap-[52px]
+            above the illustration in this same div. The tighter node
+            615:3037 spacing pass below removed exactly 40px above the
+            illustration (p-[24px] + gap-[28px] instead of mt-[40px] +
+            gap-[52px]) — shifted by that same 40px rather than re-derived
+            from scratch, since the mask's own size/target position within
+            the illustration didn't change, only how far down it now sits.
 
             z-index is required, not decorative: this div is
             position:absolute with z-index:auto, and EyeIllustration's
@@ -194,26 +207,29 @@ export function StepScreen({
             so the grain only shows in the gaps around the artwork rather
             than on top of it. */}
         <div
-          className="pointer-events-none absolute left-1/2 top-[114px] z-10 h-[273px] w-[322px] -translate-x-1/2"
+          className="pointer-events-none absolute left-1/2 top-[74px] z-10 h-[273px] w-[322px] -translate-x-1/2"
           style={{ mixBlendMode: 'soft-light' }}
         >
           <img src={radialNoiseUrl} alt="" className="block size-full max-w-none" />
         </div>
 
-        {/* Eye illustration + progress badge + title/description. Gaps
-            match Figma's Step_7 spacing (V2 section, node 509:7122):
-            40px header→badge, 52px badge→eye and eye→title block, and
-            52px title→product-card (as pb-52 here, now that the card is
-            a separate flex sibling rather than following directly after
-            this div). Flat flex column on purpose — EyeIllustration
-            sizes itself via `width: 100%` of this direct parent, which
-            only resolves correctly because this container has a
-            definite (stretched) width; nesting badge+illustration in
-            their own wrapper broke that (the wrapper's own width was
-            indeterminate under items-center, so the percentage collapsed
-            and the illustration rendered undersized) — don't
-            reintroduce a wrapper here. */}
-        <div className="relative mt-[40px] flex flex-col items-center gap-[52px] px-[--space-lg] pb-[52px]">
+        {/* Eye illustration + progress badge + title/description — node
+            615:3037's "Graph + Step" block: p-[24px] all around, gap-28
+            between each of the 3 children (badge, illustration, title
+            block). Replaces the old 40/52/52px gaps (Figma's V1 Step_7
+            spacing, node 509:7122) — those were tuned against the full
+            874px desktop-style canvas, not the ~640px a real phone
+            actually leaves after browser chrome (measured off node
+            615:3037, a real 375x812 device frame), and were the main
+            reason the illustration crowded the product card there. Flat
+            flex column on purpose — EyeIllustration sizes itself via
+            `width: 100%` of this direct parent, which only resolves
+            correctly because this container has a definite (stretched)
+            width; nesting badge+illustration in their own wrapper broke
+            that (the wrapper's own width was indeterminate under
+            items-center, so the percentage collapsed and the illustration
+            rendered undersized) — don't reintroduce a wrapper here. */}
+        <div className="relative flex flex-col items-center gap-[28px] p-[--space-lg]">
           {/* Kept in the layout (not unmounted) on the done screen — hiding
               it with `invisible` rather than skipping it entirely preserves
               the same 52px gap before the illustration, so the illustration
@@ -376,7 +392,8 @@ export function StepScreen({
               animate={{ opacity: 1, y: 0, scaleY: 1 }}
               transition={cardSpring}
             >
-              <div className="flex flex-col gap-4">
+              {/* gap-3 (12px), not gap-4 — node 615:3037. */}
+              <div className="flex flex-col gap-3">
                 {content.products.map((product) => {
                   const key = `${step}-${product.brand}-${product.name}`
                   const checked = checkedOverrides[key] ?? product.checked

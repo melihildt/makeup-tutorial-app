@@ -64,8 +64,9 @@ export function AllStepsView({
     //
     // overflow-hidden: without it, rounded-2xl was doing nothing visible
     // here — the sticky header's own solid background paints flush to
-    // this div's very top edge (no inset gap the way StepScreen's py-6
-    // gives its header), so it just covered wherever the rounded top
+    // this outer div's very top edge (its own top padding is 0; the
+    // header's inset comes from the sticky wrapper's pt-4/md:pt-6 below,
+    // not from this div), so it just covered wherever the rounded top
     // corners would otherwise show. This clips content to the rounded
     // shape instead of relying on padding to accidentally avoid the
     // problem. Doesn't affect the header's `sticky` behavior — that's
@@ -105,7 +106,14 @@ export function AllStepsView({
             it would otherwise sit right over the card's own rounded top
             corners, washing them out with pink instead of letting them
             read clearly against the header above. */}
-        <div className="sticky top-0 z-10 pb-2 pt-6" style={{ background: '#e6d6d1' }}>
+        {/* pt-4 md:pt-6, not pt-6 — matches StepScreen's own root split (see
+            its comment on the same values): the extra 8px on desktop only
+            exists to keep this header's position identical to StepScreen's
+            (whose own inset there serves the rounded-corner/backdrop look),
+            not because this sticky header needs it. Without matching them,
+            the toggle would sit at a different vertical position in each
+            view on mobile — a visible jump switching between them. */}
+        <div className="sticky top-0 z-10 pb-2 pt-4 md:pt-6" style={{ background: '#e6d6d1' }}>
           <ScreenHeader
             activeView="list"
             onBack={onBack}

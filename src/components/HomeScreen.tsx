@@ -27,17 +27,26 @@ const LOOK: Look = {
   images: [lookImage1, lookImage2],
 }
 
-// Sun/Moon/Flame below are authored as single inline SVGs rather than the
-// layered/rotated <img> stacks get_design_context returned — the source
-// icons are simple stroke primitives (a circle + one short line reused via
-// CSS rotation for all 8 sun rays; a filled crescent + sparkle for the
-// moon; a stroked outline for the flame), so redrawing them directly in one
-// viewBox is far more reliable than reproducing Figma's nested percentage/
-// container-query transforms by hand. Moon and flame paths are the actual
-// path data from the exported assets (get_design_context), repositioned
-// into a shared 36x36 frame; the sun's 8 rays are drawn from the source
-// circle/line geometry rather than 8 separately-transformed image layers.
-// All use --color-text-primary/currentColor to match the design's #0E0B06.
+// Sun/Moon/Diamond below are authored as single inline SVGs rather than the
+// layered/rotated <img> stacks get_design_context returned — the same
+// approach as the app's other hand-authored icons (see CheckIndicator.tsx):
+// path data taken directly from the exported assets, repositioned into a
+// shared viewBox, since redrawing them in one place is far more reliable
+// than reproducing Figma's nested percentage/container-query transforms by
+// hand. All use --color-text-primary to match the design's #0E0B06.
+//
+// V2 (node 572:3875, smaller filter sheet): rendered at 24px instead of
+// 36px. Moon dropped its sparkle in this version (single crescent path
+// only) and Glam switched from a flame to a diamond outline — both re-
+// pulled fresh rather than just scaled down, since they're genuinely
+// different source shapes now, not the same icons at a smaller size.
+//
+// The close icon (below, CloseIcon) is the one icon reused verbatim from
+// the very first Home pull (node 572:3666) — node 615:2884 confirmed it's
+// still part of the design (an isolated pull of just the chip row, node
+// 572:3875, had omitted it — see tokens.css's note on
+// --shadow-filter-chip-selected for the same "isolated pull missed
+// something a fuller-context pull caught" pattern).
 
 function SunIcon() {
   const rays = [0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
@@ -54,7 +63,7 @@ function SunIcon() {
     }
   })
   return (
-    <svg width={36} height={36} viewBox="0 0 36 36" fill="none" className="opacity-50" aria-hidden="true">
+    <svg width={24} height={24} viewBox="0 0 36 36" fill="none" className="opacity-50" aria-hidden="true">
       <circle cx={18} cy={18} r={6} stroke="var(--color-text-primary)" strokeWidth={2.8} />
       {rays.map((ray, i) => (
         <line
@@ -74,41 +83,37 @@ function SunIcon() {
 
 function MoonIcon() {
   return (
-    <svg width={36} height={36} viewBox="0 0 36 36" fill="none" className="opacity-50" aria-hidden="true">
-      <g transform="translate(14.4, 7.5) scale(0.92, 0.88)">
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" className="opacity-50" aria-hidden="true">
+      <g transform="translate(7, 4) scale(0.822, 0.889)">
         <path
-          d="M11.9 1.4V0H11.8999L11.9 1.4ZM7.4 10.399L6 10.399V10.399H7.4ZM11.9 22.4L11.8999 23.8H11.9V22.4ZM1.4 11.9H0V11.9L1.4 11.9ZM12.9932 19.6836L12.3381 20.9209L12.9932 19.6836ZM15.4979 21.5687L16.8732 21.8305L15.4979 21.5687ZM11.9893 1.71927L12.7784 2.87572L11.9893 1.71927ZM11.9893 1.71927L11.2003 0.562826C8.06384 2.70286 6.00001 6.30984 6 10.399L7.4 10.399L8.8 10.399C8.80001 7.27422 10.3738 4.51641 12.7784 2.87572L11.9893 1.71927ZM7.4 10.399H6C6 14.9644 8.57139 18.9265 12.3381 20.9209L12.9932 19.6836L13.6484 18.4464C10.7616 16.9179 8.8 13.8866 8.8 10.399H7.4ZM13.0714 22.3353L12.9168 20.9439C12.5834 20.9809 12.2442 21 11.9 21V22.4V23.8C12.3478 23.8 12.7902 23.7752 13.2261 23.7267L13.0714 22.3353ZM11.9 22.4L11.9001 21C6.87436 20.9998 2.80001 16.9256 2.8 11.9L1.4 11.9L0 11.9C7.7486e-06 18.4721 5.32804 23.7998 11.8999 23.8L11.9 22.4ZM1.4 11.9H2.8C2.8 6.8744 6.87435 2.80019 11.9001 2.8L11.9 1.4L11.8999 0C5.32804 0.000247598 0 5.32789 0 11.9H1.4ZM12.9932 19.6836L12.3381 20.9209C13.242 21.3995 13.7985 21.697 14.133 21.9296C14.3007 22.0462 14.3052 22.0754 14.2637 22.019C14.1956 21.9265 14.0549 21.6622 14.1226 21.3068L15.4979 21.5687L16.8732 21.8305C16.9892 21.2213 16.7763 20.7092 16.5187 20.3592C16.2875 20.0452 15.9851 19.807 15.7313 19.6306C15.2229 19.2771 14.4787 18.886 13.6484 18.4464L12.9932 19.6836ZM13.0714 22.3353L13.2261 23.7267C13.9522 23.646 14.6638 23.5709 15.1911 23.4305C15.6679 23.3036 16.6602 22.949 16.8732 21.8305L15.4979 21.5687L14.1226 21.3068C14.171 21.0526 14.3214 20.8586 14.4617 20.7544C14.5577 20.6831 14.5996 20.6905 14.4706 20.7248C14.3544 20.7558 14.176 20.7894 13.9013 20.8272C13.6305 20.8645 13.3107 20.9001 12.9168 20.9439L13.0714 22.3353ZM11.9 1.4V2.8C11.276 2.8 10.838 2.35482 10.7116 1.89434C10.589 1.44826 10.7251 0.887037 11.2003 0.562826L11.9893 1.71927L12.7784 2.87572C13.3946 2.45529 13.5713 1.73443 13.4116 1.15277C13.2479 0.556704 12.6947 0 11.9 0V1.4Z"
+          d="M9.43839 14.7486L8.74326 15.4675L9.43839 14.7486ZM10.1664 15.5111L11.0386 15.0219L10.1664 15.5111ZM9.58116 16.9582L9.86808 17.9162L9.58116 16.9582ZM9.43858 3.25089L8.74341 2.53204L9.43858 3.25089ZM10.1653 2.4897L9.2933 2.00027V2.00027L10.1653 2.4897ZM9.43858 3.25089L8.74341 2.53204C7.05308 4.16671 6 6.46108 6 9.00027H7H8C8 7.02529 8.81684 5.24327 10.1338 3.96974L9.43858 3.25089ZM7 9.00027H6C6 11.5393 7.05309 13.8331 8.74326 15.4675L9.43839 14.7486L10.1335 14.0297C8.81677 12.7564 8 10.975 8 9.00027H7ZM9 17.0003V16.0003C5.13401 16.0003 2 12.8663 2 9.00027H1H0C0 13.9708 4.02944 18.0003 9 18.0003V17.0003ZM1 9.00027H2C2 5.13428 5.13401 2.00027 9 2.00027V1.00027V0.000274897C4.02944 0.000274897 0 4.02971 0 9.00027H1ZM9.43839 14.7486L8.74326 15.4675C8.96703 15.6839 9.11763 15.8297 9.22255 15.9376C9.27409 15.9906 9.30351 16.0232 9.31925 16.0419C9.33817 16.0644 9.32036 16.0468 9.29425 16.0003L10.1664 15.5111L11.0386 15.0219C10.9302 14.8287 10.7678 14.6579 10.6567 14.5436C10.5249 14.408 10.3473 14.2364 10.1335 14.0297L9.43839 14.7486ZM9 17.0003V18.0003C9.2374 18.0003 9.55534 18.0099 9.86808 17.9162L9.58116 16.9582L9.29425 16.0003C9.32261 15.9918 9.3335 15.9942 9.29049 15.9967C9.23484 15.9999 9.15785 16.0003 9 16.0003V17.0003ZM10.1664 15.5111L9.29425 16.0003V16.0003L9.58116 16.9582L9.86808 17.9162C11.0947 17.5488 11.665 16.1386 11.0386 15.0219L10.1664 15.5111ZM9 1.00027V2.00027C9.15748 2.00027 9.23419 2.00065 9.28963 2.00386C9.33241 2.00633 9.32154 2.00872 9.2933 2.00027L9.57993 1.04223L9.86656 0.0841938C9.55415 -0.00927496 9.23687 0.000274897 9 0.000274897V1.00027ZM9.43858 3.25089L10.1338 3.96974C10.3471 3.76339 10.5244 3.59213 10.656 3.45677C10.7669 3.34263 10.9291 3.17203 11.0374 2.97913L10.1653 2.4897L9.2933 2.00027C9.31937 1.95382 9.33715 1.93632 9.31828 1.95871C9.30259 1.97733 9.27323 2.00988 9.22179 2.06279C9.11708 2.17053 8.96678 2.31603 8.74341 2.53204L9.43858 3.25089ZM9.57993 1.04223L9.2933 2.00027V2.00027L10.1653 2.4897L11.0374 2.97913C11.6643 1.86208 11.0938 0.451356 9.86656 0.0841938L9.57993 1.04223Z"
           fill="var(--color-text-primary)"
-        />
-      </g>
-      <g transform="translate(2.8, 5.6) scale(1.02)">
-        <path
-          d="M4.6464 8.56639L4.64641 8.56641L4.64641 8.56642C4.78833 8.99217 4.85929 9.20505 4.93027 9.29791C5.21044 9.66445 5.76238 9.66445 6.04255 9.29791C6.11352 9.20505 6.18448 8.99217 6.3264 8.56641L6.32641 8.5664L6.32641 8.56638C6.44089 8.22294 6.49813 8.05122 6.57218 7.89579C6.84847 7.31581 7.31581 6.84847 7.89579 6.57218C8.05122 6.49813 8.22295 6.44089 8.56639 6.32641L8.56641 6.32641L8.56642 6.3264C8.99217 6.18448 9.20505 6.11352 9.29791 6.04255C9.66445 5.76238 9.66445 5.21044 9.29791 4.93027C9.20505 4.85929 8.99217 4.78833 8.56641 4.64641L8.5664 4.64641L8.56638 4.6464C8.22294 4.53192 8.05122 4.47468 7.89579 4.40063C7.31581 4.12434 6.84847 3.657 6.57218 3.07702C6.49813 2.92159 6.44089 2.74986 6.32641 2.40642L6.32641 2.40641L6.3264 2.4064C6.18448 1.98064 6.11352 1.76776 6.04255 1.6749C5.76238 1.30837 5.21044 1.30837 4.93027 1.6749C4.85929 1.76776 4.78833 1.98064 4.64641 2.4064L4.64641 2.40641L4.6464 2.40642C4.53192 2.74986 4.47468 2.92159 4.40063 3.07702C4.12434 3.657 3.657 4.12434 3.07702 4.40063C2.92159 4.47468 2.74986 4.53192 2.40642 4.6464L2.40641 4.64641L2.4064 4.64641C1.98064 4.78833 1.76776 4.85929 1.6749 4.93027C1.30837 5.21044 1.30837 5.76238 1.6749 6.04255C1.76776 6.11352 1.98064 6.18448 2.4064 6.3264L2.40641 6.32641L2.40642 6.32641C2.74986 6.44089 2.92159 6.49813 3.07702 6.57218C3.657 6.84847 4.12434 7.31581 4.40063 7.89579C4.47468 8.05122 4.53192 8.22295 4.6464 8.56639Z"
-          stroke="var(--color-text-primary)"
-          strokeWidth={2.8}
         />
       </g>
     </svg>
   )
 }
 
-function FlameIcon() {
+function DiamondIcon() {
   return (
-    <svg width={36} height={36} viewBox="0 0 36 36" fill="none" className="opacity-50" aria-hidden="true">
-      <g transform="translate(10.5, 8.2) scale(0.83, 0.87)">
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" className="opacity-50" aria-hidden="true">
+      <g transform="translate(4, 4) scale(0.901, 0.86)">
         <path
-          d="M5.25 8.29438C5.25 7.10707 3.67083 6.79236 3.25187 7.90329C2.23842 10.5906 1.5 12.9946 1.5 14.2943C1.5 18.4364 4.85786 21.7943 9 21.7943C13.1421 21.7943 16.5 18.4364 16.5 14.2943C16.5 12.8979 15.6477 10.2269 14.5177 7.29942C13.0539 3.50712 12.322 1.61098 11.4185 1.50885C11.1294 1.47616 10.814 1.53492 10.5561 1.66951C9.75 2.09013 9.75 4.15821 9.75 8.29438C9.75 9.53701 8.74264 10.5444 7.5 10.5444C6.25736 10.5444 5.25 9.53701 5.25 8.29438Z"
+          d="M8.8756 17L1.5553 7.84963C1.22279 7.43398 1.05653 7.22616 1.01186 6.9757C0.967188 6.72525 1.05135 6.47276 1.21968 5.96779L1.96391 3.73509C2.40392 2.41505 2.62393 1.75504 3.1477 1.37752C3.67148 1 4.3672 1 5.75864 1H11.9926C13.384 1 14.0797 1 14.6035 1.37752C15.1273 1.75504 15.3473 2.41505 15.7873 3.73509L16.5315 5.96779C16.6999 6.47276 16.784 6.72525 16.7393 6.9757C16.6947 7.22616 16.5284 7.43398 16.1959 7.84963L8.8756 17ZM8.8756 17L12.3756 6M8.8756 17L5.3756 6M16.3756 7L12.3756 6M12.3756 6L10.8756 2M12.3756 6H5.3756M6.8756 2L5.3756 6M5.3756 6L1.3756 7"
           stroke="var(--color-text-primary)"
-          strokeWidth={3}
+          strokeWidth={2}
+          strokeLinecap="round"
         />
       </g>
-      <g transform="translate(15, 21) scale(0.8, 0.71)">
-        <path
-          d="M2.25971 8.12293L1.86553 7.13747C1.1821 5.42891 1.47019 3.48484 2.61974 2.0479C3.20417 1.31737 4.31526 1.31737 4.89969 2.0479C6.04923 3.48484 6.33732 5.42891 5.6539 7.13747L5.25971 8.12293"
-          stroke="var(--color-text-primary)"
-          strokeWidth={3}
-        />
-      </g>
+    </svg>
+  )
+}
+
+function CloseIcon() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 20 20" fill="none" className="opacity-40" aria-hidden="true">
+      <path d="M5 5L15 15" stroke="var(--color-text-primary)" strokeWidth={1.67} strokeLinecap="round" />
+      <path d="M15 5L5 15" stroke="var(--color-text-primary)" strokeWidth={1.67} strokeLinecap="round" />
     </svg>
   )
 }
@@ -155,7 +160,7 @@ function FilterChip({ icon, label, selected, onClick }: FilterChipProps) {
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-1 flex-col items-start gap-[28px] rounded-[--radius-filter-chip] border-2 border-solid px-3 py-4"
+      className="flex flex-1 flex-col items-start gap-[8px] rounded-[--radius-filter-chip] border-2 border-solid p-3"
       style={{
         background: 'var(--color-filter-chip-bg)',
         borderColor: selected ? 'var(--color-filter-chip-border-selected)' : 'transparent',
@@ -177,53 +182,69 @@ function FilterChip({ icon, label, selected, onClick }: FilterChipProps) {
  * and a persistent bottom filter sheet. The Day/Night/Glam filters don't
  * actually filter anything yet — there's only one look — but the chip
  * selection still visually toggles. The sheet's close icon is rendered for
- * visual fidelity to the Figma design but isn't wired to dismiss anything;
- * the sheet stays on-screen (persistent, per product decision).
+ * visual fidelity but isn't wired to dismiss anything; the sheet stays
+ * on-screen (persistent, per product decision).
  */
 export function HomeScreen({ onSelectLook }: HomeScreenProps) {
   const [selectedType, setSelectedType] = useState<LookType>('day')
 
   return (
+    // md:py-6, not py-6: this inset only exists to keep the rounded-2xl
+    // corners visible against the desktop page backdrop (App.tsx's
+    // wrapper) — on mobile the frame fills the real viewport edge-to-edge,
+    // so those corners are clipped by the device edges anyway and the
+    // padding was just costing ~48px of real content height for nothing.
+    // That mattered concretely here: node 615:2884 (a real 375x812 device
+    // frame with actual browser chrome) measured only ~640px of content
+    // height, and the old unconditional py-6 was eating almost 8% of that
+    // on top of the header/card/sheet spacing already tuned to fit it.
     <div
-      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden rounded-2xl py-6 md:h-full"
+      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden rounded-2xl md:h-full md:py-6"
       style={{ background: 'var(--gradient-bg-screen)' }}
     >
-      <div className="flex flex-col items-center gap-2 px-3 py-2 text-center">
-        <p
-          className="capitalize"
-          style={{
-            fontFamily: 'var(--font-family-serif)',
-            fontSize: 'var(--font-size-home-title)',
-            letterSpacing: 'var(--letter-spacing-home-title)',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          Beauty Notes
-        </p>
-        {/* Temporary copy — placeholder description, see conversation. */}
-        <p
-          className="opacity-50"
-          style={{
-            fontSize: 'var(--font-size-home-description)',
-            fontWeight: 'var(--font-weight-medium)',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          Small app built with Claude Code and Figma MCP by Melisa Hildt. Still in early discovery. Screen size
-          optimized for an iPhone 17.
-        </p>
-      </div>
+      {/* Header text + look card as one block (node 615:2884's "Top
+          Header": pt-20/px-12/pb-8, gap-40 between the text and the card) —
+          flex-1 + overflow-y-auto so a future longer card list scrolls here
+          without moving the filter sheet below, same pattern
+          StepScreen/AllStepsView use for their own scrollable region vs.
+          fixed-position bottom card. At today's single-card length this
+          never actually scrolls — the numbers below were sized to fit
+          exactly within the ~640px a real device leaves after browser
+          chrome (measured off that same reference, a 375x812 frame with a
+          94px address bar + 78px tab bar), so this and the sheet below
+          together should just fit without scrolling on a real phone. */}
+      <div className="flex-1 overflow-y-auto px-3 pb-2 pt-5">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <p
+            className="capitalize"
+            style={{
+              fontFamily: 'var(--font-family-serif)',
+              fontSize: 'var(--font-size-home-title)',
+              letterSpacing: 'var(--letter-spacing-home-title)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            Beauty Notes
+          </p>
+          {/* Temporary copy — placeholder description, see conversation. */}
+          <p
+            className="opacity-50"
+            style={{
+              fontSize: 'var(--font-size-home-description)',
+              fontWeight: 'var(--font-weight-medium)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            Small app built with Claude Code and Figma MCP by Melisa Hildt. Still in early discovery. Screen size
+            optimized for an iPhone 17.
+          </p>
+        </div>
 
-      {/* Card list — just the one look for now. flex-1 + overflow-y-auto so
-          a future longer list scrolls here without moving the filter sheet
-          below, same pattern StepScreen/AllStepsView use for their own
-          scrollable region vs. fixed-position bottom card. */}
-      <div className="flex-1 overflow-y-auto px-3 py-4">
         <button
           type="button"
           onClick={onSelectLook}
-          className="flex w-full flex-col items-start gap-[37px] rounded-[--radius-look-card] p-4 text-left"
-          style={{ background: 'var(--color-look-card-bg)' }}
+          className="mt-[40px] flex w-full flex-col items-start gap-[37px] rounded-[--radius-look-card] p-4 text-left"
+          style={{ background: 'var(--color-look-card-bg)', boxShadow: 'var(--shadow-filter-chip)' }}
         >
           <div className="relative h-[219px] w-full">
             <div
@@ -293,10 +314,17 @@ export function HomeScreen({ onSelectLook }: HomeScreenProps) {
         </button>
       </div>
 
-      {/* Persistent filter sheet. */}
+      {/* Persistent filter sheet. Smaller chips (24px icons, 12px
+          padding/radius) than the original pull, per node 572:3875 —
+          confirmed against the fuller-context node 615:2884 to still use
+          the gray/border chip style (not the white+shadow this file tried
+          first) and to still include the close icon (decorative only,
+          matches — not wired to dismiss anything; the sheet stays
+          persistent, per product decision). Sheet's own padding/gap
+          (p-16, gap-16) also match 615:2884 exactly. */}
       <div className="px-3 pb-4 pt-2">
         <div
-          className="relative flex w-full flex-col items-center gap-4 rounded-[--radius-card] px-4 pb-4 pt-6"
+          className="relative flex w-full flex-col items-center gap-[16px] rounded-[--radius-card] p-4"
           style={{ background: 'var(--color-surface)', boxShadow: 'var(--shadow-card)' }}
         >
           <p
@@ -305,23 +333,14 @@ export function HomeScreen({ onSelectLook }: HomeScreenProps) {
           >
             Which type of look you want today?
           </p>
-          <div className="flex w-full items-end gap-2">
+          <div className="flex w-full items-start gap-2">
             <FilterChip icon={<SunIcon />} label="Day" selected={selectedType === 'day'} onClick={() => setSelectedType('day')} />
             <FilterChip icon={<MoonIcon />} label="Night" selected={selectedType === 'night'} onClick={() => setSelectedType('night')} />
-            <FilterChip icon={<FlameIcon />} label="Glam" selected={selectedType === 'glam'} onClick={() => setSelectedType('glam')} />
+            <FilterChip icon={<DiamondIcon />} label="Glam" selected={selectedType === 'glam'} onClick={() => setSelectedType('glam')} />
           </div>
-          {/* Decorative only — not wired to dismiss the sheet (kept persistent, see doc comment above). */}
-          <svg
-            width={20}
-            height={20}
-            viewBox="0 0 20 20"
-            fill="none"
-            className="absolute right-3 top-3 opacity-40"
-            aria-hidden="true"
-          >
-            <path d="M5 5L15 15" stroke="var(--color-text-primary)" strokeWidth={1.67} strokeLinecap="round" />
-            <path d="M15 5L5 15" stroke="var(--color-text-primary)" strokeWidth={1.67} strokeLinecap="round" />
-          </svg>
+          <div className="absolute right-3 top-3" aria-hidden="true">
+            <CloseIcon />
+          </div>
         </div>
       </div>
     </div>
