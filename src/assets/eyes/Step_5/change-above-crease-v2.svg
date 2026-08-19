@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="166.097" height="191.597" viewBox="0 0 166.097 191.597" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="[Change] Above Crease" filter="url(#filter0_f_0_100)">
+<path d="M122.098 56.1922C122.098 72.6919 82.8619 80.3917 79.1984 96.8919C75.535 113.392 114.398 113.391 94.5981 147.49C93.3226 149.687 43.9991 117.945 43.9991 86.0452C43.9991 54.1458 122.098 27.5928 122.098 56.1922Z" fill="#3B2B1A"/>
+</g>
+<defs>
+<filter id="filter0_f_0_100" x="0" y="2.76815e-07" width="166.097" height="191.597" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="21.9996" result="effect1_foregroundBlur_0_100"/>
+</filter>
+</defs>
+</svg>

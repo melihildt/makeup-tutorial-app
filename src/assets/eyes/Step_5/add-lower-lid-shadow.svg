@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="187.645" height="65.9229" viewBox="0 0 187.645 65.9229" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="[Add] Lower Lid-Shadow" filter="url(#filter0_f_0_97)">
+<path d="M14.4961 8.83251C12.5974 9.14897 10.6986 9.46543 8.79983 9.78189C9.8435 15.015 11.8109 16.901 13.6331 19.7897C21.2368 30.2879 30.6846 38.6834 41.5949 45.3855C48.6654 49.5026 55.6575 53.5777 65.5093 55.2825C101.881 62.2866 137.235 47.369 169.961 42.7715C172.917 42.4001 175.838 42.1083 178.845 41.8941C178.845 39.9691 178.845 38.0441 178.845 36.1192C175.727 35.9056 172.67 35.7872 169.554 35.7679C133.374 36.306 100.874 47.6433 67.7846 40.3304C62.4311 39.3617 55.6583 35.8783 49.5598 32.2055C39.8491 26.2538 29.7666 19.962 20.2554 13.3462C19.0695 12.4936 17.945 11.6717 16.8711 10.7993C16.3669 10.4026 15.8441 9.95267 15.4023 9.54209C14.9823 9.19771 14.5992 8.66197 14.4961 8.83251Z" fill="#3B2B1A"/>
+</g>
+<defs>
+<filter id="filter0_f_0_97" x="2.38419e-07" y="-4.17233e-07" width="187.645" height="65.9229" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="4.39991" result="effect1_foregroundBlur_0_97"/>
+</filter>
+</defs>
+</svg>

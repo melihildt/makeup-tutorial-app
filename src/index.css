@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Used by ScreenHeader's Search/Widget toggle — see the comment above its
+   indicator span for why this has to be a CSS *animation* (plays on
+   mount, driven by --slide-from/--slide-to custom properties) rather than
+   a transition (needs an existing element whose style changes across two
+   paints — the indicator never gets that, it's freshly mounted already in
+   its final position every time the view toggles). */
+@keyframes header-toggle-slide {
+  from { transform: translate(-50%, -50%) translateX(var(--slide-from, 0px)); }
+  to { transform: translate(-50%, -50%) translateX(var(--slide-to, 0px)); }
+}
+@keyframes header-toggle-fade {
+  from { opacity: var(--fade-from, 1); }
+  to { opacity: var(--fade-to, 1); }
+}
+
+/* Used by CheckIndicator — same "animation, not transition" reasoning as
+   the header keyframes above (checked/unchecked render structurally
+   different children, so nothing here ever gets to transition in place). */
+@keyframes check-pop {
+  /* Whole-icon tap feedback, both directions. No overshoot-then-settle
+     spring (that's the bounce/elastic curve /animate explicitly warns
+     against) — just a quick, symmetric scale up and back on ease-out-quart. */
+  0% { transform: scale(1); }
+  40% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+@keyframes check-ring-in {
+  /* The ring (checked or unchecked) settling in after the swap — subtle,
+     so it doesn't compete with the pop or the checkmark draw. */
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes check-draw {
+  /* Checkmark stroke reveal — CHECKMARK_PATH_LENGTH (CheckIndicator.tsx)
+     feeds --check-draw-length so the dash starts fully retracted and
+     draws in to its real length, never a guessed/approximate one. */
+  from { stroke-dashoffset: var(--check-draw-length, 19); }
+  to { stroke-dashoffset: 0; }
+}
+
+/* ActionButton press/hover feedback — plain transition is correct here
+   (unlike ScreenHeader/CheckIndicator above), since this is a genuine
+   persistent element whose pseudo-class state changes in place; there's
+   no remount involved. Hover is gated behind (hover: hover) so a tap on
+   a touch device — which has no real hover, but can leave :hover "stuck"
+   applied after a tap in some mobile browsers — never triggers it; this
+   is a phone-shaped UI, so that's the primary input to design for. */
+.action-button {
+  transition: transform var(--duration-instant) var(--ease-out-quart);
+}
+@media (hover: hover) {
+  .action-button:hover {
+    transform: scale(1.02);
+  }
+}
+.action-button:active {
+  transform: scale(0.97);
+}
+
+/* Step-to-step "hero" transition. StepScreen keys its badge, illustration,
+   and title/description block by `step` (see StepScreen.tsx), so each
+   remounts fresh on every step change — same "animation, not transition"
+   reasoning as ScreenHeader/CheckIndicator above, just without the extra
+   plumbing those needed, since StepScreen itself never remounts and every
+   `step` change genuinely is a fresh thing worth animating (no equivalent
+   of the "unrelated remount" case CheckIndicator had to guard against). */
+@keyframes step-fade-in {
+  /* Badge only — deliberately just opacity, no slide/scale, to stay quiet
+     as a passive progress hint rather than active feedback. */
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes step-content-in {
+  /* Title/description. --content-slide-from is set per-render by
+     StepScreen based on whether step just increased or decreased, so new
+     content slides in from the direction of travel — from the right
+     advancing forward, from the left going back — rather than a generic
+     fade in place. */
+  from { opacity: 0; transform: translateX(var(--content-slide-from, 16px)); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes illustration-layer-in {
+  /* One eye-illustration layer (EyeIllustration.tsx) — applied per layer
+     with a small staggered animation-delay following the real paint
+     order, so the eye visibly builds up piece by piece instead of
+     appearing all at once. */
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* AllStepsView's own mount fade — see its root element's comment for why
+   this lives only there and not on StepScreen too. */
+@keyframes view-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Respect prefers-reduced-motion globally — see docs/handoff.md phase 5.
+   Collapses every transition/animation to effectively instant rather than
+   disabling them outright, so state changes still land correctly (no
+   half-finished visual states), just without motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

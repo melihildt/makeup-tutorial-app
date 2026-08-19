@@ -1,0 +1,41 @@
+<!-- fill-opacity and the grain alpha table max are turned DOWN from the
+     literal Figma "Radial Noise" component values (0.7→0.35, 0.8→0.5) —
+     the opposite direction from where this file's tuning started. Once a
+     separate z-index stacking bug got fixed (see StepScreen.tsx — the
+     mask used to paint *behind* the illustration's opaque layers, so it
+     only ever showed in the gaps around the artwork), the literal Figma
+     values plus even a mild boost read far too strong once the mask was
+     actually landing on the artwork itself; per feedback this should be
+     "almost invisible" — a hint of texture, not visible grain. If it
+     still reads as too much, go lower still rather than back up. -->
+
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="322" height="273" viewBox="0 0 322 273" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Radial Noise" filter="url(#filter0_n_0_73)" style="mix-blend-mode:soft-light">
+<ellipse cx="161" cy="136.5" rx="161" ry="136.5" fill="url(#paint0_radial_0_73)" fill-opacity="0.35"/>
+</g>
+<defs>
+<filter id="filter0_n_0_73" x="0" y="0" width="322" height="273" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="2 2" stitchTiles="stitch" numOctaves="3" result="noise" seed="2241" />
+<feComponentTransfer in="noise" result="coloredNoise1">
+<feFuncR type="linear" slope="2" intercept="-0.5" />
+<feFuncG type="linear" slope="2" intercept="-0.5" />
+<feFuncB type="linear" slope="2" intercept="-0.5" />
+<feFuncA type="discrete" tableValues="1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "/>
+</feComponentTransfer>
+<feComposite operator="in" in2="shape" in="coloredNoise1" result="noise1Clipped" />
+<feComponentTransfer in="noise1Clipped" result="color1">
+<feFuncA type="table" tableValues="0 0.5" />
+</feComponentTransfer>
+<feMerge result="effect1_noise_0_73">
+<feMergeNode in="shape" />
+<feMergeNode in="color1" />
+</feMerge>
+</filter>
+<radialGradient id="paint0_radial_0_73" cx="0" cy="0" r="1" gradientTransform="matrix(5.03125 132.708 -156.528 4.26563 155.969 140.292)" gradientUnits="userSpaceOnUse">
+<stop offset="0.62057" stop-color="#D6C1BA"/>
+<stop offset="1" stop-color="#E6D6D1" stop-opacity="0"/>
+</radialGradient>
+</defs>
+</svg>

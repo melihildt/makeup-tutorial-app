@@ -1,0 +1,17 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="255.195" height="184.851" viewBox="0 0 255.195 184.851" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="[Change] Above Crease" filter="url(#filter0_f_0_66)">
+<path d="M140.797 38.5538C180.396 49.5535 205.696 81.4529 219.996 146.352C163.897 146.352 186.996 149.652 128.697 149.652C82.0584 149.652 35.1993 111.152 35.1993 79.253C35.1993 47.3536 98.4032 26.7776 140.797 38.5538Z" fill="#E8AE86" fill-opacity="0.3"/>
+<path d="M140.797 38.5538C180.396 49.5535 205.696 81.4529 219.996 146.352C163.897 146.352 186.996 149.652 128.697 149.652C82.0584 149.652 35.1993 111.152 35.1993 79.253C35.1993 47.3536 98.4032 26.7776 140.797 38.5538Z" fill="url(#paint0_linear_0_66)"/>
+</g>
+<defs>
+<filter id="filter0_f_0_66" x="0" y="1.39686e-06" width="255.195" height="184.851" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="17.5997" result="effect1_foregroundBlur_0_66"/>
+</filter>
+<linearGradient id="paint0_linear_0_66" x1="219.996" y1="92.4254" x2="35.1993" y2="92.4254" gradientUnits="userSpaceOnUse">
+<stop stop-color="#BD7C51"/>
+<stop offset="1" stop-color="#3B2B1A"/>
+</linearGradient>
+</defs>
+</svg>

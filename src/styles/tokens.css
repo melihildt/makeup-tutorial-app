@@ -1,0 +1,155 @@
+/**
+ * Design tokens — "90s Inspired Smoky Eye" tutorial flow
+ *
+ * V1 tokens extracted from Figma (file: Tech-Experimentation) via
+ * get_design_context on Step_1, Step_2, and Step_6.
+ *
+ * V2 UPDATE (see docs/figma-v2-redesign.md): the flow was redesigned in
+ * Figma's "V2" section (node 513:9189). Values below marked "V2" replace
+ * the prior value in place — same token, new design intent, not a parallel
+ * theme. Values marked "deprecated" are no longer used by the current
+ * design but kept for now rather than deleted.
+ *
+ * No Figma variables exist in the source file, so these values are
+ * captured directly from the raw hex/px output. If you add variables in
+ * Figma later, re-pull and these should map 1:1.
+ */
+
+:root {
+  /* ---------- Color ---------- */
+  --color-bg: #f4ede8;              /* deprecated: V2 uses --gradient-bg-screen instead */
+  --color-surface: #ffffff;         /* V2: card background, flat white (was #f4ede8) */
+  --color-cta-pill: #ebdfd6;        /* deprecated: V2's Done button is icon-only, no pill bg */
+  --color-cta-pill-border: rgba(255, 255, 255, 0.5); /* deprecated, see --color-cta-pill */
+  --color-action-button: rgba(14, 11, 6, 0.04); /* V2: default "next" button bg (was tan #ddc9bb) */
+  --color-action-button-border: rgba(14, 11, 6, 0.05); /* V2: default "next" button border */
+  --color-action-button-final-bg: #0e0b06;    /* V2: "Finish" button bg (was a gradient) */
+  --color-action-button-final-text: #f9f1ec;  /* V2: "Finish" button text (was #fff) */
+  --color-text-primary: #0e0b06;    /* V2: warm near-black ink (was pure #000000) */
+  --color-text-caption: rgba(0, 0, 0, 0.4);   /* deprecated: "90s inspired" caption removed in V2 */
+  --color-text-subtle: rgba(0, 0, 0, 0.7);    /* product sub-line, e.g. "79 - Spices" */
+  --color-text-product: rgba(0, 0, 0, 0.8);   /* product name block (opacity-80 in source) */
+  --color-border-hairline: rgba(14, 11, 6, 0.05); /* V2: product image border (was rgba(0,0,0,0.1)) */
+  --color-border-card: rgba(255, 255, 255, 0.3); /* deprecated: V2 card has no visible stroke */
+  --color-image-placeholder: #e5e5e7; /* fallback bg behind product images before load */
+  --color-badge-bg: rgba(14, 11, 6, 0.07); /* V2: "N/7" progress badge pill */
+
+  /* deprecated: V1's card background was a stacked gradient. V2 uses a
+     flat --color-surface (white) + --shadow-card instead. */
+  --gradient-card:
+    linear-gradient(90deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.4) 100%),
+    linear-gradient(90deg, #f4ede8 0%, #f4ede8 100%),
+    linear-gradient(90deg, #fff8f3 0%, #fff8f3 100%),
+    linear-gradient(90deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.03) 100%);
+
+  /* V2: full-screen background gradient, top to bottom. */
+  --gradient-bg-screen: linear-gradient(180deg, #e6d6d1 0%, #f5e7de 35.561%, #fbf7f5 77.86%);
+
+  /* ---------- Radius ---------- */
+  --radius-pill: 38px;    /* Done button circle (still round in V2, just no bg/text) */
+  --radius-card: 20px;    /* product card container */
+  --radius-image: 12px;   /* product thumbnail */
+  --radius-button: 12px;  /* V2: bottom action button (was pill-shaped, full-width) */
+  --radius-badge: 4px;    /* V2: "N/7" progress badge */
+
+  /* ---------- Spacing ---------- */
+  --space-xs: 12px;
+  --space-sm: 16px;
+  --space-md: 20px;
+  --space-lg: 24px;
+
+  /* ---------- Shadow ---------- */
+  --shadow-card: 0px 0px 16px 4px rgba(14, 11, 6, 0.03); /* V2 (was 0px 0px 16px 0px rgba(0,0,0,0.05)) */
+
+  /* ---------- Motion ----------
+     Shared easing/duration tokens for phase-5 motion work (see
+     docs/handoff.md). Natural-deceleration curve, not a CSS default —
+     bounce/elastic curves are deliberately not used anywhere in this app. */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --duration-instant: 150ms; /* button press, toggle */
+  --duration-base: 200ms;    /* hover, small state changes */
+  --duration-layout: 350ms;  /* larger layout/content changes */
+
+  /* ---------- Typography ---------- */
+  /* Font is "Inter 18pt" specifically — confirm you have that exact
+     optical-size variant, not generic Inter, if pixel match matters. */
+  --font-family: 'Inter', sans-serif;
+  --font-size-step-label: 18px;   /* deprecated: V2 replaces "Step N" + title with step-title/step-description below */
+  --font-size-step-title: 16px;        /* V2: e.g. "Add Concealer" — pair with opacity-50 */
+  --font-size-step-description: 14px;  /* V2: instruction sentence — pair with opacity-40 */
+  --font-size-product-name: 14px;
+  --font-size-product-sub: 12px;  /* shade line, e.g. "79 - Spices" — pair with opacity-50, --letter-spacing-shade */
+  --font-size-header-caption: 14px; /* deprecated: "90s inspired / smoky eye" caption removed in V2 */
+  --font-size-button: 15px;
+  --font-size-cta-pill: 13px;     /* deprecated: Done button no longer shows text */
+  --font-size-badge: 12px;        /* V2: "N/7" / "steps" progress badge text — pair with opacity-50 */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --letter-spacing-tight: -0.14px;  /* brand/product name */
+  --letter-spacing-shade: -0.12px;  /* V2: shade line */
+
+  /* ---------- Fixed component sizes ---------- */
+  --size-product-image-w: 64px;  /* V2 (was 80px) */
+  --size-product-image-h: 72px;  /* V2 (was 90px) */
+  --size-check-indicator: 36px;
+  --height-action-button: 48px;
+
+  /* ---------- Home screen ----------
+     V1, pulled via get_design_context on node 572:3666 (Tech-Experimentation,
+     file 6Mr7K0RONTS8SltZRJtqYj). New screen, sits above the tutorial flow —
+     reuses --gradient-bg-screen, --radius-card, --shadow-card, --color-surface,
+     --space-* etc. from the tutorial tokens above where the design matches;
+     these are the values genuinely new to this screen. */
+  --font-family-serif: 'Goudy Bookletter 1911', Georgia, 'Times New Roman', serif; /* title only — loaded via Google Fonts, see index.html; Georgia/serif are the fallback while it loads or if the request fails */
+  --font-size-home-title: 24px;
+  --letter-spacing-home-title: -0.24px;
+  --font-size-home-description: 12px;
+  --color-look-card-bg: rgba(75, 116, 209, 0.08); /* look card container tint */
+  --color-look-card-text: #133991; /* look card title/meta text */
+  --color-filter-chip-bg: #f5f5f5; /* Day/Night/Glam chip background, selected and not */
+  --color-filter-chip-border-selected: rgba(0, 0, 0, 0.7);
+  --radius-look-card: 16px;
+  --radius-filter-chip: 16px;
+
+  /* ---------- Page frame (desktop) ----------
+     Mobile viewports fill edge-to-edge (h-dvh on each screen's own root,
+     unchanged) — these only kick in at the md: breakpoint in App.tsx, where
+     the 402px column stops filling the whole browser viewport height and
+     needs a visible backdrop + shadow to read as a floating phone-sized
+     card rather than just clipped content. */
+  --color-page-backdrop: #e6e1dc; /* visible around the card on desktop */
+  --shadow-page-frame: 0px 24px 64px rgba(14, 11, 6, 0.16);
+
+  /* ---------- Check indicator ----------
+     V2: re-derived directly from the downloaded check assets (see
+     src/assets/icons/v2/check-*.svg, docs/figma-v2-redesign.md phase 2) —
+     not inferred from the screenshot. The checkmark itself is now a
+     stroked path (round caps), not a filled shape, so it reuses
+     --check-stroke-checked / --check-stroke-checked-width rather than a
+     separate fill token. */
+  --check-fill: rgba(255, 255, 255, 0.7);           /* unchanged from V1 */
+  --check-stroke-checked: #0e0b06;                  /* V2 (was rgba(0,0,0,0.8)) */
+  --check-stroke-checked-width: 3px;                /* V2 (was 2px) */
+  --check-stroke-unchecked: rgba(14, 11, 6, 0.3);   /* V2 (was rgba(0,0,0,0.2)) */
+  --check-stroke-unchecked-width: 2px;              /* V2 (was 1px) */
+  --check-stroke-unchecked-dash: 4 5;               /* V2 (was "3 3") */
+}
+
+/*
+ * ---------- Flagged gaps — need your input ----------
+ *
+ * 1. CHECK INDICATOR: resolved for V1. V2 uses different check assets —
+ *    see docs/figma-v2-redesign.md, phase 2.
+ *
+ * 2. EYE ILLUSTRATION LAYERS: resolved for V1 (all 7 steps mapped). V2
+ *    resized the instance and shifted percentages on every step, plus at
+ *    least one new layer on Step 1 ("[Add] Concealer") — needs a full
+ *    re-pull per step. See docs/figma-v2-redesign.md, phase 3.
+ *
+ * 3. Color/blur customization (your next-iteration idea): the current
+ *    SVGs bake color into the asset. Making color and blur user-editable
+ *    means these need to become inline SVGs with fill/filter driven by
+ *    props, not flat exported files. Worth a short separate design pass
+ *    once the base flow is working.
+ */

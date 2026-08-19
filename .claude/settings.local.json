@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tailwindcss *)",
+      "mcp__0f698145-e21b-4565-8653-611fcb9b6178__get_design_context",
+      "Bash(npx tsc *)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -)",
+      "Read(//Users/melisahildt/Downloads/**)",
+      "Read(//Users/melisahildt/.claude/**)",
+      "Bash(npm audit *)"
+    ]
+  }
+}

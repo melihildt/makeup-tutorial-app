@@ -1,0 +1,119 @@
+{
+  "_note": "Asset URLs are valid for ~7 days from generation (pulled 2026-08-05). Run download-assets.js soon.",
+  "_baseLayersEveryStep": ["Sclera", "Basic_LowerUnderline", "Basic_UpperUnderline", "Crease", "iris", "iris-highlight", "Pupil", "Brow"],
+  "_progressiveLayers": {
+    "note": "Layers accumulate across steps in this order — confirms the progressive-build architecture",
+    "order": [
+      "Step 1-2: [Change] Above Crease (v1) + [Add] Lashes",
+      "Step 3: + [Change] Above Crease (v2, second shape)",
+      "Step 4: + [Add] Above Crease",
+      "Step 5: + [Add] Lower Lid-Shadow",
+      "Step 6: + [Add] Highlight  — NOTE: also switches to a larger MakeUp component instance (205x163 vs 197x153) with different padding, not just an added layer",
+      "Step 7: + [Add] Top-Eyeliner + [Add] Above-Eyeliner"
+    ]
+  },
+  "steps": {
+    "Step_1": {
+      "Sclera": "https://www.figma.com/api/mcp/asset/b60af3a6-bf9d-4cf9-be53-1d4d3e661c06.svg",
+      "Basic_LowerUnderline": "https://www.figma.com/api/mcp/asset/3ee57a24-8004-447a-afe1-ba5d1e1a4395.svg",
+      "Basic_UpperUnderline": "https://www.figma.com/api/mcp/asset/e4073abf-10d5-4f87-a8d0-3c5787e1e9ec.svg",
+      "Crease": "https://www.figma.com/api/mcp/asset/9c292e3f-3e71-46b5-b937-4f6ae1819179.svg",
+      "iris": "https://www.figma.com/api/mcp/asset/84f20f35-ee42-44bf-9ade-375653beef41.svg",
+      "iris-highlight": "https://www.figma.com/api/mcp/asset/0062abbd-8067-4ebd-a2bb-9dd091cb3cd5.svg",
+      "Pupil": "https://www.figma.com/api/mcp/asset/ace83974-f5f8-4746-9d21-a8eaf2e0f24d.svg",
+      "Brow": "https://www.figma.com/api/mcp/asset/fa2804b3-5359-4fda-86b6-a7d0249e01be.svg",
+      "[Change] Above Crease": "https://www.figma.com/api/mcp/asset/97cadb9a-cf84-4c41-8861-79dbee9f6943.svg",
+      "[Add] Lashes": "https://www.figma.com/api/mcp/asset/ccd5aeaf-411d-4acc-a41c-eaca7a6b7bd9.svg"
+    },
+    "Step_2": {
+      "Sclera": "https://www.figma.com/api/mcp/asset/96017796-895f-4b44-9949-59f3d04452ce.svg",
+      "Basic_LowerUnderline": "https://www.figma.com/api/mcp/asset/7bc94570-bc68-4966-9bff-b105798a55ab.svg",
+      "Basic_UpperUnderline": "https://www.figma.com/api/mcp/asset/6ce18d44-4482-4d83-bafc-8b99b89e6d2c.svg",
+      "Crease": "https://www.figma.com/api/mcp/asset/74b433e6-e2f3-452a-b628-1d41333be2d1.svg",
+      "iris": "https://www.figma.com/api/mcp/asset/914e7408-b903-4907-a136-9fe98a869f6e.svg",
+      "iris-highlight": "https://www.figma.com/api/mcp/asset/9b5f6d6f-b085-4795-86ab-f0ab578654de.svg",
+      "Pupil": "https://www.figma.com/api/mcp/asset/1ecca0e0-6fd4-49d7-af20-48ebf6085075.svg",
+      "Brow": "https://www.figma.com/api/mcp/asset/96a5a518-8fd9-41f7-a40c-d29d560c62d8.svg",
+      "[Change] Above Crease": "https://www.figma.com/api/mcp/asset/be2bf31e-5b7a-4025-81c4-4cf0732384ad.svg",
+      "[Add] Lashes": "https://www.figma.com/api/mcp/asset/459724dc-79ac-4ec8-ac6b-8723743c464c.svg"
+    },
+    "Step_3": {
+      "Sclera": "https://www.figma.com/api/mcp/asset/8d7c3e0a-e967-41e1-a74c-981e4fa9de0a.svg",
+      "Basic_LowerUnderline": "https://www.figma.com/api/mcp/asset/a2b298b4-b9e2-4260-b83a-1adb2c0b34ad.svg",
+      "Basic_UpperUnderline": "https://www.figma.com/api/mcp/asset/18703118-7a02-433a-835d-1b86463c6124.svg",
+      "Crease": "https://www.figma.com/api/mcp/asset/0ef46943-cd80-407c-8ecb-0484b295b362.svg",
+      "iris": "https://www.figma.com/api/mcp/asset/9305f180-c176-494a-bfdc-16b188f68f15.svg",
+      "iris-highlight": "https://www.figma.com/api/mcp/asset/f13155c7-9e92-43ad-b0bc-b7c297eb4c6a.svg",
+      "Pupil": "https://www.figma.com/api/mcp/asset/5f2d45bb-040e-4510-9fa3-5a1fc06fb529.svg",
+      "Brow": "https://www.figma.com/api/mcp/asset/61de1a40-2b7d-4146-9cc2-dc5166d3ddf0.svg",
+      "[Change] Above Crease v1": "https://www.figma.com/api/mcp/asset/39d524e2-ee7d-40d8-9ad7-9db5ceddad90.svg",
+      "[Change] Above Crease v2": "https://www.figma.com/api/mcp/asset/7f74be4f-3953-43e1-9a9d-a2b2386c022f.svg",
+      "[Add] Lashes": "https://www.figma.com/api/mcp/asset/93ec2911-5e3c-4533-b348-39c53cba140b.svg"
+    },
+    "Step_4": {
+      "Sclera": "https://www.figma.com/api/mcp/asset/6d620cff-1684-4fc7-94e2-2a0ad498153a.svg",
+      "Basic_LowerUnderline": "https://www.figma.com/api/mcp/asset/3ed56765-c685-4630-b383-d4d2d5ea624f.svg",
+      "Basic_UpperUnderline": "https://www.figma.com/api/mcp/asset/c9c8a2eb-aa2e-468d-becf-f5d9e9321b3b.svg",
+      "Crease": "https://www.figma.com/api/mcp/asset/d3cde6fc-ebbe-49e0-86d2-001cdc9b1129.svg",
+      "iris": "https://www.figma.com/api/mcp/asset/e57d17ef-20bc-405c-975e-8f46d6040198.svg",
+      "iris-highlight": "https://www.figma.com/api/mcp/asset/f7d72917-1dc8-4cf0-a63e-cf389e5989b7.svg",
+      "Pupil": "https://www.figma.com/api/mcp/asset/24c81b0d-fc94-4539-a643-d38284a0b244.svg",
+      "Brow": "https://www.figma.com/api/mcp/asset/2ac79451-e883-48e3-aee0-791db8a6fd5d.svg",
+      "[Change] Above Crease v1": "https://www.figma.com/api/mcp/asset/66cbf08e-c74c-45ba-ac04-245a1b4e8b54.svg",
+      "[Change] Above Crease v2": "https://www.figma.com/api/mcp/asset/8acb2282-40cb-4060-ab06-9794adaa33a9.svg",
+      "[Add] Above Crease": "https://www.figma.com/api/mcp/asset/85a1d6f7-4e61-40e6-8bf5-fba8190c2686.svg",
+      "[Add] Lashes": "https://www.figma.com/api/mcp/asset/91a71e8d-0a63-43ed-9de1-89b4b58c2d08.svg"
+    },
+    "Step_5": {
+      "Sclera": "https://www.figma.com/api/mcp/asset/e2a1b6dc-e2d0-4c3f-80b6-735065882f4a.svg",
+      "Basic_LowerUnderline": "https://www.figma.com/api/mcp/asset/bb1f7a79-dcaf-4981-8b94-c08d99164dcc.svg",
+      "Basic_UpperUnderline": "https://www.figma.com/api/mcp/asset/f264a564-2e5c-4a99-a6e2-462f67f6c9a5.svg",
+      "Crease": "https://www.figma.com/api/mcp/asset/3dca98f4-4fb6-416a-8442-394457663282.svg",
+      "iris": "https://www.figma.com/api/mcp/asset/57906cea-7c36-4a8e-be2c-7c4ee36054bc.svg",
+      "iris-highlight": "https://www.figma.com/api/mcp/asset/af95d71a-ab79-4b01-85d9-eed9a29a6339.svg",
+      "Pupil": "https://www.figma.com/api/mcp/asset/e17535da-1081-4a75-a3d7-00df3cad73d5.svg",
+      "Brow": "https://www.figma.com/api/mcp/asset/5a6d88f2-f192-4773-aa5f-5b2e01542563.svg",
+      "[Add] Lower Lid-Shadow": "https://www.figma.com/api/mcp/asset/51743eac-0ed0-443e-a77e-3f16a313cf72.svg",
+      "[Change] Above Crease v1": "https://www.figma.com/api/mcp/asset/0f16335b-b222-49b7-bc58-83b13d29c128.svg",
+      "[Change] Above Crease v2": "https://www.figma.com/api/mcp/asset/d93f6c9d-f254-4525-846a-ca9b9d78183c.svg",
+      "[Add] Above Crease": "https://www.figma.com/api/mcp/asset/15497b87-09ae-47b1-bd14-136c1f244b44.svg",
+      "[Add] Lashes": "https://www.figma.com/api/mcp/asset/e213ff50-e298-47c9-8a9a-94c57cd582a8.svg"
+    },
+    "Step_6": {
+      "_note": "Uses a different/larger MakeUp component instance than Steps 1-5",
+      "Sclera": "https://www.figma.com/api/mcp/asset/bce9d66e-8191-4032-8997-1c345f2245c4.svg",
+      "Basic_LowerUnderline": "https://www.figma.com/api/mcp/asset/eee5fe16-033f-4ee9-aff2-e5628e867a1e.svg",
+      "Basic_UpperUnderline": "https://www.figma.com/api/mcp/asset/b287481a-adbf-4a28-82d0-c26ab5524f80.svg",
+      "Crease": "https://www.figma.com/api/mcp/asset/4b979895-727f-45c9-a03c-55f64140a0ae.svg",
+      "iris": "https://www.figma.com/api/mcp/asset/62624fdd-042d-465d-94ec-c82e1da92919.svg",
+      "iris-highlight": "https://www.figma.com/api/mcp/asset/c738a4ce-358f-4266-baeb-c4dc31bf5d46.svg",
+      "Pupil": "https://www.figma.com/api/mcp/asset/4278fc81-389c-4b44-aaaf-eaec83412097.svg",
+      "Brow": "https://www.figma.com/api/mcp/asset/8ffc5b70-10a1-47c3-a565-72fcd793bbe0.svg",
+      "[Add] Lower Lid-Shadow": "https://www.figma.com/api/mcp/asset/2c32a7f4-211b-4601-a0c3-4bbdf3dad1e4.svg",
+      "[Change] Above Crease v1": "https://www.figma.com/api/mcp/asset/3bb25e26-5bd6-4faa-a167-c588f7eba6b3.svg",
+      "[Change] Above Crease v2": "https://www.figma.com/api/mcp/asset/d272423b-8b47-4280-9e95-cacb23e8e47d.svg",
+      "[Add] Above Crease": "https://www.figma.com/api/mcp/asset/2962367a-e0e9-4b92-b90b-f99d637fbb71.svg",
+      "[Add] Highlight": "https://www.figma.com/api/mcp/asset/bc6eb93c-ae4b-4f93-8e81-12b3a8dda07d.svg",
+      "[Add] Lashes": "https://www.figma.com/api/mcp/asset/dd81b7d1-bc2d-47c3-9644-9edb03304285.svg"
+    },
+    "Step_7": {
+      "_note": "Same larger MakeUp instance as Step_6, plus final eyeliner layers. Bottom action button uses a distinct black-gradient/white-text style here, unlike the tan/black default.",
+      "Sclera": "https://www.figma.com/api/mcp/asset/ec6d54b3-aabe-4926-8415-b27a1c8673a4.svg",
+      "Basic_LowerUnderline": "https://www.figma.com/api/mcp/asset/5b27767d-e7ca-465d-9c1b-a40296c526dc.svg",
+      "Basic_UpperUnderline": "https://www.figma.com/api/mcp/asset/cdb32736-aeb7-492b-b191-1d75e1167ab9.svg",
+      "Crease": "https://www.figma.com/api/mcp/asset/74f74e2e-3441-4f0e-82a5-08f919ad15e4.svg",
+      "iris": "https://www.figma.com/api/mcp/asset/fa962215-3fa2-4cbe-8d7d-5d65b550cac7.svg",
+      "iris-highlight": "https://www.figma.com/api/mcp/asset/62534084-1886-49c8-a963-c36e5260ae49.svg",
+      "Pupil": "https://www.figma.com/api/mcp/asset/283d2504-ca30-4a38-9915-f8a0a60ec1ab.svg",
+      "Brow": "https://www.figma.com/api/mcp/asset/58fb3600-176b-4dc8-9418-a63666db2eff.svg",
+      "[Add] Lower Lid-Shadow": "https://www.figma.com/api/mcp/asset/385cd159-ffbd-4a34-b16d-533533b3d2e0.svg",
+      "[Change] Above Crease v1": "https://www.figma.com/api/mcp/asset/a3b46182-341a-43bf-a6ae-cbd981111abf.svg",
+      "[Change] Above Crease v2": "https://www.figma.com/api/mcp/asset/53bf4bb6-3e08-4ed1-9c0a-1d82034dc63a.svg",
+      "[Add] Above Crease": "https://www.figma.com/api/mcp/asset/cafff583-94da-4ad1-a3c6-80d25699e28c.svg",
+      "[Add] Highlight": "https://www.figma.com/api/mcp/asset/83309763-f3d4-4f74-be37-299eb9e41cba.svg",
+      "[Add] Top-Eyeliner": "https://www.figma.com/api/mcp/asset/41171e06-590d-41f0-b934-fb44fb0af625.svg",
+      "[Add] Above-Eyeliner": "https://www.figma.com/api/mcp/asset/b86b86ff-855b-4778-a290-f6dbabdb7284.svg",
+      "[Add] Lashes": "https://www.figma.com/api/mcp/asset/203bfd6e-46d3-4240-963b-49096982e236.svg"
+    }
+  }
+}
