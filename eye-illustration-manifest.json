@@ -14,16 +14,18 @@
   },
   "steps": {
     "Step_1": {
-      "Sclera": "https://www.figma.com/api/mcp/asset/b60af3a6-bf9d-4cf9-be53-1d4d3e661c06.svg",
-      "Basic_LowerUnderline": "https://www.figma.com/api/mcp/asset/3ee57a24-8004-447a-afe1-ba5d1e1a4395.svg",
-      "Basic_UpperUnderline": "https://www.figma.com/api/mcp/asset/e4073abf-10d5-4f87-a8d0-3c5787e1e9ec.svg",
-      "Crease": "https://www.figma.com/api/mcp/asset/9c292e3f-3e71-46b5-b937-4f6ae1819179.svg",
-      "iris": "https://www.figma.com/api/mcp/asset/84f20f35-ee42-44bf-9ade-375653beef41.svg",
-      "iris-highlight": "https://www.figma.com/api/mcp/asset/0062abbd-8067-4ebd-a2bb-9dd091cb3cd5.svg",
-      "Pupil": "https://www.figma.com/api/mcp/asset/ace83974-f5f8-4746-9d21-a8eaf2e0f24d.svg",
-      "Brow": "https://www.figma.com/api/mcp/asset/fa2804b3-5359-4fda-86b6-a7d0249e01be.svg",
-      "[Change] Above Crease": "https://www.figma.com/api/mcp/asset/97cadb9a-cf84-4c41-8861-79dbee9f6943.svg",
-      "[Add] Lashes": "https://www.figma.com/api/mcp/asset/ccd5aeaf-411d-4acc-a41c-eaca7a6b7bd9.svg"
+      "_note": "V2 re-pull (node 545:1793, pulled 2026-08-19) — supersedes the V1 entry this used to hold. V1's Step 1 was replaced by a single flattened 1.6MB image (no Dev Mode access at the time to get real layer names); this is the first time step 1 has had genuine per-layer assets, same as every other step below.",
+      "[Add] Concealer": "https://www.figma.com/api/mcp/asset/deb45a03-e65c-4d00-bb67-23ebdf22ba6b.svg",
+      "Sclera": "https://www.figma.com/api/mcp/asset/c73f39fe-245f-45f9-8a0c-9141e7591f90.svg",
+      "Basic_LowerUnderline": "https://www.figma.com/api/mcp/asset/68d55eca-8e8e-424b-b323-bd164c245491.svg",
+      "Basic_UpperUnderline": "https://www.figma.com/api/mcp/asset/28df544f-96e6-4925-94da-bc96c4c1d5d2.svg",
+      "Crease": "https://www.figma.com/api/mcp/asset/8310aae7-75bc-4a74-8061-a8fad42a5bb2.svg",
+      "iris": "https://www.figma.com/api/mcp/asset/5c5c0ce4-9783-4b67-b1b6-06e32f78ca6d.svg",
+      "Pupil": "https://www.figma.com/api/mcp/asset/6112ad55-6740-4cad-b3b5-d02ec79ca677.svg",
+      "iris-highlight": "https://www.figma.com/api/mcp/asset/4865e187-cb31-410b-92f1-e4bcb5b586d6.svg",
+      "[Add] Lashes": "https://www.figma.com/api/mcp/asset/366ae75a-b48d-43f9-83f1-1d992b39d05e.svg",
+      "Brow": "https://www.figma.com/api/mcp/asset/32769ebe-a9f5-42d4-a8eb-bd628a50fd0b.svg",
+      "Concealer Highlight": "https://www.figma.com/api/mcp/asset/7d87954d-69eb-4f72-8cda-ae93d5192860.svg"
     },
     "Step_2": {
       "Sclera": "https://www.figma.com/api/mcp/asset/96017796-895f-4b44-9949-59f3d04452ce.svg",

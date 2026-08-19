@@ -1,6 +1,5 @@
 import { useEffect, useRef, type CSSProperties } from 'react'
 import manifest from '../../eye-illustration-manifest.json'
-import step1IllustrationUrl from '../assets/eyes/step-1-illustration.svg'
 
 type EyeIllustrationProps = {
   step: number
@@ -68,13 +67,16 @@ type StepLayout = {
 
 // All percentage layout below was read via Figma's get_design_context on
 // each step's "MakeUp" instance (file 6Mr7K0RONTS8SltZRJtqYj):
-//   Step 1: 319:4545   Step 2: 316:4454   Step 3: 316:4363
+//   Step 1: 545:1793 (V2 re-pull)   Step 2: 316:4454   Step 3: 316:4363
 //   Step 4: 316:4272   Step 5: 316:4011   Step 6: 313:3823   Step 7: 313:3793
 //
-// Steps 1-4 share one 197.55x153.57 instance (identical base-layer
-// percentages). Step 5 uses a slightly taller 197.55x155.10 instance
-// (percentages shift a little). Steps 6-7 switch to a larger 205.81x163.43
-// instance per the manifest's own note, with different padding throughout.
+// Step 1 is on its own 217.31x168.92 instance — a genuine V2 re-pull (see
+// eye-illustration-manifest.json's Step_1._note), not the V1 data steps
+// 2-4 below still use. Steps 2-4 share one 197.55x153.57 instance
+// (identical base-layer percentages). Step 5 uses a slightly taller
+// 197.55x155.10 instance (percentages shift a little). Steps 6-7 switch to
+// a larger 205.81x163.43 instance per the manifest's own note, with
+// different padding throughout.
 //
 // Paint order is NOT "base layers, then variants on top" — it mirrors
 // Figma's actual DOM/z-order per step, which varies: e.g. Above Crease
@@ -83,10 +85,16 @@ type StepLayout = {
 // eye group between the base eye and the lashes.
 const STEP_LAYOUTS: Record<number, StepLayout> = {
   1: {
-    canvasWidth: 197.54978942871094,
-    canvasHeight: 153.56625366210938,
+    // V2 re-pull (node 545:1793) — replaces the V1 placeholder this used to
+    // hold. This step doesn't render from these per-layer assets directly
+    // (see EyeIllustration's own doc comment for the historical reason:
+    // the V2 redesign was originally only reachable as one flattened SVG
+    // export, before Dev Mode access was available) — real per-layer data
+    // is now the actual rendering source, same as every other step.
+    canvasWidth: 217.30465698242188,
+    canvasHeight: 168.9226531982422,
     paintOrder: [
-      '[Change] Above Crease',
+      '[Add] Concealer',
       'Sclera',
       'Basic_LowerUnderline',
       'Basic_UpperUnderline',
@@ -96,50 +104,68 @@ const STEP_LAYOUTS: Record<number, StepLayout> = {
       'iris-highlight',
       '[Add] Lashes',
       'Brow',
+      'Concealer Highlight',
     ],
     layers: {
-      Sclera: { box: { top: '62.42%', right: '3.9%', bottom: '0.29%', left: '17.58%' } },
+      Sclera: { box: { top: '62%', right: '3.89%', bottom: '0.7%', left: '17.58%' } },
       Basic_LowerUnderline: {
-        box: { top: '79.61%', right: '3.9%', bottom: '0%', left: '17.59%' },
+        box: { top: '79.19%', right: '3.89%', bottom: '0.42%', left: '17.59%' },
         bleed: { top: '-0.37%', right: '0%', bottom: '-3.42%', left: '0%' },
       },
       Basic_UpperUnderline: {
-        box: { top: '62.42%', right: '3.9%', bottom: '6.07%', left: '16.48%' },
+        box: { top: '62%', right: '3.89%', bottom: '6.49%', left: '16.48%' },
         bleed: { top: '-5%', right: '0%', bottom: '0%', left: '0%' },
       },
       Crease: {
-        box: { top: '44.51%', right: '14.48%', bottom: '35.43%', left: '8.13%' },
+        box: { top: '44.09%', right: '14.47%', bottom: '35.85%', left: '8.13%' },
         bleed: { top: '-2.35%', right: '0%', bottom: '-0.72%', left: '0%' },
         blend: 'multiply',
       },
       iris: {
-        box: { top: '62.42%', right: '33.41%', bottom: '8.59%', left: '38.75%' },
+        box: { top: '62%', right: '33.41%', bottom: '9.01%', left: '38.75%' },
         bleed: { top: '-0.86%', right: '-1.02%', bottom: '-1.77%', left: '-0.92%' },
       },
       Pupil: {
-        box: { top: '62.42%', right: '37.86%', bottom: '16.09%', left: '44.32%' },
+        box: { top: '62%', right: '37.86%', bottom: '16.51%', left: '44.32%' },
         bleed: { top: '-1.55%', right: '-0.96%', bottom: '-1.63%', left: '-2.3%' },
       },
       'iris-highlight': {
-        box: { top: '68.15%', right: '37.31%', bottom: '23.26%', left: '56.01%' },
+        box: { top: '67.73%', right: '37.3%', bottom: '23.68%', left: '56.01%' },
         bleed: { top: '-1.36%', right: '-7.66%', bottom: '-6.96%', left: '-4.74%' },
       },
       Brow: {
-        box: { top: '0%', right: '0%', bottom: '79.13%', left: '2%' },
+        box: { top: '-0.42%', right: '0%', bottom: '79.55%', left: '2%' },
         bleed: { top: '-19.76%', right: '0%', bottom: '-12.9%', left: '-0.32%' },
-      },
-      '[Change] Above Crease': {
-        box: { top: '20.84%', right: '4.45%', bottom: '4.63%', left: '2%' },
-        bleed: { top: '-15.38%', right: '-9.52%', bottom: '-15.38%', left: '-9.52%' },
       },
     },
     rotated: {
+      '[Add] Concealer': {
+        box: { top: '2.82%', right: '57.27%', bottom: '60.43%', left: '2.33%' },
+        width: 'hypot(91.8043cqw, 18.4585cqh)',
+        height: 'hypot(-8.19572cqw, 81.5415cqh)',
+        rotateDeg: 8.09,
+        bleed: { top: '-2.19%', right: '-1.07%', bottom: '-1.61%', left: '-1.05%' },
+      },
       '[Add] Lashes': {
-        box: { top: '50.14%', right: '58.17%', bottom: '20.06%', left: '0%' },
-        width: 'hypot(97.9299cqw, -7.11838cqh)',
-        height: 'hypot(2.07008cqw, 92.8816cqh)',
+        box: { top: '49.72%', right: '58.17%', bottom: '20.48%', left: '0%' },
+        width: 'hypot(97.9299cqw, -7.11842cqh)',
+        height: 'hypot(2.07007cqw, 92.8816cqh)',
         rotateDeg: -2.3,
         bleed: { top: '0%', right: '0%', bottom: '-3.91%', left: '-0.15%' },
+      },
+      'Concealer Highlight': {
+        // The unlabeled mole/highlight ellipse near the outer corner —
+        // Figma gave it no layer name, so this key is our own (kept
+        // distinct from steps 6-7's unrelated "[Add] Highlight" layer,
+        // which is a different shape at a different position — reusing
+        // that name would make EyeIllustration's key-based continuity
+        // logic wrongly treat them as the same persisting layer if a user
+        // ever jumps from step 1 straight to 6/7 via the All Steps list).
+        box: { top: '93.56%', right: '-5.82%', bottom: '-22.7%', left: '85.51%' },
+        width: 'hypot(61.5263cqw, 25.5349cqh)',
+        height: 'hypot(-38.4737cqw, 74.4651cqh)',
+        rotateDeg: 24.85,
+        bleed: { top: '-1.39%', right: '-1.42%', bottom: '-1.47%', left: '-3.01%' },
       },
     },
   },
@@ -633,7 +659,7 @@ function getBrowBoxRaw(step: number): RawBox | undefined {
 }
 
 // Every step's Brow is close to the same *absolute* size in Figma
-// (~193.6 x 32px, regardless of step) — what actually differs per step is
+// (~193-213 x 32-35px depending on step) — what actually differs per step is
 // how much padding surrounds it in that step's MakeUp canvas (steps 6-7
 // use a visibly larger canvas with more padding, per the manifest's own
 // note). Scaling each step's whole canvas to fit the same box therefore
@@ -679,31 +705,6 @@ for (const stepKey of Object.keys(STEP_LAYOUTS)) {
   }
 }
 
-// Step 1 overrides the entry the loop above just computed from V1 data.
-// Its real V2 illustration (Step1Illustration, rendered from one flat SVG
-// export — see EyeIllustration's doc comment) has its own canvas and Brow
-// box, measured directly off that export (225x211 canvas; Brow's raw
-// bbox via svgpathtools was (3.7,0)-(217.2,46.8)). Brow-width-matching it
-// against the same browTarget every other step uses makes Brow render at
-// one consistent size/position across all 7 steps, same as steps 2-7 do
-// with each other — the cost is that this artwork's Brow is proportionally
-// thicker than V1's, so matching its width makes the whole canvas render
-// taller than before, which grows VIEWPORT_HEIGHT (below) for every step.
-// That's intentional: brow continuity across steps was called out as the
-// priority over keeping the illustration's on-screen height identical to
-// what steps 2-7 need on their own.
-const V2_STEP_1_CANVAS = { width: 225, height: 211 }
-const V2_STEP_1_BROW_RAW: RawBox = { x: 3.7, y: 0, w: 213.5, h: 46.8 }
-{
-  const scale = browTarget.w / V2_STEP_1_BROW_RAW.w
-  rawAlignment[1] = {
-    offsetX: browTarget.x - V2_STEP_1_BROW_RAW.x * scale,
-    offsetY: browTarget.y - V2_STEP_1_BROW_RAW.y * scale,
-    canvasRenderWidth: V2_STEP_1_CANVAS.width * scale,
-    canvasRenderHeight: V2_STEP_1_CANVAS.height * scale,
-  }
-}
-
 // A shared viewport sized to fit every step's aligned canvas without
 // clipping — steps with more canvas padding (6-7) need a larger viewport
 // than steps 1-4 to keep Brow the same rendered size. Guards against a
@@ -722,9 +723,9 @@ const VIEWPORT_HEIGHT = Math.max(
 
 type StepAlignment = { leftPct: number; topPct: number; widthPct: number; heightPct: number }
 
-// Deliberately relative to the shared VIEWPORT_HEIGHT (whichever step is
-// tallest — currently step 1, since it's brow-width-matched against V1's
-// noticeably-less-padded canvas) rather than each step's own height. An
+// Deliberately relative to the shared VIEWPORT_HEIGHT (whichever step ends
+// up tallest once every step's Brow is matched to the same target size)
+// rather than each step's own height. An
 // earlier version cropped each step's outer box to just its own content
 // to avoid dead space below shorter steps' artwork — but that made every
 // step's title/description sit at a *different* absolute height (each
@@ -742,27 +743,6 @@ for (const [stepKey, raw] of Object.entries(rawAlignment)) {
     widthPct: (raw.canvasRenderWidth / VIEWPORT_WIDTH) * 100,
     topPct: ((raw.offsetY - minOffsetY) / VIEWPORT_HEIGHT) * 100,
     heightPct: (raw.canvasRenderHeight / VIEWPORT_HEIGHT) * 100,
-  }
-}
-
-// Step 1's flat SVG export has no "bleed" concept — its Brow's raw bbox
-// (measured via svgpathtools on the export) already captures the
-// artwork's full visual extent. V1's per-layer assets are different:
-// every V1 step's Brow layer relies on EyeLayer's `bleed.top: '-19.76%'`
-// inset (of the layer's own box height) to reveal soft/feathered pixels
-// beyond a tighter source crop, which shifts its true *visible* top
-// above the plain box-percentage position this whole alignment system
-// computes offsetY from. That shift is already baked into steps 2-7's
-// rendering; Step1Illustration needs the equivalent nudge applied
-// manually, or its Brow renders visibly lower than every other step's
-// (confirmed: ~7px, measured against Step 2's rendered Brow).
-const referenceBrowTopBleedPct =
-  Math.abs(parseFloat(referenceLayout.layers.Brow?.bleed?.top ?? '0')) / 100
-const step1BrowBleedCompensation = referenceBrow.h * referenceBrowTopBleedPct * referenceScale
-if (STEP_ALIGNMENT[1]) {
-  STEP_ALIGNMENT[1] = {
-    ...STEP_ALIGNMENT[1],
-    topPct: STEP_ALIGNMENT[1].topPct - (step1BrowBleedCompensation / VIEWPORT_HEIGHT) * 100,
   }
 }
 
@@ -869,33 +849,6 @@ function RotatedEyeLayer({
   )
 }
 
-function Step1Illustration() {
-  const alignment = STEP_ALIGNMENT[1]
-  if (!alignment) return null
-
-  return (
-    // Positioned in the same shared VIEWPORT_WIDTH/HEIGHT box every other
-    // step uses (via STEP_ALIGNMENT[1], overridden above from this
-    // artwork's own Brow measurements) — one <img> instead of the usual
-    // per-layer stack, since this whole illustration is one flat export.
-    <div
-      className="absolute pointer-events-none"
-      style={{
-        left: `${alignment.leftPct}%`,
-        top: `${alignment.topPct}%`,
-        width: `${alignment.widthPct}%`,
-        height: `${alignment.heightPct}%`,
-        // Single flat export, not a layer stack — same entrance treatment
-        // as the other steps' layers, just with no stagger (nothing to
-        // stagger against, it's one image).
-        ...layerEntranceStyle(0),
-      }}
-    >
-      <img src={step1IllustrationUrl} alt="" className="block size-full max-w-none" />
-    </div>
-  )
-}
-
 function StepStub({ step }: { step: number }) {
   return (
     <div
@@ -907,12 +860,8 @@ function StepStub({ step }: { step: number }) {
   )
 }
 
-// Step 1 has no comparable layer set (it's one flat image, not a layer
-// stack — see Step1Illustration's own doc comment) — treated as "no
-// layers" so every layer in whatever step comes after it correctly reads
-// as new, rather than crashing or silently matching against stale data.
 function getOrderedKeysForStep(step: number | null): string[] {
-  if (step === null || step === 1) return []
+  if (step === null) return []
   const manifestLayers = getManifestStepLayers(step)
   const layout = STEP_LAYOUTS[step]
   if (!layout || manifestLayers.length === 0) return []
@@ -927,19 +876,16 @@ function getOrderedKeysForStep(step: number | null): string[] {
  * paint order — see the comment on STEP_LAYOUTS for why that's not simply
  * "base layers then variants on top".
  *
- * Step 1 is the exception: real V2 data confirmed only step 1's
- * illustration actually differs from V1 (steps 2-7 keep the layered V1
- * data above, untouched). Its source is one flattened SVG export (see
- * Step1Illustration) rather than the per-layer assets the rest of this
- * file expects — the export has no layer names (Figma's plain "Export as
- * SVG" doesn't preserve them; that needs Dev Mode's "Copy as SVG", not
- * available on the source file's plan) and pairs up a clean shape with a
- * hand-textured duplicate of it for nearly every part (brow, iris, lash
- * strokes, etc.), which made re-splitting it into this file's normal
- * per-layer model both error-prone and unnecessary — step 1 doesn't need
- * to share layers with any other step. STEP_LAYOUTS[1] is still kept
- * below, unused for rendering now, solely because it's REFERENCE_STEP for
- * the brow-anchoring math every other step's alignment depends on.
+ * Step 1 uses its own V2 data (STEP_LAYOUTS[1], re-pulled from Figma once
+ * Dev Mode access was available — see eye-illustration-manifest.json's
+ * Step_1._note) but otherwise renders through this exact same per-layer
+ * path as steps 2-7; it used to be a special case rendered from one
+ * flattened 1.6MB SVG export (Figma's plain "Export as SVG" doesn't
+ * preserve layer names, which is all that was available at the time), which
+ * also meant every layer looked "new" the moment step 2 loaded — nothing
+ * persisted across the 1→2 transition. Now that step 1's layers share real
+ * names with step 2 (Sclera, Crease, iris, Brow, etc.), the diffing below
+ * correctly treats those as continuing, not rebuilding.
  *
  * EyeIllustration itself is never remounted between steps (StepScreen just
  * passes it a new `step` prop) — that's what lets React's own per-layer
@@ -966,19 +912,15 @@ export function EyeIllustration({ step }: EyeIllustrationProps) {
     prevStepRef.current = step
   }, [step])
 
-  const manifestLayers = step === 1 ? [] : getManifestStepLayers(step)
-  const stepLayout = step === 1 ? undefined : STEP_LAYOUTS[step]
+  const manifestLayers = getManifestStepLayers(step)
+  const stepLayout = STEP_LAYOUTS[step]
   const alignment = STEP_ALIGNMENT[step]
 
-  if (step !== 1 && (!stepLayout || !alignment || manifestLayers.length === 0)) {
+  if (!stepLayout || !alignment || manifestLayers.length === 0) {
     return <StepStub step={step} />
   }
 
-  if (!alignment) {
-    return <StepStub step={step} />
-  }
-
-  const orderedKeys = stepLayout?.paintOrder.filter((key) => manifestLayers.includes(key)) ?? []
+  const orderedKeys = stepLayout.paintOrder.filter((key) => manifestLayers.includes(key))
   const previousOrderedKeys = getOrderedKeysForStep(previousStep)
   // Stagger only counts *new* layers against each other — not their raw
   // position in orderedKeys — so e.g. two new layers that happen to sit
@@ -997,49 +939,45 @@ export function EyeIllustration({ step }: EyeIllustrationProps) {
       className="relative w-full mx-auto"
       style={{ maxWidth: VIEWPORT_WIDTH, aspectRatio: `${VIEWPORT_WIDTH} / ${VIEWPORT_HEIGHT}` }}
     >
-      {step === 1 ? (
-        <Step1Illustration />
-      ) : (
-        <div
-          // pointer-events-none: layers bleed past this box's edges (negative
-          // insets for feathered/blurred shapes), so without this their
-          // transparent-but-present <img> bounding boxes intercept clicks
-          // meant for whatever's rendered below the illustration.
-          className="absolute pointer-events-none"
-          style={{
-            left: `${alignment.leftPct}%`,
-            top: `${alignment.topPct}%`,
-            width: `${alignment.widthPct}%`,
-            height: `${alignment.heightPct}%`,
-          }}
-        >
-          {orderedKeys.map((layerKey) => {
-            // previousStep === null: nothing has rendered yet (this is the
-            // very first mount, e.g. initial page load on step 1) — treat
-            // every layer as new so the full build-up plays once, as a
-            // page-load entrance rather than a step-to-step one.
-            const isNewLayer = previousStep === null || !previousOrderedKeys.includes(layerKey)
-            const staggerIndex = isNewLayer ? newLayerCount++ : 0
-            return stepLayout?.rotated?.[layerKey] ? (
-              <RotatedEyeLayer
-                key={layerKey}
-                layerKey={layerKey}
-                step={step}
-                staggerIndex={staggerIndex}
-                animate={isNewLayer}
-              />
-            ) : (
-              <EyeLayer
-                key={layerKey}
-                layerKey={layerKey}
-                step={step}
-                staggerIndex={staggerIndex}
-                animate={isNewLayer}
-              />
-            )
-          })}
-        </div>
-      )}
+      <div
+        // pointer-events-none: layers bleed past this box's edges (negative
+        // insets for feathered/blurred shapes), so without this their
+        // transparent-but-present <img> bounding boxes intercept clicks
+        // meant for whatever's rendered below the illustration.
+        className="absolute pointer-events-none"
+        style={{
+          left: `${alignment.leftPct}%`,
+          top: `${alignment.topPct}%`,
+          width: `${alignment.widthPct}%`,
+          height: `${alignment.heightPct}%`,
+        }}
+      >
+        {orderedKeys.map((layerKey) => {
+          // previousStep === null: nothing has rendered yet (this is the
+          // very first mount, e.g. initial page load on step 1) — treat
+          // every layer as new so the full build-up plays once, as a
+          // page-load entrance rather than a step-to-step one.
+          const isNewLayer = previousStep === null || !previousOrderedKeys.includes(layerKey)
+          const staggerIndex = isNewLayer ? newLayerCount++ : 0
+          return stepLayout.rotated?.[layerKey] ? (
+            <RotatedEyeLayer
+              key={layerKey}
+              layerKey={layerKey}
+              step={step}
+              staggerIndex={staggerIndex}
+              animate={isNewLayer}
+            />
+          ) : (
+            <EyeLayer
+              key={layerKey}
+              layerKey={layerKey}
+              step={step}
+              staggerIndex={staggerIndex}
+              animate={isNewLayer}
+            />
+          )
+        })}
+      </div>
     </div>
   )
 }
