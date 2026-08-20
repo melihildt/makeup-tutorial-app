@@ -1,30 +1,11 @@
 import { useState } from 'react'
-import lookImage1 from '../assets/looks/soft-smokey-eye-1.jpg'
-import lookImage2 from '../assets/looks/soft-smokey-eye-2.jpg'
+import { TUTORIALS, TutorialStack } from './TutorialCard'
 
 type LookType = 'day' | 'night' | 'glam'
 
 type HomeScreenProps = {
   /** Called when the (only, for now) look card is tapped — hands off to the tutorial flow. */
   onSelectLook?: () => void
-}
-
-type Look = {
-  title: string
-  brand: string
-  durationMinutes: number
-  level: string
-  images: [string, string]
-}
-
-// Only one look exists so far — see the filter sheet below, which is
-// deliberately non-functional until there's more than one to filter.
-const LOOK: Look = {
-  title: 'Soft Smokey Eye',
-  brand: 'By Tom Ford SS 2019',
-  durationMinutes: 25,
-  level: 'Advanced',
-  images: [lookImage1, lookImage2],
 }
 
 // Sun/Moon/Diamond below are authored as single inline SVGs rather than the
@@ -118,36 +99,6 @@ function CloseIcon() {
   )
 }
 
-function ClockIcon() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 16 16" fill="none" className="shrink-0 opacity-20" aria-hidden="true">
-      <circle cx={8} cy={8} r={6} stroke="var(--color-look-card-text)" strokeWidth={1.33} />
-      <path d="M8 4.7V8L10.5 8" stroke="var(--color-look-card-text)" strokeWidth={1.33} strokeLinecap="round" />
-    </svg>
-  )
-}
-
-/** Skill-level bars — drawn with plain CSS borders in the Figma source
- *  (not an exported image), so reproduced the same way here. */
-function LevelIcon() {
-  return (
-    <div className="relative size-[16px] shrink-0 opacity-20">
-      <div
-        className="absolute rounded-[0.667px] border-[1.333px] border-solid"
-        style={{ borderColor: 'var(--color-look-card-text)', bottom: '16.67%', left: '75%', right: '8.33%', top: '29.17%' }}
-      />
-      <div
-        className="absolute rounded-[0.667px] border-[1.333px] border-solid"
-        style={{ borderColor: 'var(--color-look-card-text)', inset: '54.17% 41.67% 16.67% 41.67%' }}
-      />
-      <div
-        className="absolute rounded-[0.667px] border-[1.333px] border-solid"
-        style={{ borderColor: 'var(--color-look-card-text)', bottom: '16.67%', left: '8.33%', right: '75%', top: '37.5%' }}
-      />
-    </div>
-  )
-}
-
 type FilterChipProps = {
   icon: React.ReactNode
   label: string
@@ -192,27 +143,27 @@ export function HomeScreen({ onSelectLook }: HomeScreenProps) {
     // md:py-6, not py-6: this inset only exists to keep the rounded-2xl
     // corners visible against the desktop page backdrop (App.tsx's
     // wrapper) — on mobile the frame fills the real viewport edge-to-edge,
-    // so those corners are clipped by the device edges anyway and the
-    // padding was just costing ~48px of real content height for nothing.
-    // That mattered concretely here: node 615:2884 (a real 375x812 device
+    // and rounding is dropped there too (md:rounded-2xl, matching App.tsx's
+    // own wrapper), so a real device shows a flush, square-cornered screen
+    // instead of the backdrop color peeking through rounded corners. That
+    // mattered concretely here: node 615:2884 (a real 375x812 device
     // frame with actual browser chrome) measured only ~640px of content
     // height, and the old unconditional py-6 was eating almost 8% of that
     // on top of the header/card/sheet spacing already tuned to fit it.
     <div
-      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden rounded-2xl md:h-full md:py-6"
+      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl md:py-6"
       style={{ background: 'var(--gradient-bg-screen)' }}
     >
-      {/* Header text + look card as one block (node 615:2884's "Top
-          Header": pt-20/px-12/pb-8, gap-40 between the text and the card) —
-          flex-1 + overflow-y-auto so a future longer card list scrolls here
-          without moving the filter sheet below, same pattern
-          StepScreen/AllStepsView use for their own scrollable region vs.
-          fixed-position bottom card. At today's single-card length this
-          never actually scrolls — the numbers below were sized to fit
-          exactly within the ~640px a real device leaves after browser
-          chrome (measured off that same reference, a 375x812 frame with a
-          94px address bar + 78px tab bar), so this and the sheet below
-          together should just fit without scrolling on a real phone. */}
+      {/* Header text + tutorial stack as one block (node 615:2884's "Top
+          Header": pt-20/px-12/pb-8, gap-40 between the text and the card)
+          — flex-1 + overflow-y-auto so a future longer card list scrolls
+          here without moving the filter sheet below, same pattern
+          StepScreen/AllStepsView use. The stack itself is drag-only now,
+          not scroll-linked (see TutorialCard.tsx's TutorialStack module
+          comment for why), so at today's content length this shouldn't
+          actually need to scroll — same "sized to fit" intent as the
+          original single-card layout, just no longer load-bearing for
+          the stack's own interaction. */}
       <div className="flex-1 overflow-y-auto px-3 pb-2 pt-5">
         <div className="flex flex-col items-center gap-2 text-center">
           <p
@@ -240,78 +191,13 @@ export function HomeScreen({ onSelectLook }: HomeScreenProps) {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onSelectLook}
-          className="mt-[40px] flex w-full flex-col items-start gap-[37px] rounded-[--radius-look-card] p-4 text-left"
-          style={{ background: 'var(--color-look-card-bg)', boxShadow: 'var(--shadow-filter-chip)' }}
-        >
-          <div className="relative h-[219px] w-full">
-            <div
-              className="absolute left-1/2 top-[1px] h-[171px] w-[148px] -translate-x-1/2"
-              style={{ marginLeft: '84px' }}
-            >
-              <div className="h-full w-full" style={{ transform: 'rotate(1.77deg)' }}>
-                <img
-                  alt=""
-                  src={LOOK.images[0]}
-                  className="h-[166px] w-[143px] rounded-[20px] object-cover"
-                  style={{ boxShadow: '0px 4px 20px 0px rgba(67, 48, 35, 0.2)' }}
-                />
-              </div>
-            </div>
-            <div
-              className="absolute left-1/2 top-0 h-[219px] w-[152px] -translate-x-1/2"
-              style={{ marginLeft: '-82px' }}
-            >
-              <div className="h-full w-full" style={{ transform: 'rotate(-2.39deg)' }}>
-                <img
-                  alt="Model wearing the Soft Smokey Eye look"
-                  src={LOOK.images[1]}
-                  className="h-[213px] w-[143px] rounded-[20px] object-cover"
-                  style={{ boxShadow: '0px 4px 20px 0px rgba(67, 48, 35, 0.2)' }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex w-full items-start justify-between">
-            <div className="flex flex-col items-start gap-1">
-              <p
-                className="capitalize whitespace-nowrap text-[16px]"
-                style={{ color: 'var(--color-look-card-text)', fontWeight: 'var(--font-weight-semibold)' }}
-              >
-                {LOOK.title}
-              </p>
-              <p
-                className="whitespace-nowrap text-[12px] opacity-50"
-                style={{ color: 'var(--color-look-card-text)', fontWeight: 'var(--font-weight-medium)' }}
-              >
-                {LOOK.brand}
-              </p>
-            </div>
-            <div className="flex flex-col items-end justify-center gap-1">
-              <div className="flex items-end justify-end gap-1">
-                <p
-                  className="whitespace-nowrap text-[10px] opacity-50"
-                  style={{ color: 'var(--color-look-card-text)', fontWeight: 'var(--font-weight-medium)', letterSpacing: '-0.1px' }}
-                >
-                  {LOOK.durationMinutes} min
-                </p>
-                <ClockIcon />
-              </div>
-              <div className="flex items-end gap-1">
-                <p
-                  className="whitespace-nowrap text-[10px] opacity-50"
-                  style={{ color: 'var(--color-look-card-text)', fontWeight: 'var(--font-weight-medium)', letterSpacing: '-0.1px' }}
-                >
-                  {LOOK.level}
-                </p>
-                <LevelIcon />
-              </div>
-            </div>
-          </div>
-        </button>
+        {/* Drag-native tutorial stack — node 642:5092's "BigCard". Front
+            card + one peeking card; swipe the front card (any direction)
+            to advance, wraps back to the first after the last. See
+            TutorialCard.tsx's TutorialStack module comment. */}
+        <div className="mt-[40px]">
+          <TutorialStack tutorials={TUTORIALS} onSelect={onSelectLook} />
+        </div>
       </div>
 
       {/* Persistent filter sheet. Smaller chips (24px icons, 12px

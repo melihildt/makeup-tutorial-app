@@ -72,8 +72,12 @@ export function AllStepsView({
     // problem. Doesn't affect the header's `sticky` behavior — that's
     // scoped to its actual scrolling ancestor (the overflow-y-auto div
     // below), not this outer one.
+    // md:rounded-2xl, not rounded-2xl: on mobile the frame fills the real
+    // viewport edge-to-edge, so rounding it just shows the page backdrop
+    // color through the corners instead of a flush square screen — same
+    // fix as App.tsx's own wrapper and HomeScreen/StepScreen's roots.
     <div
-      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden rounded-2xl md:h-full"
+      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl"
       style={{ background: 'var(--gradient-bg-screen)' }}
     >
       {/* Scrollable region. The header now lives *inside* it (sticky, see

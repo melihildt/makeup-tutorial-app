@@ -165,12 +165,12 @@ export function StepScreen({
     // only, same reasoning as HomeScreen's root: that inset only earns its
     // keep on desktop, where it keeps the rounded corners visible against
     // the page backdrop; on mobile the frame fills the real viewport edge-
-    // to-edge (those corners are clipped by the device edges regardless),
-    // so unconditional py-6 was just costing ~48px of real content height
-    // for nothing — concretely part of why the eye illustration was
-    // crowding the product card on a real device.
+    // to-edge and rounding is dropped there too (md:rounded-2xl), so it
+    // reads as a flush square screen — unconditional py-6 was just costing
+    // ~48px of real content height for nothing — concretely part of why
+    // the eye illustration was crowding the product card on a real device.
     <div
-      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden rounded-2xl pt-4 md:h-full md:pb-6 md:pt-6"
+      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden pt-4 md:h-full md:rounded-2xl md:pb-6 md:pt-6"
       style={{ background: 'var(--gradient-bg-screen)' }}
     >
       <ScreenHeader
