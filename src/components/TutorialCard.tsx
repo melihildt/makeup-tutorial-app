@@ -424,28 +424,6 @@ export const DEFAULT_MOTION_TUNING: MotionTuning = {
   gripScale: 0.96, // settled on by feel (unchanged from the first guess)
 }
 
-/** How the not-yet-revealed peek presents before its content crossfades
- *  in (see contentOpacity in useCardMotion):
- *  - 'yellow': swap to the flat CardBehind placeholder entirely — the
- *    first version built.
- *  - 'mask': keep the real content visible the whole time, dim it with a
- *    dark scrim that lifts as it nears the front — apple-design's "dim to
- *    focus" materials pattern (a receding layer reads as *behind*, not
- *    swapped-out). This is the current default per your steer toward "a
- *    mask that shadows the card below" over a flat color placeholder.
- *  - 'off': no treatment at all — real content fully visible the entire
- *    time it's peeking, the pre-ghost-feature behavior, kept as the third
- *    point of comparison rather than assuming you want one of the other
- *    two.
- *  TEMPORARY, selected via MotionTuner alongside the numeric sliders —
- *  same "settle on a value, then hardcode it and remove the picker"
- *  lifecycle as everything else in that panel. */
-export type GhostStyle = 'yellow' | 'mask' | 'off'
-export const DEFAULT_GHOST_STYLE: GhostStyle = 'mask'
-/** Peak darkness of the 'mask' scrim (0 = invisible, 1 = opaque) — not a
- *  slider yet since it's a brand-new mode; say if it needs to be one. */
-const MASK_MAX_OPACITY = 0.35
-
 function TutorialStackCard({
   tutorial,
   index,
@@ -455,7 +433,6 @@ function TutorialStackCard({
   activeCardIndex,
   isLocked,
   tuning,
-  ghostStyle,
   onSelect,
   onCommitStart,
   onAdvance,
@@ -486,7 +463,6 @@ function TutorialStackCard({
    *  intended. */
   isLocked: boolean
   tuning: MotionTuning
-  ghostStyle: GhostStyle
   onSelect?: () => void
   onCommitStart: () => void
   onAdvance: () => void
@@ -498,10 +474,11 @@ function TutorialStackCard({
   // so feeding it back into this card's own restRotateDeg would be a
   // feedback loop (it'd start rotating itself "away" on top of the
   // drag-driven tilt it already has, double-counting). Every other card
-  // *should* react to it — that's the whole point. Picked via plain
-  // ternary, not inside a useTransform combiner, for the same reason
-  // ghostStyle is (see that comment) — isFrontCard is a plain prop-derived
-  // boolean, not a tracked motion-value input.
+  // *should* react to it — that's the whole point. isFrontCard is a plain
+  // prop-derived boolean, not a tracked motion-value input, so it's picked
+  // via a plain ternary rather than branched inside a useTransform
+  // combiner (see the ghost-reveal math below for why that distinction
+  // matters).
   const isFrontCard = index === activeCardIndex
   const liveIndexForOthers = useTransform([activeIndex, dragProgress], ([a, d]) => a + d)
   const effectiveIndex = isFrontCard ? activeIndex : liveIndexForOthers
@@ -515,37 +492,16 @@ function TutorialStackCard({
   // gets an unambiguous fixed ceiling instead of relying on the same
   // formula as everyone else.
   const zIndexFinal = isFrontCard ? 1000 : zIndex
-  // Three ways to present "not revealed yet," picked by ghostStyle (see
-  // its own comment) — all three still multiply by the outer `opacity`,
-  // so a departing card's fade-out applies regardless of which is active
-  // (contentOpacity is always 1 there, so both reveal-opacities come out
-  // to 0 either way — no ghost/mask on exit, only on approach; see
-  // contentOpacity's own comment in useCardMotion).
-  //
-  // Both variants are computed unconditionally, and the *pick* between
-  // them is a plain JS ternary on the ghostStyle prop — not a branch
-  // inside a useTransform combiner. useTransform's combiner only reliably
-  // re-fires when one of its *listed* input motion values changes;
-  // ghostStyle is a plain prop closed over by the function, not a tracked
-  // input, so a combiner that branches on it can go stale the instant you
-  // toggle the mode without also nudging opacity/contentOpacity — found
-  // this the first time through, toggling to 'off' kept showing the
-  // 'mask' dimming until something else happened to change contentOpacity
-  // anyway. Picking between two independently-correct, already-computed
-  // motion values on every render sidesteps that entirely — an ordinary
-  // React re-render (which a prop change always causes) is what actually
-  // decides which one gets bound to style.opacity, not the derivation
-  // itself.
-  const zero = useMotionValue(0)
-  const ghostRevealBase = useTransform([opacity, contentOpacity], ([slot, content]) => slot * (1 - content))
-  const maskRevealBase = useTransform(ghostRevealBase, (v) => v * MASK_MAX_OPACITY)
-  const contentGatedBase = useTransform([opacity, contentOpacity], ([slot, content]) => slot * content)
-  const yellowOpacity = ghostStyle === 'yellow' ? ghostRevealBase : zero
-  const maskOpacity = ghostStyle === 'mask' ? maskRevealBase : zero
-  // Content itself only actually hides in 'yellow' mode (swapped for the
-  // placeholder) — 'mask' and 'off' both keep the real card fully visible
-  // the whole time (mask just dims it via the separate scrim above).
-  const contentFinalOpacity = ghostStyle === 'yellow' ? contentGatedBase : opacity
+  // Peek reveal: locked in on the flat CardBehind placeholder (yellow)
+  // that fades to the real card as it nears the front — the two
+  // alternatives explored (a dark "mask" scrim over the real content, and
+  // no treatment at all) are gone from the code now that this one's
+  // settled, not just hidden behind a flag. Both still multiply by the
+  // outer `opacity` so a departing card's fade-out applies (contentOpacity
+  // is always 1 there, so ghostOpacity comes out to 0 — no ghost on exit,
+  // only on approach; see contentOpacity's own comment in useCardMotion).
+  const ghostOpacity = useTransform([opacity, contentOpacity], ([slot, content]) => slot * (1 - content))
+  const contentFinalOpacity = useTransform([opacity, contentOpacity], ([slot, content]) => slot * content)
   // isFrontCard itself is computed above (needed earlier, for
   // effectiveIndex). Second question here: which card is allowed to
   // actually start a *new* gesture right now (blocked while locked,
@@ -693,7 +649,7 @@ function TutorialStackCard({
       onDrag={isInteractive ? handleDrag : undefined}
       onDragEnd={isInteractive ? handleDragEnd : undefined}
     >
-      <CardBehind opacity={yellowOpacity} />
+      <CardBehind opacity={ghostOpacity} />
       <motion.div className="absolute inset-0" style={{ opacity: contentFinalOpacity }}>
         <TutorialLookCard
           tutorial={tutorial}
@@ -702,16 +658,6 @@ function TutorialStackCard({
           detailsOpacity={detailsOpacity}
         />
       </motion.div>
-      {/* 'mask' mode's scrim — sits on top of the real content (which stays
-          fully rendered underneath, unlike 'yellow') and dims it. Same
-          radius as the card itself so the dimming doesn't spill past its
-          rounded corners. pointer-events-none: never a hit-testable layer,
-          this card isn't interactive while it's still a peek anyway. */}
-      <motion.div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{ opacity: maskOpacity, background: 'var(--color-text-primary)', borderRadius: 'var(--radius-tutorial-card)' }}
-      />
     </motion.div>
   )
 }
@@ -747,17 +693,7 @@ function TutorialStackCard({
  * Once numbers are settled on: report them back, and this + the `tuning`
  * prop threading in TutorialStack/TutorialStackCard should come out in
  * favor of plain DEFAULT_MOTION_TUNING constants again. */
-function MotionTuner({
-  tuning,
-  onChange,
-  ghostStyle,
-  onGhostStyleChange,
-}: {
-  tuning: MotionTuning
-  onChange: (next: MotionTuning) => void
-  ghostStyle: GhostStyle
-  onGhostStyleChange: (next: GhostStyle) => void
-}) {
+function MotionTuner({ tuning, onChange }: { tuning: MotionTuning; onChange: (next: MotionTuning) => void }) {
   const rows: Array<{ key: keyof MotionTuning; label: string; min: number; max: number; step: number }> = [
     { key: 'commitDistance', label: 'commit dist', min: 40, max: 250, step: 5 },
     { key: 'commitVelocity', label: 'commit vel', min: 100, max: 1200, step: 25 },
@@ -767,7 +703,6 @@ function MotionTuner({
     { key: 'rotationRange', label: 'tilt range', min: 5, max: 40, step: 1 },
     { key: 'gripScale', label: 'grip scale', min: 0.85, max: 1, step: 0.01 },
   ]
-  const ghostOptions: GhostStyle[] = ['yellow', 'mask', 'off']
   return (
     // fixed, not absolute — this used to be positioned relative to the
     // stack's own 346px-tall box (`-top-8`, meant to sit just above it),
@@ -776,21 +711,6 @@ function MotionTuner({
     // instead means its own height can never overlap the stack no matter
     // how many rows get added.
     <div className="fixed left-2 top-2 z-[999] w-[260px] rounded bg-black/80 px-2 py-1.5 font-mono text-[10px] leading-tight text-white">
-      <div className="flex items-center gap-1.5 py-0.5">
-        <span className="w-[80px] shrink-0">peek style</span>
-        <div className="flex flex-1 gap-1">
-          {ghostOptions.map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => onGhostStyleChange(opt)}
-              className={`flex-1 rounded px-1 py-0.5 ${ghostStyle === opt ? 'bg-white text-black' : 'bg-white/20'}`}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-      </div>
       {rows.map(({ key, label, min, max, step }) => (
         <div key={key} className="flex items-center gap-1.5 py-0.5">
           <span className="w-[80px] shrink-0">{label}</span>
@@ -825,9 +745,12 @@ export function TutorialStack({ tutorials, onSelect }: TutorialStackProps) {
   // for the whole fly-off, so a second touch in that window could start a
   // second commit before the first one's onAdvance has landed.
   const [isAdvancing, setIsAdvancing] = useState(false)
-  // TEMPORARY — see MotionTuner.
+  // TEMPORARY — see MotionTuner. Panel is hidden (not rendered) for now,
+  // per request, so the stack is uninterrupted while iterating on the
+  // rest of the home screen — the mechanism itself is untouched, current
+  // values just aren't editable live at the moment. Uncomment the
+  // <MotionTuner> line below to bring the panel back.
   const [tuning, setTuning] = useState(DEFAULT_MOTION_TUNING)
-  const [ghostStyle, setGhostStyle] = useState<GhostStyle>(DEFAULT_GHOST_STYLE)
 
   function handleCommitStart() {
     setIsAdvancing(true)
@@ -886,8 +809,8 @@ export function TutorialStack({ tutorials, onSelect }: TutorialStackProps) {
 
   return (
     <div className="relative mx-auto" style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}>
-      {/* TEMPORARY — see MotionTuner's own comment. */}
-      <MotionTuner tuning={tuning} onChange={setTuning} ghostStyle={ghostStyle} onGhostStyleChange={setGhostStyle} />
+      {/* TEMPORARY — see MotionTuner's own comment above. Hidden for now:
+          <MotionTuner tuning={tuning} onChange={setTuning} /> */}
       {tutorials.map((tutorial, index) => (
         <TutorialStackCard
           key={tutorial.id}
@@ -896,7 +819,6 @@ export function TutorialStack({ tutorials, onSelect }: TutorialStackProps) {
           total={tutorials.length}
           isLocked={isAdvancing}
           tuning={tuning}
-          ghostStyle={ghostStyle}
           onCommitStart={handleCommitStart}
           activeIndex={activeIndex}
           dragProgress={dragProgress}

@@ -6,12 +6,43 @@ tilt, fly-off, loop) and its motion tuning — a separate area from
 `docs/handoff.md` (the step-flow/illustration doc, now stale on the "no
 home page" point — a home page exists now, see below).
 
-**Nothing in this feature is committed yet.** `git status` shows
-`index.html`, `AllStepsView.tsx`, `HomeScreen.tsx`, `StepScreen.tsx`,
-`tokens.css` modified and `TutorialCard.tsx` untracked, all from this
-work. Consider committing before starting a new session on top of it, or
-at least know the working tree *is* the feature right now — there's no
-committed baseline to diff against.
+**Committed** on branch `feature/home-tutorial-stack` (off `main`, which
+is untouched — still on the commit before this feature). Check
+`git log`/`git status` on a fresh session start: if there are *more*
+uncommitted changes on top of that branch, they're from later in this
+same work than whenever this doc was last updated — read the diff before
+assuming this doc is fully current.
+
+**Immediate next task, per the user directly**: "iterate the rest of the
+page (colors, filters style, like you saw on the figma)" — the stack
+itself is in a good place; the ask now is the rest of HomeScreen (see
+"Not yet touched," below). The Figma file already used this whole
+session is `Tech-Experimentation`, file key `6Mr7K0RONTS8SltZRJtqYj` —
+nodes already pulled and worth reusing rather than re-fetching:
+`642:5092` (the `BigCard` component + its "Unfold" ghost variant),
+`651:5362` (the full "Cards" composition, card placement/rotation
+reference).
+
+**`635:4792` already covers the filter chips and header** — pulled once
+this session but not yet acted on (attention stayed on the card stack).
+Worth re-reading rather than re-fetching before touching either. What it
+showed, from memory (verify against a fresh pull before trusting exact
+numbers):
+
+- **Header** — "Beauty Notes" in the serif font at 32px (bigger than the
+  current 24px), tight tracking (-1.28px); an icon row (info + user,
+  each in a rounded-12 white/60%-opacity + hairline-border box) that
+  doesn't exist in the current build at all.
+- **Filter chips redesigned as "LookSelector"** — a materially different
+  style than the current flat `--color-filter-chip-bg` (`#f5f5f5`)
+  chips: each has a photo-texture background with a colored
+  `mix-blend-overlay`/`mix-blend-soft-light` tint per option (Day: gold
+  `#e3b345` overlay + a gold-tinted shadow; Night: blue `#688db6`
+  soft-light; Glam: green `#beef9e` soft-light), plus a per-state border
+  (selected: `rgba(44,41,38,0.5)`; unselected: `rgba(44,41,38,0.1)`).
+  This is a materially bigger visual change than a color swap — it needs
+  actual texture/tint assets or a CSS approximation of the blend-mode
+  effect, not just new hex values in the existing chip component.
 
 ## What this covers
 
@@ -34,24 +65,28 @@ One file, several pieces, roughly back-to-front:
 - **`TutorialLookCard`** — one card's look, at rest. Dumb about
   scroll/drag; just renders a card given a `tutorial`, plus optional
   `detailsOpacity` (for the reveal system, below).
-- **`CardBehind`** — the flat placeholder-tint layer, now embedded inside
-  each card's own peek presentation (not a separate static prop like the
-  first version — see "Ghost/mask reveal system").
+- **`CardBehind`** — the flat placeholder-tint (yellow) layer, embedded
+  inside each card's own peek presentation, not a separate static prop
+  like the first version — see "Ghost reveal system," now locked in.
 - **`useCardMotion(activeIndex, cardIndex, total)`** — the core per-card
-  pose math. Takes the stack's continuous `activeIndex` value and a
-  card's own index, returns motion values for rotation, opacity, z-index,
-  and the content-reveal band. `circularLocal()` is the key helper: signed
-  distance from `cardIndex` to `activeIndex`, **wrapped** so the loop
-  (last card → first card) doesn't produce a huge stale distance — this
-  was a real, hard-to-spot bug (see "Bugs fixed" below).
+  pose math. Takes an index value (see `effectiveIndex` in
+  `TutorialStackCard` — not always literally the stack's `activeIndex`,
+  read that comment before assuming) and a card's own index, returns
+  motion values for rotation, opacity, z-index, and the content-reveal
+  band. `circularLocal()` is the key helper: signed distance from
+  `cardIndex` to the index value, **wrapped** so the loop (last card →
+  first card) doesn't produce a huge stale distance — this was a real,
+  hard-to-spot bug (see "Bugs fixed" below).
 - **`TutorialStackCard`** — one card's full behavior: composes rotation,
   drag position, grip scale into one `transform`; owns the drag gesture
   (`handleDragStart`/`handleDrag`/`handleDragEnd`); decides commit vs.
-  cancel; only the front card is ever interactive.
-- **`TutorialStack`** — owns `activeCardIndex` (state) and `activeIndex`
-  (continuous motion value driving all the per-card math), advances on a
-  committed drag, handles the wrap-to-first loop, renders the temporary
-  `MotionTuner` panel (see below).
+  cancel; only the front card is ever interactive. Also where
+  `dragProgress` gets folded into (or excluded from) this card's own pose
+  — see bug #6 below, it's not optional plumbing.
+- **`TutorialStack`** — owns `activeCardIndex` (state), `activeIndex` (the
+  settled motion value), and `dragProgress` (the live one) — advances on
+  a committed drag, handles the wrap-to-first loop. Also renders the
+  `MotionTuner` panel, currently commented out (see below).
 
 `HomeScreen.tsx` just renders `<TutorialStack tutorials={TUTORIALS}
 onSelect={onSelectLook} />` — no scroll container, no ref threading. An
@@ -63,50 +98,53 @@ re-read that reasoning in `TutorialStack`'s own module comment before
 resurrecting the old approach — it was replaced for concrete, tested
 reasons, not on a whim.
 
-## Ghost/mask reveal system
+## Ghost reveal system — locked in
 
 While a card is the peek (not yet front), its real content doesn't show
 immediately — it reveals over the *last* ~55% of its approach
 (`CONTENT_REVEAL_BAND` in `useCardMotion`), photos slightly before text.
-Before that, one of three treatments (`GhostStyle`, picked live via the
-tuner panel):
+Before that, it shows the flat `CardBehind` yellow placeholder instead —
+**this is the final, locked-in choice.** Two alternatives were explored
+and explicitly rejected, and their code is gone, not just hidden:
 
-- **`'yellow'`** — swap to the flat `CardBehind` placeholder entirely.
-- **`'mask'`** — *current default.* Keep the real content visible the
-  whole time, dim it with a dark scrim (`MASK_MAX_OPACITY = 0.35`) that
-  lifts as it nears the front — apple-design's "dim to focus" materials
-  pattern. This is what the user steered toward over the flat color swap.
-- **`'off'`** — no treatment, real content fully visible immediately.
+- A dark "mask" scrim over the still-visible real content (apple-design's
+  "dim to focus" pattern) — user's own idea initially, but decided
+  against it after comparing live.
+- No treatment at all (real content visible immediately).
 
-**Not yet settled** — the user was mid-test on `'mask'` vs the other two
-when this doc was written. If they've confirmed a preference, hardcode
-`DEFAULT_GHOST_STYLE` to it and strip `ghostStyle`/`onGhostStyleChange`
-prop-threading + the picker row in `MotionTuner`, same lifecycle as the
-numeric sliders (below).
+If either comes back as a request, it's a rebuild, not an un-hide — check
+git history around this commit for the removed `GhostStyle`
+type/`MASK_MAX_OPACITY`/mask-scrim JSX if reference code would help
+rather than starting from scratch.
 
-## MotionTuning / MotionTuner (temporary)
+## MotionTuning / MotionTuner (temporary — hidden, not removed)
 
 Every drag/spring/reveal number is a field on the `MotionTuning` type
-(`DEFAULT_MOTION_TUNING` for current values), live-editable via the
-`MotionTuner` panel rendered top-left of the stack. **This is temporary
-dev tooling** — same pattern this project has used a few times now
-(`SegmentTuner`, `StackDebugReadout`, both already removed once their job
-was done): once the user settles on final numbers, hardcode them into
-`DEFAULT_MOTION_TUNING`/`DEFAULT_GHOST_STYLE` and delete `MotionTuner` +
-the `tuning`/`ghostStyle` prop threading in `TutorialStack`/
-`TutorialStackCard`. Don't mistake this panel for a permanent feature.
+(`DEFAULT_MOTION_TUNING` for current values). There's still a
+`MotionTuner` component with live sliders over all of them, and
+`TutorialStack` still holds `tuning` state and threads it down — **but
+the panel itself is currently commented out**, not rendered, per the
+user's request to see the stack uninterrupted while iterating on the
+rest of the page. To bring it back: uncomment the `<MotionTuner
+tuning={tuning} onChange={setTuning} />` line in `TutorialStack` (search
+"Hidden for now" in `TutorialCard.tsx`). Once the user settles on truly
+final numbers (they may still want to adjust after seeing the rest of
+the page redesigned around the stack), hardcode them into
+`DEFAULT_MOTION_TUNING` and delete `MotionTuner` + the `tuning`
+prop-threading entirely — same end-of-life pattern as `SegmentTuner` and
+`StackDebugReadout` before it, both fully removed once their job was
+done. Don't mistake "hidden" for "done with."
 
-**Current values** (as of this doc):
+**Current values**:
 
 ```
 commitDistance: CARD_WIDTH * 0.35 (~118px)
-commitVelocity: 500 px/s
-flyOffDuration: 0.7s   — settled on by feel
-flyOffBounce:   0.15   — settled on by feel
+commitVelocity: 1200 px/s — settled on by feel
+flyOffDuration: 0.7s      — settled on by feel
+flyOffBounce:   0.15      — settled on by feel
 cancelDuration: 0.4s
 rotationRange:  20deg
-gripScale:      0.96   — settled on by feel
-ghostStyle:     'mask' — NOT yet confirmed final, see above
+gripScale:      0.96      — settled on by feel
 ```
 
 ## Bugs fixed this session (worth knowing before you "fix" them again)
@@ -161,6 +199,33 @@ If something in this area looks broken again, check these first:
    comment for the exact reasoning (a card just passed after a wrap has a
    *huge* plain distance that reads as "still upcoming" instead of "just
    departed" without wrapping into `(-total/2, total/2]`).
+
+6. **A "flick" can survive every per-card transform fix if the *rest of
+   the stack* doesn't track the live gesture at all.** After fixing 1-3
+   above, the user still saw a flick — root cause this time: `activeIndex`
+   (which every non-dragged card's pose is computed from) sat completely
+   frozen for the whole drag, only starting to animate *after* release.
+   So the peek had to accelerate from a standing start at the exact
+   instant the dragged card was already flying at real velocity — two
+   very different motion states meeting at one frame. Fixed with a live
+   `dragProgress` value (0..1, distance dragged ÷ commitDistance) added to
+   `activeIndex` for every card *except* the one currently being dragged
+   (folding it into that card's own rest-pose would be a feedback loop —
+   its own drag would make it also react to its own drag). On commit, the
+   settled `activeIndex` jumps to match wherever the live preview had
+   already gotten to (same tick, invisible) before springing the
+   remaining — usually much shorter — distance, instead of restarting the
+   whole journey from the old integer. This is also the apple-design
+   principle directly: "always animate from the presentation value, never
+   the target/logical value."
+
+7. **A live-tracking peek can numerically tie the dragged card's z-index**
+   — direct consequence of #6: as `dragProgress` approaches 1, the peek's
+   own z-index formula approaches the same value the front card's has,
+   and a CSS tie resolves by DOM order, which could put the peek
+   *in front of* the card the user is physically holding. Fixed by giving
+   the actively-interactive card an unambiguous fixed ceiling (`1000`)
+   instead of computing its z-index the same way as everyone else.
 
 ## Known deferred issue (not part of this session's fixes)
 
