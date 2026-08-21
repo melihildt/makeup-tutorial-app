@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   animate as animateValue,
   motion,
@@ -18,6 +18,9 @@ import autumnImage2 from '../assets/looks/autumn-hermes-2.jpg'
 import mattesImage1 from '../assets/looks/everyday-mattes-1.jpg'
 import mattesImage2 from '../assets/looks/everyday-mattes-2.jpg'
 import cardGhostTexture from '../assets/looks/card-ghost-texture.jpg'
+import cardGhostTextureNight from '../assets/looks/card-ghost-texture-night.png'
+import cardGhostTextureGlam from '../assets/looks/card-ghost-texture-glam.png'
+import type { LookType } from './HomeScreen'
 
 /**
  * Tutorial stack card — "BigCard" component, node 642:5092
@@ -120,6 +123,25 @@ function BookmarkIcon({ filled }: { filled: boolean }) {
           fill="var(--color-tutorial-card-text)"
         />
       )}
+    </svg>
+  )
+}
+
+/** Restart icon for the Start Over card (below) — node 666:2684
+ *  ("fi-rr-rotate-right", Tech-Experimentation), real path data pulled via
+ *  download_assets, not hand-approximated (same standard as BookmarkIcon
+ *  above). Source export had its fill hardcoded to the literal hex
+ *  #2C2926 — swapped for `var(--color-tutorial-card-text)` since that's
+ *  the exact same color as a token already, matching how every other icon
+ *  in this file is themed. */
+function RotateRightIcon() {
+  return (
+    <svg width={48} height={48} viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <path
+        d="M43.9241 25.75C43.5385 30.3097 41.6055 34.6004 38.4459 37.9104C35.2864 41.2204 31.0901 43.3507 26.5533 43.9479C22.0165 44.545 17.4119 43.5731 13.5034 41.1934C9.59492 38.8137 6.61751 35.1693 5.06513 30.8647C3.51276 26.5602 3.47873 21.8542 4.9687 17.5277C6.45867 13.2011 9.38307 9.51398 13.2567 7.07802C17.1304 4.64206 21.7205 3.60368 26.2654 4.13516C30.8104 4.66664 35.037 6.73603 38.2441 10H32.0001C31.4697 10 30.961 10.2107 30.5859 10.5858C30.2109 10.9609 30.0001 11.4696 30.0001 12C30.0001 12.5304 30.2109 13.0391 30.5859 13.4142C30.961 13.7893 31.4697 14 32.0001 14H40.2861C41.271 13.9995 42.2154 13.608 42.9118 12.9116C43.6081 12.2152 43.9996 11.2709 44.0001 10.286V2C44.0001 1.46957 43.7894 0.960859 43.4144 0.585787C43.0393 0.210714 42.5306 0 42.0001 0V0C41.4697 0 40.961 0.210714 40.5859 0.585787C40.2109 0.960859 40.0001 1.46957 40.0001 2V6.156C35.9775 2.56146 30.8599 0.428968 25.4751 0.103423C20.0903 -0.222122 14.753 1.27831 10.3266 4.36206C5.90026 7.44581 2.64352 11.9326 1.08317 17.0966C-0.477194 22.2607 -0.249938 27.8002 1.72818 32.8191C3.7063 37.838 7.31961 42.0429 11.9837 44.7537C16.6478 47.4645 22.09 48.5227 27.4301 47.7572C32.7702 46.9916 37.6959 44.4471 41.4106 40.5351C45.1252 36.6232 47.4117 31.5725 47.9001 26.2C47.926 25.9215 47.8935 25.6406 47.8048 25.3754C47.7161 25.1101 47.5731 24.8662 47.385 24.6592C47.1968 24.4523 46.9676 24.2868 46.712 24.1733C46.4563 24.0598 46.1799 24.0008 45.9001 24C45.4122 23.9941 44.9396 24.1701 44.5743 24.4936C44.2091 24.8171 43.9773 25.265 43.9241 25.75V25.75Z"
+        fill="var(--color-tutorial-card-text)"
+        fillOpacity={0.8}
+      />
     </svg>
   )
 }
@@ -338,6 +360,24 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity,
   )
 }
 
+/** Which ghost-card texture goes with which filter chip — see HomeScreen's
+ *  own LOOK_TYPES for the chip colors this is matching (day gold #e3b345,
+ *  night blue #688db6, glam green #beef9e). Day keeps the original photo
+ *  texture (card-ghost-texture.jpg, already gold-toned on its own); night/
+ *  glam are new PNG exports the user supplied specifically for this,
+ *  matched to their filter by actual pixel color rather than their
+ *  original filenames — the files as first delivered were misnamed
+ *  relative to which chip they visually matched (confirmed by sampling
+ *  their average color against the chip tints above, and by the user's own
+ *  reference mock once renamed to match). CardBehind and StartOverCard
+ *  both read from this one map rather than each hardcoding their own
+ *  three-way branch. */
+const GHOST_TEXTURES: Record<LookType, string> = {
+  day: cardGhostTexture,
+  night: cardGhostTextureNight,
+  glam: cardGhostTextureGlam,
+}
+
 /** Ghost "not-yet-revealed card" placeholder, node 635:5015 ("Card-Behind")
  *  — originally a fixed, separately-positioned/rotated static prop behind
  *  the front card (rotate(7deg), exact value from the Figma inspector).
@@ -354,14 +394,35 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity,
  *  Purely decorative: doesn't represent a specific tutorial, just "here's
  *  the next one, not shown yet." Source design uses a photo texture tinted
  *  gold via mix-blend-overlay — this now uses the real texture asset
- *  (card-ghost-texture.jpg, downsized/recompressed PNG→JPEG from the
- *  original ~618KB export down to ~58KB, no visible difference) directly
- *  as the image, not layered under a separate --color-card-behind-tint
- *  overlay: the source photo is already gold-toned on its own, so the
- *  flat-swatch tint it stood in for is retired rather than kept as a
- *  redundant second layer on top of a photo that already reads as gold.
- *  `opacity` drives the reveal — see useCardMotion's contentOpacity. */
-export function CardBehind({ opacity, className }: { opacity?: MotionValue<number>; className?: string }) {
+ *  directly as the image (day: card-ghost-texture.jpg, downsized/
+ *  recompressed PNG→JPEG from the original ~618KB export down to ~58KB, no
+ *  visible difference), not layered under a separate
+ *  --color-card-behind-tint overlay: the day photo is already gold-toned
+ *  on its own, so the flat-swatch tint it stood in for is retired rather
+ *  than kept as a redundant second layer on top of a photo that already
+ *  reads as gold. `lookType` (new) picks which of GHOST_TEXTURES actually
+ *  shows — see the map's own comment; `key={lookType}` + check-ring-in
+ *  (index.css, the same "new content settling in after a state swap"
+ *  keyframe LookSelectorChip's own icon already uses) gives the swap a
+ *  quick fade+scale-in instead of an instant pop, since a bare `src`
+ *  change on an already-mounted `<img>` has nothing to transition from —
+ *  same "animation, not transition" reasoning as every other
+ *  structurally-different-content swap in this app (see check-pop's own
+ *  comment, index.css). `opacity` drives the reveal — see useCardMotion's
+ *  contentOpacity. `backfaceVisibility: 'hidden'` is a permanent no-op for
+ *  every card except the first tutorial slot mid-restart-flip (see
+ *  TutorialStackCard's flipRotateY) — this layer never rotates on its own
+ *  axis, so it only ever turns away from the viewer when its *parent*
+ *  does, which happens nowhere else. */
+export function CardBehind({
+  opacity,
+  lookType,
+  className,
+}: {
+  opacity?: MotionValue<number>
+  lookType: LookType
+  className?: string
+}) {
   return (
     <motion.div
       aria-hidden="true"
@@ -370,10 +431,107 @@ export function CardBehind({ opacity, className }: { opacity?: MotionValue<numbe
         borderRadius: 'var(--radius-tutorial-card)',
         boxShadow: 'var(--shadow-tutorial-card)',
         opacity,
+        backfaceVisibility: 'hidden',
       }}
     >
-      <img alt="" src={cardGhostTexture} className="size-full object-cover" />
+      <img
+        key={lookType}
+        alt=""
+        src={GHOST_TEXTURES[lookType]}
+        className="size-full object-cover"
+        style={{ animation: 'check-ring-in var(--duration-base) var(--ease-out-quart)' }}
+      />
     </motion.div>
+  )
+}
+
+/** The stack's terminal slot, node 665:2571 ("Home - Start Over") —
+ *  replaces the old wrap-to-first-tutorial loop (see TutorialStack's
+ *  module comment): swipe away the last tutorial and you land here
+ *  instead of silently cycling back to the first one, so reaching the end
+ *  of the deck is a deliberate boundary, not an invisible loop a user
+ *  could lose track of. Deliberately reuses the same GHOST_TEXTURES map
+ *  CardBehind reads from (not a second copy of the per-filter assets) —
+ *  the design has this card *be* the ghost, permanently, with a restart
+ *  icon + label on top rather than ever crossfading into some other "real"
+ *  content the way a tutorial card does; recoloring with the selected
+ *  filter is the one exception to "permanently," per the user's own call
+ *  that this card shouldn't be exempt from that just because it isn't
+ *  literally "a look." Root is the
+ *  same role="button" whole-card-tappable pattern as TutorialLookCard
+ *  (see its own comment for why a real <button> doesn't work here) —
+ *  tapping (or Enter/Space) is what flips this card in place to reveal the
+ *  first tutorial on its back face; see TutorialStackCard's
+ *  handleStartOverTap and the back-face JSX in its render. */
+function StartOverCard({
+  onSelect,
+  disabled,
+  detailsOpacity,
+  lookType,
+}: {
+  onSelect?: () => void
+  disabled?: boolean
+  detailsOpacity?: MotionValue<number>
+  lookType: LookType
+}) {
+  return (
+    <div
+      role="button"
+      aria-disabled={disabled || undefined}
+      tabIndex={disabled ? -1 : 0}
+      onClick={disabled ? undefined : onSelect}
+      onKeyDown={
+        disabled
+          ? undefined
+          : (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onSelect?.()
+              }
+            }
+      }
+      className={`relative flex h-full w-[338px] items-center justify-center overflow-hidden text-left active:scale-[0.97] ${disabled ? '' : 'cursor-pointer'}`}
+      style={{
+        borderRadius: 'var(--radius-tutorial-card)',
+        boxShadow: 'var(--shadow-tutorial-card)',
+        transition: 'transform var(--duration-instant) var(--ease-out-quart)',
+      }}
+    >
+      {/* key={lookType} + check-ring-in — see CardBehind's own comment for
+          why a bare src swap needs an animation, not a transition, and
+          GHOST_TEXTURES for which asset goes with which filter. This front
+          face recolors with the selected filter same as CardBehind (per
+          the user's own call — StartOverCard isn't exempt just because
+          it's not literally "a look"). */}
+      <img
+        key={lookType}
+        alt=""
+        src={GHOST_TEXTURES[lookType]}
+        className="absolute inset-0 size-full object-cover"
+        style={{ animation: 'check-ring-in var(--duration-base) var(--ease-out-quart)' }}
+      />
+      {/* Icon + label fade in on the same detailsOpacity band the front
+          card's own title/byline use elsewhere — a card entering the peek
+          slot behind the actual front card is already just this same
+          ghost texture (see the comment above), so there's nothing to
+          crossfade there; the icon/label are the only part of this card's
+          "content" that needs its own reveal timing. */}
+      <motion.div
+        className="relative flex flex-col items-center gap-3"
+        style={detailsOpacity ? { opacity: detailsOpacity } : undefined}
+      >
+        <RotateRightIcon />
+        <p
+          style={{
+            color: 'var(--color-tutorial-card-text)',
+            fontWeight: 'var(--font-weight-medium)',
+            fontSize: '16px',
+          }}
+        >
+          Start Over
+        </p>
+      </motion.div>
+    </div>
   )
 }
 
@@ -400,6 +558,12 @@ type TutorialStackProps = {
    *  this file's module comment), so all 4 route to it for the time
    *  being rather than 3 of them silently doing nothing. */
   onSelect?: () => void
+  /** The selected Day/Night/Glam filter — see HomeScreen's own LookType.
+   *  Doesn't filter which tutorials show (see this file's module comment,
+   *  "until we add more cards"); only drives the ghost card's own color
+   *  for now, threaded straight through to every TutorialStackCard as
+   *  `lookType`. */
+  lookType: LookType
 }
 
 /** Signed distance from `cardIndex` to the current `v`, wrapped around a
@@ -470,12 +634,19 @@ function useCardMotion(activeIndex: MotionValue<number>, cardIndex: number, tota
   // down from >1 into the visible range) starts as pure CardBehind ghost
   // — real photos/badge withheld — and only crossfades into its actual
   // content over the *last* CONTENT_REVEAL_BAND of its approach to the
-  // front. Wider than detailsOpacity's band (0.5) on purpose: photos
-  // reveal a little before the title/byline text does, so the sequence
-  // reads as ghost → photos → text settling in, not everything popping
-  // in at once. `local <= 0` (front or already departed) always fully
+  // front. `local <= 0` (front or already departed) always fully
   // revealed — the ghost is only ever for a card that hasn't arrived yet.
-  const CONTENT_REVEAL_BAND = 0.55
+  // 0.35, not the original 0.55 — narrower band means the crossfade zone
+  // (where any real content shows through at all) starts later, closer to
+  // the front, so more of the peek's approach reads as pure yellow ghost
+  // before it starts blending in the real photo — per the user's request
+  // to see more of the yellow before the upcoming slide takes over. This
+  // also means photos no longer reliably lead detailsOpacity's fixed 0.5
+  // band (the "photos reveal a little before text" note that used to live
+  // here) — content is now the bottleneck for both, so they blend in
+  // closer together than before. Not a problem, just worth knowing if the
+  // stagger ever looks off.
+  const CONTENT_REVEAL_BAND = 0.35
   const contentOpacity = useTransform(activeIndex, (v) => {
     const local = circularLocal(cardIndex, v, total)
     if (local <= 0) return 1
@@ -491,6 +662,16 @@ function useCardMotion(activeIndex: MotionValue<number>, cardIndex: number, tota
  *  MotionTuning: this is a geometry constant (derived from the card's own
  *  size), not a feel choice. */
 const FLY_OFF_DISTANCE = Math.hypot(CARD_WIDTH, CARD_HEIGHT)
+
+/** How much of the raw drag distance actually reaches the Start Over
+ *  card's own position while it's being dragged — that card can never
+ *  commit (see TutorialStackCard's handleDrag/handleDragEnd), so a 1:1
+ *  drag would either do nothing (looking broken/unresponsive) or move
+ *  exactly like a real swipe right up until it doesn't commit (a
+ *  confusing bait-and-switch). Damping it to a fraction of the real
+ *  travel — "light rubber-band" per the user's own call — reads as the
+ *  card visibly resisting instead of either extreme. */
+const START_OVER_RESIST_FACTOR = 0.35
 
 /** Every value below was a hardcoded guess before — now a single object so
  *  they can come from the (temporary) MotionTuner sliders instead. See
@@ -536,8 +717,24 @@ export const DEFAULT_MOTION_TUNING: MotionTuning = {
   gripScale: 0.96, // settled on by feel (unchanged from the first guess)
 }
 
+/** What this card slot actually renders/does. The Start Over slot (see
+ *  StartOverCard above) shares every bit of pose/drag/fly-off machinery
+ *  below with a real tutorial slot — it's positioned by the exact same
+ *  `useCardMotion`, the exact same composed transform — so it's a variant
+ *  of the *same* component rather than a separate one, with only content
+ *  and a few interaction rules (see handleDrag/handleDragEnd/
+ *  handleStartOverTap below) actually differing.
+ *
+ *  `firstTutorial`/`firstTutorialSaved` (start-over only): the Start Over
+ *  card's own *back face* — see handleStartOverTap and the JSX below —
+ *  is a static rendering of the first tutorial, so this slot needs that
+ *  tutorial's data even though it isn't the one showing normally. */
+type TutorialStackCardVariant =
+  | { kind: 'tutorial'; tutorial: Tutorial; saved: boolean; onToggleSave: () => void }
+  | { kind: 'start-over'; firstTutorial: Tutorial; firstTutorialSaved: boolean }
+
 function TutorialStackCard({
-  tutorial,
+  variant,
   index,
   total,
   activeIndex,
@@ -548,12 +745,19 @@ function TutorialStackCard({
   onSelect,
   onCommitStart,
   onAdvance,
-  saved,
-  onToggleSave,
+  hintTrigger,
+  onInteraction,
+  lookType,
 }: {
-  tutorial: Tutorial
+  variant: TutorialStackCardVariant
   index: number
   total: number
+  /** Which filter chip is selected — see HomeScreen's own LookType and
+   *  LOOK_TYPES. Only actually consumed by CardBehind and (for the
+   *  start-over slot) StartOverCard's own ghost texture; threaded through
+   *  every card uniformly rather than singled out, same reasoning as every
+   *  other shared prop here. */
+  lookType: LookType
   /** The *settled* index — only changes on an actual advance (spring
    *  tween or wrap-snap), never during a live drag. */
   activeIndex: MotionValue<number>
@@ -566,7 +770,10 @@ function TutorialStackCard({
    *  zero — the front card was already moving with your finger the whole
    *  time, so the rest of the stack standing frozen until release was
    *  exactly the kind of two-systems-out-of-sync seam that reads as a
-   *  flick, same family of issue as the onDrag fix above. */
+   *  flick, same family of issue as the onDrag fix above. Never updated
+   *  by a Start Over drag (see handleDrag) — that gesture can never
+   *  commit, so there's no real "progress toward advancing" for anything
+   *  else in the stack to preview. */
   dragProgress: MotionValue<number>
   activeCardIndex: number
   /** True from the instant a commit starts until onAdvance's state catch-up
@@ -577,13 +784,29 @@ function TutorialStackCard({
    *  intended. */
   isLocked: boolean
   tuning: MotionTuning
+  /** Ignored for the Start Over slot — tapping it calls handleStartOverTap
+   *  instead (see below), never this. */
   onSelect?: () => void
   onCommitStart: () => void
   onAdvance: () => void
-  /** Bookmark state for *this* tutorial specifically — owned by
-   *  TutorialStack (see its module comment), just threaded through here. */
-  saved: boolean
-  onToggleSave: () => void
+  /** Increments every ~4s that TutorialStack's front card sits untouched
+   *  (see its own comment) — a standing "psst, you can swipe this" nudge,
+   *  not a one-time tooltip: it keeps repeating for as long as the current
+   *  front card stays idle, and re-arms fresh for whichever card becomes
+   *  front next. Every card gets the same value, same as activeIndex/
+   *  dragProgress; each decides for itself whether a given bump is meant
+   *  for it via its own `isFrontCard` (plus `variant.kind === 'tutorial'`
+   *  — see the hint effect's own comment for why Start Over opts out)
+   *  rather than TutorialStack singling one out. */
+  hintTrigger: number
+  /** Fires on this card's own handleDragStart — TutorialStack's signal that
+   *  the current front card has been touched, used to hold off the next
+   *  repeat of the hint (see its own comment) until this card stops being
+   *  front. Not scoped to the front card specifically in the type (every
+   *  card technically has it available) because only the interactive one
+   *  can ever actually call it — `isInteractive` already gates whether
+   *  `handleDragStart` runs at all. */
+  onInteraction: () => void
 }) {
   // Two different questions, again (see isFrontCard/isInteractive below,
   // same shape): which index value THIS card's own pose should react to.
@@ -609,7 +832,36 @@ function TutorialStackCard({
   // being actively gripped has no business ever losing that tie, so it
   // gets an unambiguous fixed ceiling instead of relying on the same
   // formula as everyone else.
-  const zIndexFinal = isFrontCard ? 1000 : zIndex
+  // Flight fade/scale/z-dive — see handleDragEnd's committed branch. All
+  // three sit at their rest values (1, 1, 0) except during an actual
+  // fly-off, and get reset the instant that fly-off's onAdvance fires (same
+  // "animate a fresh 0-duration tween, don't .set()" pattern as dragX/dragY
+  // below — a bare .set() can still lose to a not-fully-settled tail end of
+  // the fade/scale/zdrop animations themselves).
+  const flightOpacity = useMotionValue(1)
+  const flightScale = useMotionValue(1)
+  const flightZDrop = useMotionValue(0)
+  // Front card's z-index ceiling isn't always a flat 1000 any more — once a
+  // fly-off starts diving (flightZDrop -> 1), it ramps down toward the
+  // ordinary peek's own zIndex range so the departing card visibly tucks
+  // *behind* the peek partway through its exit instead of staying on top
+  // the whole time it's fading — the "moving behind, like a continuous
+  // stack" feel this was asked for, not just "translate away and vanish."
+  const frontZIndex = useTransform(flightZDrop, (d) => 1000 - d * 950)
+  const zIndexFinal = isFrontCard ? frontZIndex : zIndex
+  // Restart flip — see handleStartOverTap below for what drives this, and
+  // the comment on the `transform` template further down for the 3D
+  // mechanics. Only ever nonzero for the Start Over card itself, only for
+  // the ~0.7s right after it's tapped — a complete no-op (0deg, identity)
+  // for every tutorial card, always. Unlike an earlier version of this
+  // mechanism, the flip never needs to force opacity/rotation/z-index
+  // overrides on top of the ordinary pose math: the Start Over card stays
+  // `isFrontCard` (see below) for its *entire* flip — the logical advance
+  // to the first tutorial only happens once the flip has actually finished
+  // (see handleStartOverTap) — so every other value this card already
+  // computes (rest rotation 0, opacity 1, zIndex 1000) is already correct
+  // for a flipping front card with zero special-casing.
+  const flipRotateY = useMotionValue(0)
   // Peek reveal: locked in on the flat CardBehind placeholder (yellow)
   // that fades to the real card as it nears the front — the two
   // alternatives explored (a dark "mask" scrim over the real content, and
@@ -659,13 +911,29 @@ function TutorialStackCard({
   // picked, just from one continuous, always-live template instead of
   // two competing ones.
   const totalRotate = useTransform([restRotateDeg, dragRotate], ([rest, drag]) => rest + drag)
-  const transform = useMotionTemplate`translateX(${dragX}px) translateY(${dragY}px) rotate(${totalRotate}deg) scale(${gripScale})`
+  // gripScale (picked-up feedback) and flightScale (fly-off shrink) are
+  // both legitimate, independent reasons this card's own scale might not
+  // be 1 — composed the same "always one continuous value" way as
+  // totalRotate above, not two competing scale bindings.
+  const totalScale = useTransform([gripScale, flightScale], ([grip, flight]) => grip * flight)
+  // rotateY sits safely alongside the existing Z-axis `rotate` here: the
+  // only card whose flipRotateY is ever nonzero is the Start Over card,
+  // right after it's tapped, at which point it's still isFrontCard (see
+  // handleStartOverTap) and dragRotate is 0 (nothing being dragged, drag
+  // is disabled the instant the tap locks the stack) — so totalRotate is
+  // guaranteed 0 for the entire flip, no competing rotation to fight.
+  const transform = useMotionTemplate`translateX(${dragX}px) translateY(${dragY}px) rotate(${totalRotate}deg) rotateY(${flipRotateY}deg) scale(${totalScale})`
 
   function handleDragStart() {
     // Fast, fixed — button-press-feedback range (100-160ms), not a
     // "feel" choice worth a slider; the tunable part of grip is *how far*
     // it shrinks (tuning.gripScale), not how quickly.
     animateValue(gripScale, tuning.gripScale, { duration: 0.15 })
+    // Evidence this card has been touched — holds off the next repeat of
+    // TutorialStack's swipe-hint for as long as this card stays front (see
+    // onInteraction's own doc comment). Harmless to call on every drag
+    // start, not just the first on this card.
+    onInteraction()
   }
 
   // Keeps dragX/dragY (and therefore totalRotate/gripScale, since they're
@@ -683,6 +951,19 @@ function TutorialStackCard({
   // card's position/rotation at two different times, meeting at a visible
   // seam right at release.
   function handleDrag(_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    if (variant.kind === 'start-over') {
+      // Resistance, not a real drag: damped well under the actual finger
+      // travel (START_OVER_RESIST_FACTOR, see its own comment) so it
+      // visibly gives a little without ever tracking 1:1 — and
+      // dragProgress deliberately never gets touched here. This card can
+      // never commit (handleDragEnd below always cancels it), so there's
+      // no genuine "progress toward advancing" for the peek behind it to
+      // preview; leaving dragProgress alone keeps that peek completely
+      // still through the whole resisting gesture.
+      dragX.set(info.offset.x * START_OVER_RESIST_FACTOR)
+      dragY.set(info.offset.y * START_OVER_RESIST_FACTOR)
+      return
+    }
     dragX.set(info.offset.x)
     dragY.set(info.offset.y)
     // See dragProgress's own doc comment above — this is what makes the
@@ -692,47 +973,170 @@ function TutorialStackCard({
     dragProgress.set(Math.min(1, distance / tuning.commitDistance))
   }
 
+  // A committed tutorial-card drag's departure — see handleDragEnd below.
+  // The Start Over card no longer calls this (it flips in place instead,
+  // see handleStartOverTap) — it used to share this exact function for its
+  // own tap-triggered departure, back when tapping it made it fly away
+  // like a swiped card; that read as "the card just vanishes" rather than
+  // "it flips to reveal what's next," which is what this was actually
+  // supposed to feel like, so that reuse was retired in favor of
+  // handleStartOverTap's own dedicated flip.
+  function flyOff(angle: number, velocity: { x: number; y: number }) {
+    onCommitStart()
+    // Fly-off continues in whatever direction was actually given (any
+    // angle, not just left/right) — momentum-driven when there is any, so
+    // a little bounce, and the release velocity is handed straight to the
+    // spring (apple-design's "velocity handoff") so there's no seam
+    // between the finger letting go and the card continuing on its own.
+    // Not captured into a variable (used to be, for Promise.all below) —
+    // see the fade-gates-onAdvance comment further down for why waiting
+    // on these specifically was the actual cause of the lingering.
+    animateValue(dragX, Math.cos(angle) * FLY_OFF_DISTANCE, {
+      type: 'spring',
+      velocity: velocity.x,
+      bounce: tuning.flyOffBounce,
+      duration: tuning.flyOffDuration,
+    })
+    animateValue(dragY, Math.sin(angle) * FLY_OFF_DISTANCE, {
+      type: 'spring',
+      velocity: velocity.y,
+      bounce: tuning.flyOffBounce,
+      duration: tuning.flyOffDuration,
+    })
+    // The *visible* disappearance is a separate, deliberately faster
+    // animation from the translate spring above — flightX/flightY still
+    // carry the card off in whatever direction it was actually thrown
+    // (momentum-driven feel, unchanged), but a spring's tail decelerates
+    // right near its target, so waiting for *that* to fully settle before
+    // treating the card as "gone" is exactly what read as lingering at a
+    // corner for a beat before disappearing. Fading + shrinking + diving
+    // behind the peek (frontZIndex, above) on their own quicker timeline
+    // sells "gone" well before the translate spring's long tail actually
+    // finishes — and reads as the card receding into the stack rather
+    // than just sailing off-screen.
+    const FLIGHT_FADE_DURATION = tuning.flyOffDuration * 0.45
+    // [0.25, 1, 0.5, 1] — the numeric form of this file's own
+    // --ease-out-quart token (tokens.css), same curve already used for the
+    // card's press-feedback transition below. Was 'easeIn', which starts
+    // slow and accelerates at the *end* — for a fade-to-0 that meant the
+    // card stayed near-fully-visible for most of this window and only
+    // actually vanished right at the end, undermining the "sells gone
+    // quickly" intent above. A strong ease-out front-loads the drop instead.
+    const flightFade = animateValue(flightOpacity, 0, { duration: FLIGHT_FADE_DURATION, ease: [0.25, 1, 0.5, 1] })
+    animateValue(flightScale, 0.55, { duration: FLIGHT_FADE_DURATION, ease: [0.25, 1, 0.5, 1] })
+    animateValue(flightZDrop, 1, { duration: FLIGHT_FADE_DURATION, ease: [0.25, 1, 0.5, 1] })
+    // Hand the stack forward once the card has actually *disappeared*
+    // (the fade, not the translate) — see comment above. flightX/flightY
+    // keep animating in the background and get cut off by the resets
+    // below the moment this fires; that's intentional; they've already
+    // done their job of carrying the card away from under your finger.
+    flightFade.then(() => {
+      onAdvance()
+      // animate(..., {duration:0}), NOT .set() — matters here too:
+      // without interrupting first, a bare .set() can still lose to a
+      // not-fully-settled tail end of the animations above.
+      animateValue(dragX, 0, { duration: 0 })
+      animateValue(dragY, 0, { duration: 0 })
+      animateValue(flightOpacity, 1, { duration: 0 })
+      animateValue(flightScale, 1, { duration: 0 })
+      animateValue(flightZDrop, 0, { duration: 0 })
+    })
+  }
+
+  // Tapping (or Enter/Space on) the Start Over card — this card flips in
+  // place to reveal the first tutorial on its back face (see the back-face
+  // JSX below); it does not fly away. onCommitStart locks the whole stack
+  // for the flip's duration, same protection every other commit gets.
+  // Deliberately does NOT advance the logical stack (onAdvance) up front —
+  // this card stays `isFrontCard` for its *entire* flip (activeCardIndex
+  // only actually changes once the flip settles, below), which is what
+  // lets every other pose value it already computes (rest rotation 0,
+  // opacity 1, zIndex 1000) stay correct with zero extra overrides for the
+  // whole ~0.7s: nothing about *this* card's own position/visibility ever
+  // needs to react to "having advanced" until the swap below.
+  function handleStartOverTap() {
+    onCommitStart()
+    const flip = animateValue(flipRotateY, 180, { type: 'spring', bounce: 0.15, duration: 0.7 })
+    // Once the flip has actually turned all the way (back face now facing
+    // the viewer, showing the same first-tutorial content this card's own
+    // back face just displayed), hand off to the real, interactive card 0
+    // instance — a separate TutorialStackCard that's been sitting in its
+    // normal front pose the whole time, just occluded behind this one (see
+    // zIndexFinal). onAdvance flips activeCardIndex to 0 via an instant
+    // `.set()` (handleAdvance's existing wrapped-jump branch), not a tween
+    // — invisible here for the same reason it always was: something is
+    // already fully covering the jump, it's just this card's own settled
+    // back face now, not an off-screen flown-away card. Resetting
+    // flipRotateY back to 0 afterward is equally invisible: the instant
+    // activeCardIndex changes, this card stops being isFrontCard and its
+    // own opacity collapses to 0 via the ordinary "just departed" formula
+    // (see useCardMotion's opacity), so nothing is left on screen to show
+    // the reset happening.
+    flip.then(() => {
+      onAdvance()
+      animateValue(flipRotateY, 0, { duration: 0 })
+    })
+  }
+
+  // Swipe-hint nudge — see TutorialStack's own repeating idle timer for
+  // what drives hintTrigger. Only the front card ever plays this (checked
+  // via isFrontCard, not a fixed index — see hintTrigger's own doc comment
+  // for why); every other card ignores it. Also opts out for the Start
+  // Over slot specifically: swiping it never does anything (it only
+  // resists and springs back, see handleDrag/handleDragEnd's start-over
+  // branches) — tapping is the actual gesture there, so a swipe-shaped
+  // nudge would be actively misleading rather than helpful. A small, quick
+  // tug straight up and back — up because that's the direction this whole
+  // feature already treats as canonical (see handleStartOverTap and
+  // flyOff's own framing) — just enough to catch a glance without reading
+  // as an actual commit-in-progress (NUDGE_DISTANCE is a fraction of
+  // tuning.commitDistance). Reuses dragX/dragY directly rather than a
+  // separate motion value: if the user grabs the card mid-nudge, Framer's
+  // own onDrag keeps calling `.set()` every pointermove, which trivially
+  // overrides whatever's left of this animation within a frame or two —
+  // no special handoff needed, same as any other interruption in this
+  // file. Repeats: hintTrigger itself increments every ~4s of continued
+  // idleness on TutorialStack's end (not just once), so this effect just
+  // naturally re-fires each time — nothing extra needed here to "repeat."
+  useEffect(() => {
+    if (!isFrontCard || variant.kind !== 'tutorial' || hintTrigger === 0) return
+    const NUDGE_DISTANCE = 18
+    const nudge = animateValue(dragY, -NUDGE_DISTANCE, { type: 'spring', bounce: 0.35, duration: 0.35 })
+    nudge.then(() => {
+      animateValue(dragY, 0, { type: 'spring', bounce: 0.25, duration: 0.4 })
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on hintTrigger alone: isFrontCard/dragY are stable-enough refs for this component instance, re-running on their identity isn't the intent here.
+  }, [hintTrigger])
+
   function handleDragEnd(_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    animateValue(gripScale, 1, { duration: 0.15 })
+    if (variant.kind === 'start-over') {
+      // Never commits, regardless of distance/velocity — this card only
+      // ever advances via handleStartOverTap above. Always the same
+      // settle-back-to-center a cancelled tutorial-card drag uses; the
+      // velocity handed to it is scaled down to match the damped
+      // resistance in handleDrag; feeding in the raw, undamped velocity
+      // would make it visually "spring past" where it actually was.
+      animateValue(dragX, 0, {
+        type: 'spring',
+        velocity: info.velocity.x * START_OVER_RESIST_FACTOR,
+        bounce: 0,
+        duration: tuning.cancelDuration,
+      })
+      animateValue(dragY, 0, {
+        type: 'spring',
+        velocity: info.velocity.y * START_OVER_RESIST_FACTOR,
+        bounce: 0,
+        duration: tuning.cancelDuration,
+      })
+      return
+    }
     const distance = Math.hypot(info.offset.x, info.offset.y)
     const speed = Math.hypot(info.velocity.x, info.velocity.y)
     const committed = distance > tuning.commitDistance || speed > tuning.commitVelocity
-    animateValue(gripScale, 1, { duration: 0.15 })
     if (committed) {
-      onCommitStart()
-      // Fly-off continues in whatever direction the drag was actually
-      // going (any angle, not just left/right) — momentum-driven, so a
-      // little bounce, and the release velocity is handed straight to
-      // the spring (apple-design's "velocity handoff") so there's no seam
-      // between the finger letting go and the card continuing on its own.
       const angle = Math.atan2(info.offset.y, info.offset.x)
-      const flightX = animateValue(dragX, Math.cos(angle) * FLY_OFF_DISTANCE, {
-        type: 'spring',
-        velocity: info.velocity.x,
-        bounce: tuning.flyOffBounce,
-        duration: tuning.flyOffDuration,
-      })
-      const flightY = animateValue(dragY, Math.sin(angle) * FLY_OFF_DISTANCE, {
-        type: 'spring',
-        velocity: info.velocity.y,
-        bounce: tuning.flyOffBounce,
-        duration: tuning.flyOffDuration,
-      })
-      // Hand the stack forward once the fly-off has *actually* finished,
-      // not a fixed guess at how long that takes — that guess (a flat
-      // 300ms) was wrong the moment the spring's real settle time (bounce
-      // pushes it past the nominal duration) diverged from it: the next
-      // card was becoming interactive while this one was still visibly
-      // mid-flight, two clocks disagreeing. Awaiting the real animations
-      // keeps it exactly in sync regardless of what the sliders are set
-      // to.
-      Promise.all([flightX, flightY]).then(() => {
-        onAdvance()
-        // animate(..., {duration:0}), NOT dragX.set(0) — matters here
-        // too: without interrupting first, a bare .set() can still lose
-        // to a not-fully-settled tail end of the spring above.
-        animateValue(dragX, 0, { duration: 0 })
-        animateValue(dragY, 0, { duration: 0 })
-      })
+      flyOff(angle, { x: info.velocity.x, y: info.velocity.y })
     } else {
       // Cancelled: a settle back to center, not a released-momentum
       // motion, so no bounce (apple-design: bounce only when the gesture
@@ -749,11 +1153,19 @@ function TutorialStackCard({
   return (
     <motion.div
       className="absolute inset-0"
-      // No flat opacity here anymore — transform/zIndex are shared by
-      // both layers below (same position, same stacking), but ghost vs.
-      // content need their own independent opacities, not one value the
-      // whole slot shares.
-      style={{ transform, zIndex: zIndexFinal }}
+      // flightOpacity is the one flat opacity at this level — separate
+      // from ghost/content's own independent opacities below (those still
+      // need to stay independent, see their own comment), but the fly-off
+      // fade is a property of the *whole card as it leaves*, not either
+      // layer specifically, so it multiplies on top of both uniformly. At
+      // rest (not flying) it's always 1, a no-op.
+      // transformStyle: 'preserve-3d' — needed so the two/three face
+      // children below render as true 3D siblings sharing *this* element's
+      // own 3D space, which is what makes their `backfaceVisibility:
+      // 'hidden'` mean anything at all (see the transform comment above,
+      // and the back-face layer's own comment below). Harmless for every
+      // card that never rotates on Y.
+      style={{ transform, zIndex: zIndexFinal, opacity: flightOpacity, transformStyle: 'preserve-3d' }}
       // Free in both axes, per "it should feel more free, even
       // vertically" — `drag={true}` (not `"x"`) also sets touch-action:
       // none on this element, which is what actually stops it from
@@ -767,17 +1179,55 @@ function TutorialStackCard({
       onDrag={isInteractive ? handleDrag : undefined}
       onDragEnd={isInteractive ? handleDragEnd : undefined}
     >
-      <CardBehind opacity={ghostOpacity} />
-      <motion.div className="absolute inset-0" style={{ opacity: contentFinalOpacity }}>
-        <TutorialLookCard
-          tutorial={tutorial}
-          onSelect={onSelect}
-          disabled={!isInteractive}
-          detailsOpacity={detailsOpacity}
-          saved={saved}
-          onToggleSave={onToggleSave}
-        />
+      <CardBehind opacity={ghostOpacity} lookType={lookType} />
+      {/* No rotation of its own — this is the "front face" in the
+          reference implementation's terms (`.thefront`, no extra
+          transform), always facing the viewer at flipRotateY===0 and
+          turning away (backface-hidden) right alongside the parent as
+          flipRotateY approaches 180 — which only ever happens for the
+          Start Over card, during its own flip. Every other card's parent
+          rotateY never leaves 0, so this is a permanent no-op there. */}
+      <motion.div
+        className="absolute inset-0"
+        style={{ opacity: contentFinalOpacity, backfaceVisibility: 'hidden' }}
+      >
+        {variant.kind === 'tutorial' ? (
+          <TutorialLookCard
+            tutorial={variant.tutorial}
+            onSelect={onSelect}
+            disabled={!isInteractive}
+            detailsOpacity={detailsOpacity}
+            saved={variant.saved}
+            onToggleSave={variant.onToggleSave}
+          />
+        ) : (
+          <StartOverCard
+            onSelect={handleStartOverTap}
+            disabled={!isInteractive}
+            detailsOpacity={detailsOpacity}
+            lookType={lookType}
+          />
+        )}
       </motion.div>
+      {/* The flip's "back face" (`.theback` in the reference implementation
+          — statically pre-rotated 180°, backface-hidden) — only the Start
+          Over slot has one. This is what tapping Start Over is actually
+          revealing: a plain, non-interactive rendering of the first
+          tutorial, sitting on the reverse side of the *same* card the
+          "Start Over" content is printed on, not a separate card flying in
+          from somewhere else. Hidden (backface-culled) at flipRotateY===0
+          for exactly the same reason the content layer above is visible
+          there; the two swap places as the parent crosses 90°. disabled +
+          no onSelect/onToggleSave: this is decorative until the real,
+          interactive card 0 instance (a completely separate
+          TutorialStackCard, already sitting in its normal front pose
+          underneath) takes over the instant handleStartOverTap's flip
+          settles — see its own comment for why that handoff is invisible. */}
+      {variant.kind === 'start-over' && (
+        <div className="absolute inset-0" style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}>
+          <TutorialLookCard tutorial={variant.firstTutorial} disabled saved={variant.firstTutorialSaved} />
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -797,9 +1247,18 @@ function TutorialStackCard({
  * removes the second gesture surface instead of trying to reconcile two
  * that kept conflicting.
  *
- * Loops: advancing past the last tutorial wraps back to the first
- * (`% tutorials.length`) — see handleAdvance's wrapped-vs-forward split
- * for why the wrap specifically snaps instead of tweening.
+ * Doesn't actually loop any more: swiping away the last tutorial doesn't
+ * silently wrap back to the first (an earlier version did — reaching the
+ * end of the deck with no visible boundary read as confusing, no way to
+ * tell whether you'd looped or just lost track). Instead it's a fixed
+ * `tutorials.length + 1`-card cycle (`total` below) where that extra slot
+ * is the Start Over card (see StartOverCard's own comment) — an explicit
+ * dead end you have to deliberately tap (or Enter/Space) your way out of,
+ * not something a swipe can carry you past. `% total`, not
+ * `% tutorials.length` — see handleAdvance's wrapped-vs-forward split for
+ * why the wrap specifically snaps instead of tweening; that logic is
+ * otherwise unchanged, it just now also covers the Start Over → first-
+ * tutorial wrap the same way it always covered last → first.
  *
  * `prefers-reduced-motion`: skips the whole drag-stack in favor of a
  * plain vertical list — same 4 tutorials, same tap-through, no gesture
@@ -850,8 +1309,12 @@ function MotionTuner({ tuning, onChange }: { tuning: MotionTuning; onChange: (ne
   )
 }
 
-export function TutorialStack({ tutorials, onSelect }: TutorialStackProps) {
+export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackProps) {
   const reduceMotion = useReducedMotion()
+  // +1 for the Start Over slot (index === tutorials.length) — see this
+  // component's own module comment above for why that's a real slot in
+  // the cycle now instead of a plain `% tutorials.length` wrap.
+  const total = tutorials.length + 1
   const [activeCardIndex, setActiveCardIndex] = useState(0)
   const activeIndex = useMotionValue(0)
   // See TutorialStackCard's dragProgress prop doc — this is that value,
@@ -865,6 +1328,53 @@ export function TutorialStack({ tutorials, onSelect }: TutorialStackProps) {
   // for the whole fly-off, so a second touch in that window could start a
   // second commit before the first one's onAdvance has landed.
   const [isAdvancing, setIsAdvancing] = useState(false)
+  // Swipe-hint nudge: nudges the deck if the user hasn't touched the
+  // *current* front card within 4s of it becoming front, and keeps
+  // repeating every 4s for as long as that stays true — not a one-time
+  // "teach it once" tooltip, a standing reminder that follows wherever
+  // browsing currently is. Waits a beat rather than firing immediately on
+  // arrival, since an instant nudge would play before anyone's had a
+  // chance to even look at the screen, and the stack already gives a
+  // visual cue (the peeking card + its tilt) that there's more here for
+  // anyone who already gets it. A ref, not state, for the "have they
+  // touched this one" flag: it's written from a card's onInteraction (a
+  // plain callback, not a render) and only ever read inside the interval
+  // below — no re-render should happen just because the user touched
+  // something, that's what isAdvancing/activeCardIndex are for.
+  const hasInteractedRef = useRef(false)
+  // Bumped every 4s that hasInteractedRef is still false — threaded to
+  // every card as `hintTrigger` (see TutorialStackCard's own doc comment
+  // for why every card gets the same value instead of this component
+  // singling one out; each decides via its own isFrontCard whether a given
+  // bump is meant for it). Starts at 0, meaning "never triggered yet" (the
+  // effect that watches it explicitly ignores 0 for that reason).
+  const [hintTrigger, setHintTrigger] = useState(0)
+  useEffect(() => {
+    // reduceMotion skips this entirely: that branch renders a plain list
+    // (see below) with no TutorialStackCard mounted at all, so nothing
+    // would ever consume hintTrigger anyway — no point running an interval
+    // whose only effect is an unread state update.
+    if (reduceMotion) return
+    // Resets the "have they touched this one" flag every time this effect
+    // (re-)runs — i.e. every time activeCardIndex changes (see the
+    // dependency array below) — so arriving at a new front card starts a
+    // fresh 4s countdown regardless of whether an earlier card in this
+    // same session was already interacted with. That's the whole point:
+    // this isn't "has the user ever learned to swipe," it's "is *this*
+    // card sitting idle right now."
+    hasInteractedRef.current = false
+    const interval = setInterval(() => {
+      if (!hasInteractedRef.current) {
+        setHintTrigger((c) => c + 1)
+      }
+    }, 4000)
+    return () => clearInterval(interval)
+    // activeCardIndex, not just reduceMotion: a new front card needs its
+    // own fresh interval/flag, not a continuation of the previous card's.
+  }, [reduceMotion, activeCardIndex])
+  function handleInteraction() {
+    hasInteractedRef.current = true
+  }
   // TEMPORARY — see MotionTuner. Panel is hidden (not rendered) for now,
   // per request, so the stack is uninterrupted while iterating on the
   // rest of the home screen — the mechanism itself is untouched, current
@@ -902,7 +1412,15 @@ export function TutorialStack({ tutorials, onSelect }: TutorialStackProps) {
   }
 
   function handleAdvance() {
-    const next = (activeCardIndex + 1) % tutorials.length
+    // % total, not % tutorials.length — see this component's own module
+    // comment above. The only way to actually reach `next === 0` from
+    // `activeCardIndex === tutorials.length` (the Start Over slot) is
+    // handleStartOverTap calling this once its own flip has settled, never
+    // a real drag commit (Start Over's own handleDragEnd never calls
+    // onCommitStart/onAdvance at all) — so this generic advance path
+    // staying exactly as it was for the ordinary last-tutorial case is
+    // correct without needing to know *why* it was called.
+    const next = (activeCardIndex + 1) % total
     const wrapped = next < activeCardIndex
     // Where the live preview had already gotten to (activeIndex is still
     // sitting at the old settled integer at this point — dragProgress is
@@ -928,6 +1446,13 @@ export function TutorialStack({ tutorials, onSelect }: TutorialStackProps) {
       // time this fires, so an instant jump here is invisible; the
       // fly-off itself is the only motion this transition needs.
       activeIndex.set(next)
+      // `wrapped` can only mean one thing now that there's a real Start
+      // Over slot instead of a plain modulo (see this component's own
+      // module comment): we just came *from* it, landing back on the
+      // first tutorial — this time not because anything flew off, but
+      // because handleStartOverTap's own flip just settled, and that
+      // card's own turned-away back face is what's covering this jump
+      // instead (see handleStartOverTap's own comment).
     } else {
       // Jump the settled value up to match the live preview first (no
       // visible change — dragProgress just went to 0 in the same tick, so
@@ -959,15 +1484,22 @@ export function TutorialStack({ tutorials, onSelect }: TutorialStackProps) {
   }
 
   return (
-    <div className="relative mx-auto" style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}>
+    // perspective: only the Start Over card's own restart flip ever puts
+    // any 3D rotation on a card at all (see TutorialStackCard's
+    // flipRotateY) — a shared perspective here just gives that one flip
+    // real depth/foreshortening instead of looking like a flat mirror-
+    // swap; every other card renders exactly as before, since perspective
+    // is a no-op for children that never use a 3D transform in the first
+    // place.
+    <div className="relative mx-auto" style={{ width: CARD_WIDTH, height: CARD_HEIGHT, perspective: 1000 }}>
       {/* TEMPORARY — see MotionTuner's own comment above. Hidden for now:
           <MotionTuner tuning={tuning} onChange={setTuning} /> */}
       {tutorials.map((tutorial, index) => (
         <TutorialStackCard
           key={tutorial.id}
-          tutorial={tutorial}
+          variant={{ kind: 'tutorial', tutorial, saved: savedIds.has(tutorial.id), onToggleSave: () => handleToggleSave(tutorial.id) }}
           index={index}
-          total={tutorials.length}
+          total={total}
           isLocked={isAdvancing}
           tuning={tuning}
           onCommitStart={handleCommitStart}
@@ -976,10 +1508,33 @@ export function TutorialStack({ tutorials, onSelect }: TutorialStackProps) {
           activeCardIndex={activeCardIndex}
           onSelect={onSelect}
           onAdvance={handleAdvance}
-          saved={savedIds.has(tutorial.id)}
-          onToggleSave={() => handleToggleSave(tutorial.id)}
+          hintTrigger={hintTrigger}
+          onInteraction={handleInteraction}
+          lookType={lookType}
         />
       ))}
+      {/* The stack's terminal slot — see this component's own module
+          comment and StartOverCard's comment. index === tutorials.length,
+          the one slot `total` (tutorials.length + 1) adds beyond the real
+          tutorials. firstTutorial/firstTutorialSaved feed its back face
+          (see TutorialStackCard's own JSX) — this app always has at least
+          one tutorial, so tutorials[0] is never undefined in practice. */}
+      <TutorialStackCard
+        key="start-over"
+        variant={{ kind: 'start-over', firstTutorial: tutorials[0], firstTutorialSaved: savedIds.has(tutorials[0].id) }}
+        index={tutorials.length}
+        total={total}
+        isLocked={isAdvancing}
+        tuning={tuning}
+        onCommitStart={handleCommitStart}
+        activeIndex={activeIndex}
+        dragProgress={dragProgress}
+        activeCardIndex={activeCardIndex}
+        onAdvance={handleAdvance}
+        hintTrigger={hintTrigger}
+        onInteraction={handleInteraction}
+        lookType={lookType}
+      />
     </div>
   )
 }

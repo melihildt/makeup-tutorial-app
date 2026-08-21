@@ -1,48 +1,48 @@
 # Handoff — Home screen tutorial stack & motion
 
 Written to carry context into a fresh session/window without re-deriving
-everything from scratch. Scoped to the **HomeScreen card stack** (drag,
-tilt, fly-off, loop) and its motion tuning — a separate area from
-`docs/handoff.md` (the step-flow/illustration doc, now stale on the "no
-home page" point — a home page exists now, see below).
+everything from scratch. Originally scoped to the **HomeScreen card
+stack** (drag, tilt, fly-off, loop) and its motion tuning — a separate
+area from `docs/handoff.md` (the step-flow/illustration doc, now stale on
+the "no home page" point — a home page exists now, see below). That
+original scope is the active task again as of this update (see
+"Immediate next task" below) after a detour through the rest of the home
+screen.
 
 **Committed** on branch `feature/home-tutorial-stack` (off `main`, which
-is untouched — still on the commit before this feature). Check
-`git log`/`git status` on a fresh session start: if there are *more*
-uncommitted changes on top of that branch, they're from later in this
-same work than whenever this doc was last updated — read the diff before
-assuming this doc is fully current.
+is untouched — still on the commit before this feature). Latest relevant
+commit: `628b8b7` — "Redesign home header/filters, add real card photos,
+bookmark toggle, chip press-flash." Check `git log`/`git status` on a
+fresh session start: if there are *more* uncommitted changes on top of
+that, they're from later than whenever this doc was last updated — read
+the diff before assuming this doc is fully current.
 
-**Immediate next task, per the user directly**: "iterate the rest of the
-page (colors, filters style, like you saw on the figma)" — the stack
-itself is in a good place; the ask now is the rest of HomeScreen (see
-"Not yet touched," below). The Figma file already used this whole
-session is `Tech-Experimentation`, file key `6Mr7K0RONTS8SltZRJtqYj` —
-nodes already pulled and worth reusing rather than re-fetching:
-`642:5092` (the `BigCard` component + its "Unfold" ghost variant),
-`651:5362` (the full "Cards" composition, card placement/rotation
-reference).
+**Immediate next task, per the user directly**: "iterate the swipe" — back
+to the drag/tilt/fly-off motion this doc was originally written for (see
+"MotionTuning / MotionTuner" and "Bugs fixed" below, both still fully
+current). The "rest of the page" detour this doc used to point to as the
+next task (colors, filter chips, header, real photos, a bookmark toggle)
+is now **done and committed** (`628b8b7`) — see that commit message for
+the detailed "why" behind each piece rather than duplicating it here; the
+short version, if useful context for swipe work: the filter sheet moved
+from a bottom sheet to directly under the header, chips got a photo-
+texture + per-type tint + press-flash treatment, all four tutorial cards
+now have real photos, and the heart icon became a real bookmark
+save/unsaved toggle (which is why `TutorialLookCard`'s root changed from
+a `<button>` to a `role="button"` div — see Architecture below). None of
+that touched the drag/motion mechanics this doc is actually about, with
+one exception: **`CARD_HEIGHT` moved 346 → 359** (a bottom-padding fix,
+unrelated to motion) which feeds `FLY_OFF_DISTANCE` — the fly-off
+diagonal is very slightly longer now than the numbers below were tuned
+against. Probably imperceptible, but worth knowing if fly-off distance
+ever feels subtly off from what's documented.
 
-**`635:4792` already covers the filter chips and header** — pulled once
-this session but not yet acted on (attention stayed on the card stack).
-Worth re-reading rather than re-fetching before touching either. What it
-showed, from memory (verify against a fresh pull before trusting exact
-numbers):
-
-- **Header** — "Beauty Notes" in the serif font at 32px (bigger than the
-  current 24px), tight tracking (-1.28px); an icon row (info + user,
-  each in a rounded-12 white/60%-opacity + hairline-border box) that
-  doesn't exist in the current build at all.
-- **Filter chips redesigned as "LookSelector"** — a materially different
-  style than the current flat `--color-filter-chip-bg` (`#f5f5f5`)
-  chips: each has a photo-texture background with a colored
-  `mix-blend-overlay`/`mix-blend-soft-light` tint per option (Day: gold
-  `#e3b345` overlay + a gold-tinted shadow; Night: blue `#688db6`
-  soft-light; Glam: green `#beef9e` soft-light), plus a per-state border
-  (selected: `rgba(44,41,38,0.5)`; unselected: `rgba(44,41,38,0.1)`).
-  This is a materially bigger visual change than a color swap — it needs
-  actual texture/tint assets or a CSS approximation of the blend-mode
-  effect, not just new hex values in the existing chip component.
+The Figma file used throughout is `Tech-Experimentation`, file key
+`6Mr7K0RONTS8SltZRJtqYj` — nodes already pulled and worth reusing rather
+than re-fetching: `642:5092` (the `BigCard` component + its "Unfold"
+ghost variant), `651:5362` (the full "Cards" composition, card
+placement/rotation reference), `635:4792` (header/filter chips, now
+implemented — see `628b8b7`).
 
 ## What this covers
 
@@ -51,23 +51,37 @@ The home screen (`HomeScreen.tsx`) shows a stack of tutorial cards
 can tap the front card to open its tutorial, or drag/swipe it (any
 direction) to advance to the next one, looping back to the first after
 the last. Only "Soft Smokey Eye" has a real tutorial behind it
-(`TutorialFlow`); the other three tutorials are real UI with placeholder
-content, not wired to anything — same "not functional yet" spirit as the
-Day/Night/Glam filter chips below the stack.
+(`TutorialFlow`); the other three tutorials have real photos and a real
+bookmark toggle now, but are still not wired to an actual tutorial flow —
+same "looks real, not functional yet" spirit as the Day/Night/Glam filter
+chips above the stack (which also got real photo-texture styling and a
+press-flash effect, `628b8b7`, but still don't filter anything).
 
 ## Architecture — `src/components/TutorialCard.tsx`
 
 One file, several pieces, roughly back-to-front:
 
 - **`Tutorial` type + `TUTORIALS` array** — the 4 tutorials' data (title,
-  brand, duration, real images for the one with content, placeholder
-  colors for the other three).
+  brand, duration, real images for all four now — `placeholderColors` is
+  unused/legacy at this point, kept on the type rather than deleted in
+  case a future entry ships without photos).
 - **`TutorialLookCard`** — one card's look, at rest. Dumb about
   scroll/drag; just renders a card given a `tutorial`, plus optional
-  `detailsOpacity` (for the reveal system, below).
-- **`CardBehind`** — the flat placeholder-tint (yellow) layer, embedded
-  inside each card's own peek presentation, not a separate static prop
-  like the first version — see "Ghost reveal system," now locked in.
+  `detailsOpacity` (for the reveal system, below) and `saved`/
+  `onToggleSave` (the bookmark toggle, `628b8b7` — state is owned by
+  `TutorialStack`, not local, so it survives this exact card instance
+  staying mounted as it cycles through peek/front/peek). **Root is a
+  `role="button"` div, not a `<button>`** — changed when the bookmark
+  needed its own independently-tappable nested control, and a real
+  `<button>` can't validly nest inside another `<button>`. Reproduces
+  Enter/Space activation and tab order by hand; if you're touching tap
+  behavior here, read that component's own module comment before
+  assuming it's still a plain button.
+- **`CardBehind`** — the peek/ghost layer, embedded inside each card's
+  own peek presentation, not a separate static prop like the first
+  version — see "Ghost reveal system," now locked in. Renders a real
+  photo texture (`card-ghost-texture.jpg`, `628b8b7`) now, not the flat
+  yellow tint swatch described in older versions of this doc.
 - **`useCardMotion(activeIndex, cardIndex, total)`** — the core per-card
   pose math. Takes an index value (see `effectiveIndex` in
   `TutorialStackCard` — not always literally the stack's `activeIndex`,
@@ -103,9 +117,13 @@ reasons, not on a whim.
 While a card is the peek (not yet front), its real content doesn't show
 immediately — it reveals over the *last* ~55% of its approach
 (`CONTENT_REVEAL_BAND` in `useCardMotion`), photos slightly before text.
-Before that, it shows the flat `CardBehind` yellow placeholder instead —
-**this is the final, locked-in choice.** Two alternatives were explored
-and explicitly rejected, and their code is gone, not just hidden:
+Before that, it shows `CardBehind`'s photo-texture ghost layer instead
+(a real image now, `card-ghost-texture.jpg` — was a flat yellow tint
+swatch in older versions of this doc, see Architecture above) —
+**the reveal *mechanism* is the final, locked-in choice**, independent of
+what `CardBehind` itself happens to render. Two alternatives to the
+mechanism were explored and explicitly rejected, and their code is gone,
+not just hidden:
 
 - A dark "mask" scrim over the still-visible real content (apple-design's
   "dim to focus" pattern) — user's own idea initially, but decided
@@ -232,9 +250,12 @@ If something in this area looks broken again, check these first:
 **Ghost-card clipping on narrow phones** — a separate, older issue, on
 hold per the user's explicit call, tracked in Claude's own memory file
 (`tutorial-stack-ghost-card-clipping.md` in this project's memory dir).
-Root cause: a rotated 338×346 card has a ~377.6px bounding box, wider
-than the ~351px of room on a 375px phone (`375 - 2×12px` padding), so a
-tilted peek card's corners clip on real narrow phones. Surface this again
+Root cause (numbers below are pre-`628b8b7` — `CARD_HEIGHT` moved
+346 → 359 since, see "Immediate next task" above; the bounding-box math
+hasn't been re-verified against the new height): a rotated 338×346 card
+has a ~377.6px bounding box, wider than the ~351px of room on a 375px
+phone (`375 - 2×12px` padding), so a tilted peek card's corners clip on
+real narrow phones. Surface this again
 once the stack/motion work is otherwise done.
 
 ## Testing notes — important limitation
@@ -259,22 +280,24 @@ config), find the Mac's LAN IP (`ipconfig getifaddr en0`), give the user
 that's most likely the Mac's firewall — the user has to allow it
 themselves, it's not something fixable from here.
 
-## Not yet touched — "rest of the home" screen
+## Done since this doc was last "not yet touched" — see `628b8b7`
 
-The user's own words when asking for this doc: "refine the animation and
-rest of the home." Beyond the stack itself, largely unexamined this
-session:
+Everything this section used to list as untouched is now done: the
+filter chips (real photo texture + per-type tint + press-flash, moved
+from a bottom sheet to directly under the header), the heart icon (now a
+real bookmark save/unsaved toggle), and the header text (32px Cactus
+Classical Serif + a new info/user icon row). Full "why" for each is in
+the commit message, not repeated here.
 
-- **Filter sheet** (Day/Night/Glam chips below the stack) — still
-  decorative-only, doesn't filter anything (only one tutorial has real
-  content, so there's nothing to filter yet). No animation/polish pass
-  done on it.
-- **Heart/favorite icon** on each card — decorative, no state, no tap
-  handler.
-- **Header text** ("Beauty Notes" + description) — untouched this
-  session, static.
-- General **mobile viewport polish** beyond the one deferred clipping
-  issue above — worth a fresh look once the stack feel is finalized.
+**Still open, not part of this doc's original scope**: general mobile
+viewport polish beyond the one deferred clipping issue below — worth a
+fresh look once the swipe/motion feel is finalized again. A horizontal
+scroll/bounce bug *was* found and fixed properly this round (two real
+causes: iOS's page-level rubber-band, and a genuine scrollable-surface
+gap the fly-off animation could trigger in `HomeScreen`'s own scroll
+container) — if anything like it resurfaces, check `overflow-x` is still
+set everywhere `overflow-y-auto` is, and that `html`/`body` are still
+locked in `index.css`, before re-diagnosing from scratch.
 
 ## Quick file map
 
@@ -284,9 +307,13 @@ docs/handoff.md              Older doc — step-flow/illustration work, now stal
 docs/figma-v2-redesign.md    Step-flow Figma reference (unrelated to this feature)
 
 src/components/
-  HomeScreen.tsx              Renders header text + <TutorialStack> + filter sheet
+  HomeScreen.tsx              Header + filter chips (LookSelector) + <TutorialStack>, top to bottom
   TutorialCard.tsx            Everything described above — the whole stack feature lives here
   TutorialFlow.tsx            The step-by-step tutorial screen (only reachable via Soft Smokey Eye)
 
-src/styles/tokens.css         --color-card-behind-tint, --radius-tutorial-card, etc. — search "tutorial-card" / "card-behind"
+src/assets/
+  looks/                      Per-tutorial photo pairs (all 4 tutorials now) + card-ghost-texture.jpg
+  filter-chips/                Shared woven texture, tinted per chip via mix-blend-mode
+
+src/styles/tokens.css         --radius-tutorial-card, --shadow-tutorial-card, --duration-*/--ease-out-quart, etc. — search "tutorial-card". --color-card-behind-tint is deprecated (CardBehind uses a real photo now, see Architecture above).
 ```

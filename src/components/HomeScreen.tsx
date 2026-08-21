@@ -4,7 +4,12 @@ import dayTexture from '../assets/filter-chips/day-texture.jpg'
 import nightTexture from '../assets/filter-chips/night-texture.jpg'
 import glamTexture from '../assets/filter-chips/glam-texture.jpg'
 
-type LookType = 'day' | 'night' | 'glam'
+// Exported: TutorialCard.tsx's ghost card (CardBehind/StartOverCard) reads
+// this same type — the selected filter now drives the ghost card's own
+// background color, not just this file's chip styling, so both sides need
+// to agree on the exact same set of values rather than each defining their
+// own near-duplicate union.
+export type LookType = 'day' | 'night' | 'glam'
 
 type HomeScreenProps = {
   /** Called when the (only, for now) look card is tapped — hands off to the tutorial flow. */
@@ -356,9 +361,14 @@ function LookSelectorChip({
  * decision, see git history). The Day/Night/Glam filters still don't
  * actually filter anything — there's only one real look — but the chip
  * selection still visually toggles, and now also toggles which chip shows
- * its icon (see LookSelectorChip above). The info/user icon buttons in the
- * header are new and purely decorative — no tap handlers wired yet, same
- * "not functional yet" spirit as the filters.
+ * its icon (see LookSelectorChip above), plus (new) the tutorial stack's
+ * own ghost card color (`selectedType` threaded down as `lookType` — see
+ * TutorialStack's own prop and CardBehind/StartOverCard in TutorialCard.tsx)
+ * — a deliberate first step toward the filters doing something, taken
+ * before the actual per-look card sets exist, per the user's own framing
+ * ("until we add more cards"). The info/user icon buttons in the header are
+ * new and purely decorative — no tap handlers wired yet, same "not
+ * functional yet" spirit as the filters otherwise still are.
  */
 export function HomeScreen({ onSelectLook }: HomeScreenProps) {
   const [selectedType, setSelectedType] = useState<LookType>('day')
@@ -465,7 +475,7 @@ export function HomeScreen({ onSelectLook }: HomeScreenProps) {
             gracefully (collapses toward the filter row, no extra gap) on a
             short viewport where header + card barely fit together. */}
         <div className="flex flex-1 items-center justify-center">
-          <TutorialStack tutorials={TUTORIALS} onSelect={onSelectLook} />
+          <TutorialStack tutorials={TUTORIALS} onSelect={onSelectLook} lookType={selectedType} />
         </div>
       </div>
     </div>
