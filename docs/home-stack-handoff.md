@@ -7,27 +7,30 @@ from `docs/handoff.md` (the step-flow/illustration doc, stale on the "no
 home page" point — a home page exists now).
 
 **Git state — read this before assuming anything else in this doc is
-current.** Branch `feature/home-tutorial-stack` (off `main`, untouched),
-pushed to `origin` and up to date with it as of this doc's last update.
-Latest **commit**: `dca8144` — "Add stack entrance + screen transition,
-remove dev-tuner and dead code." Working tree clean (only untracked,
-unrelated tooling scaffolding — `.agents/`, `.claude/skills/`,
-`skills-lock.json` — sit outside this). Run `git status`/`git log
---oneline -5` on a fresh session start regardless; if there's anything
-beyond a clean tree at this commit, it's from later than this doc — read
-the diff before trusting this doc's "current state" claims over the
-actual code.
+current.** Branch `feature/home-tutorial-stack` (off `main`, untouched).
+Pushed to `origin`, working tree clean, as of this doc's last update —
+run `git status`/`git log --oneline -5` on a fresh session start
+regardless to confirm nothing's changed since; if there's anything beyond
+a clean tree, it's from later than this doc — read the diff before
+trusting this doc's "current state" claims over the actual code.
 
-**Immediate next task, per the user directly**: the animation-audit plans
-— `plans/003-fold-flip-values-into-motion-tuning.md`,
-`004-start-over-rubber-band-friction.md`, `005-content-layer-composed-transform.md`
-(see "Animation audit" further down and `plans/README.md` for the summary
-+ execution order — 004 before 003 if both are done). Two other items were
-explicitly **deferred to later, lower priority, per the user's own
-call**: the `CardBack`-fly-off-reads-abrupt issue (see "Known deferred
-issues" below — several real fixes landed chasing it already, none
-confirmed to close it, don't re-derive from scratch) and ghost-card
-clipping on narrow phones (older, lower priority still).
+**Immediate next task, per the user directly**: plan 004
+(`plans/004-start-over-rubber-band-friction.md`, real rubber-band
+friction on the Start Over card's drag) — 003, 006, and 007 are done (see
+"Animation audit" further down and `plans/README.md`), 005 is a
+low-priority consistency nit that needs a rewrite before it's even
+executable (its quoted code no longer exists — see `plans/README.md`'s
+own note). Two other items were explicitly **deferred to later, lower
+priority, per the user's own call**: the `CardBack`-fly-off-reads-abrupt
+issue (see "Known deferred issues" below — several real fixes landed
+chasing it already, none confirmed to close it, don't re-derive from
+scratch) and ghost-card clipping on narrow phones (older, lower priority
+still).
+
+**A second, follow-up animation audit ran this session** (against
+`TutorialCard.tsx` + `App.tsx` + `HomeScreen.tsx`, not just the original
+scope) — see "Animation audit" further down for the two findings it
+produced (006, 007, both executed) and what came back clean.
 
 The Figma file used throughout is `Tech-Experimentation`, file key
 `6Mr7K0RONTS8SltZRJtqYj`. Nodes pulled and worth reusing rather than
@@ -181,12 +184,24 @@ that ducked midpoint, alongside a fade (`imgOpacity`, JS-driven via
 Framer, not `check-ring-in` — a scale-pop on a whole card-sized ghost
 layer read as too busy layered on top of the rotation), then both ease
 back to 0/1 to swing out and reveal. 0.2s per phase (duck+fade-out, then
-swing+fade-in), `--ease-out-quart`'s numeric form throughout. Known,
+swing+fade-in), `EASE_OUT_QUART` throughout (the exported constant —
+`--ease-out-quart`'s numeric JS-array form, see plan 006 below). Known,
 accepted gap: a filter tap that lands exactly mid-drag (this card's own
 tilt actively changing that same instant) targets an already-stale
 cancel-out value by the time the duck settles — deliberately not solved,
 too rare an overlap (two-tap filter chip + a live drag, at the same time)
 to justify live-tracking `parentRotate` for.
+
+**Race-guarded against rapid filter switching (plan 007, "Animation
+audit" below)** — the duck-and-reveal effect's async `.then()` callback
+now checks a `cancelled` flag (set by the effect's own cleanup function)
+before applying its result. Without this, tapping Day/Night/Glam quickly
+could let a stale, superseded effect run's callback fire *after* a newer
+tap already landed the correct color — reverting the ghost card to the
+wrong texture and starting a second swing-back animation on top of the
+current one. Spot-checked working in this session's browser tooling;
+real-device rapid-tap testing (or CPU-throttled DevTools) is the more
+convincing confirmation if this ever needs re-checking.
 
 **Scope, per the user's own framing**: this is ghost-card color only —
 "until we add more cards" — Day/Night/Glam still don't filter which
@@ -282,28 +297,35 @@ felt settled — check git history if a similar tuning UI is ever needed
 again. `MotionTuning`/`DEFAULT_MOTION_TUNING` themselves **stay** — every
 drag/spring/reveal number still lives there, `TutorialStackCard` still
 reads everything through `tuning.*`, and the pending animation-audit
-plans (003, 004 below) both operate on this exact shape, which is why it
-wasn't collapsed back into plain constants at the same time. `tuning`
-itself is now a plain `const = DEFAULT_MOTION_TUNING` inside
-`TutorialStack`, not `useState` — nothing has ever called a setter since
-the panel doesn't exist, so state with no writer was just indirection.
-Current values:
+plan 004 (below) still operates on this exact shape (003 already
+executed — see "Animation audit"), which is why it wasn't collapsed back
+into plain constants at the same time. `tuning` itself is now a plain
+`const = DEFAULT_MOTION_TUNING` inside `TutorialStack`, not `useState` —
+nothing has ever called a setter since the panel doesn't exist, so state
+with no writer was just indirection. Current values:
 
 ```
-commitDistance: CARD_WIDTH * 0.35 (~118px)
-commitVelocity: 1200 px/s — settled on by feel
-flyOffDuration: 0.7s      — settled on by feel
-flyOffBounce:   0.15      — settled on by feel
-cancelDuration: 0.4s
-rotationRange:  20deg
-gripScale:      0.96      — settled on by feel
+commitDistance:     CARD_WIDTH * 0.35 (~118px)
+commitVelocity:     1200 px/s — settled on by feel
+flyOffDuration:     0.7s      — settled on by feel
+flyOffBounce:       0.15      — settled on by feel
+cancelDuration:     0.4s
+rotationRange:      20deg
+gripScale:          0.96      — settled on by feel
+flipDuration:       0.7s      — settled on by feel (Start Over's flip)
+flipBounce:         0.15      — settled on by feel (Start Over's flip)
+flightFadeFraction: 0.45      — settled on by feel (fraction of flyOffDuration
+                                the disappear-faster fade actually takes)
 ```
 
-Plus (not yet in `MotionTuning`, only informally settled): Start Over's
-flip `{bounce: 0.15, duration: 0.7}`, tutorial-card flip
-`{bounce: 0.15, duration: 0.45}`, swipe-hint nudge `{bounce: 0.35, duration: 0.35}`
-out / `{bounce: 0.25, duration: 0.4}` back. `plans/003-fold-flip-values-into-motion-tuning.md`
-(see "Animation audit" below) already specs folding some of these in.
+The last three were folded in from bare literals by plan 003 (see
+"Animation audit" below) — a pure relocation, values unchanged. **Still
+not folded in** (postdate 003's own scope, deliberately left for
+follow-up rather than silently expanding 003 — see `plans/README.md`'s
+own note): the tutorial-card detail flip's spring (`{bounce: 0.15,
+duration: 0.45}`, `handleCardTap`) and the swipe-hint nudge's two springs
+(`{bounce: 0.35, duration: 0.35}` out / `{bounce: 0.25, duration: 0.4}`
+back).
 
 ## First-load entrance + screen transition (`App.tsx`)
 
@@ -316,7 +338,7 @@ map's "unrelated" framing of it before.
 the whole stack fades + rises + gently scales up as one unit on mount —
 `{opacity: 0, transform: 'translateY(16px) scale(0.96)'}` →
 `{opacity: 1, transform: 'translateY(0px) scale(1)'}`, 0.35s,
-`--ease-out-quart`'s numeric form. Deliberately **not** per-card
+`EASE_OUT_QUART` (the exported constant, see plan 006 below). Deliberately **not** per-card
 staggered (front/peek entering separately) — this plays every session,
 not once-ever, so it stays restrained rather than choreographed.
 Gated to true first load only via `hasPlayedStackEntrance`, a **module-level**
@@ -469,6 +491,20 @@ current — nothing here has changed:
     (computed style checked), but whether it actually reads as long enough
     now needs a real swipe to confirm, same limitation as every other fix
     in this doc.
+12. **An async `useEffect` callback with no cancellation guard is a race
+    waiting for a fast-enough user, not a hypothetical.** `CardBehind`'s
+    duck-and-reveal effect (see "Ghost card recolor by filter" above)
+    scheduled its reveal — `setDisplayedLookType` + the swing-back
+    animations — inside a `duck.then(() => {...})`, with nothing stopping
+    that callback from firing after a *newer* effect run (a second filter
+    tap before the first's duck finished) had already superseded it.
+    Found by a follow-up `improve-animations` audit (plan 007), not by
+    live testing — the kind of bug that's real in the code regardless of
+    whether a session happens to catch it by hand. Fix: the standard React
+    async-effect guard — a `let cancelled = false` set by the effect's own
+    cleanup function (which React calls right before the next run, or on
+    unmount), checked at the top of the `.then()` callback before it does
+    anything.
 
 (Full original reasoning for each preserved in git history / earlier
 versions of this doc if you need the blow-by-blow, not just the summary.)
@@ -579,15 +615,32 @@ explicit call, tracked in Claude's own memory file
 the current `CARD_HEIGHT` (359). Surface again once the stack/motion work
 is otherwise done.
 
-**Animation audit** (`plans/` directory, from an `improve-animations` pass
-this session) — 5 findings, 2 already executed and folded into "Bugs
-fixed"-adjacent work above (fly-off fade easing, a since-superseded
-restart-flip lock window). **3 still open**, full self-contained plans
-already written: `003` (fold flip/hint feel-values into `MotionTuning`),
+**Animation audit** (`plans/` directory) — two separate `improve-animations`
+passes now. **Original pass** (against `TutorialCard.tsx` alone, commit
+`628b8b7`): 5 findings — `001`/`002` done early, `003` (fold flip/hint
+feel-values into `MotionTuning`) and `006`/`007` (below) since done too,
 `004` (Start Over's drag resistance is flat linear damping, not real
-rising rubber-band friction), `005` (a transform-composition consistency
-nit, low-confidence/low-priority). See `plans/README.md` for the summary
-table and execution-order notes (004 before 003 if both are done).
+rising rubber-band friction) still open and is the current "immediate next
+task," `005` (a transform-composition consistency nit, low-priority) still
+open and needs a rewrite before it's executable — its quoted code
+(`contentOwnRotateY`/`flipProgress`) no longer exists anywhere in the
+file. **Follow-up pass this session** (`TutorialCard.tsx` + `App.tsx` +
+`HomeScreen.tsx`, commit `db1e1be`, prompted by how much had changed since
+the original pass): 2 findings, both executed — `006` consolidated a
+hand-typed `[0.25, 1, 0.5, 1]` cubic-bezier array (11 occurrences across 2
+files) into one exported `EASE_OUT_QUART` constant in `TutorialCard.tsx`;
+`007` closed a real race in `CardBehind`'s duck-and-reveal effect
+(rapid Day/Night/Glam filter switching could leave the ghost card showing
+a stale, wrong color — see the "Ghost card recolor by filter" section
+above for the fix). Everything else the follow-up pass checked came back
+clean — no `ease-in`, no `scale(0)`, no `transition: all`, no animated
+layout properties, reduced-motion already handled correctly at both the
+CSS and JS level. Two minor, additive "missed opportunities" were noted
+but not turned into plans (not asked for): `ProductsPreview`'s 3
+thumbnails could use a 30-80ms stagger when a card flips to its back
+face, and the header info/profile icon buttons have no press feedback at
+all. See `plans/README.md` for the full summary table, execution notes,
+and dependencies between plans.
 
 ## Testing notes — important limitation
 

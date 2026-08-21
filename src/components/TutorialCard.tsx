@@ -30,6 +30,14 @@ import previewMascaraImg from '../assets/product-images/Product_Mascara.png'
 import previewHighlightImg from '../assets/product-images/Product_Highlight.png'
 import type { LookType } from './HomeScreen'
 
+/** The numeric (JS array) form of tokens.css's --ease-out-quart
+ *  (cubic-bezier(0.25, 1, 0.5, 1)) — Framer Motion's animate()/transition
+ *  props need a plain array, not a CSS custom property string, so this is
+ *  the one shared source for that array instead of it being hand-typed at
+ *  every call site. Import this into any other file that needs the same
+ *  curve for a Framer animation (see App.tsx) rather than retyping it. */
+export const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const
+
 /**
  * Tutorial stack card — "BigCard" component, node 642:5092
  * (Tech-Experimentation). TutorialLookCard is the card's own look, at
@@ -768,23 +776,37 @@ export function CardBehind({
       isFirstRender.current = false
       return
     }
+    // Guards the .then() below against a newer effect run superseding
+    // this one before it resolves (rapid filter switching: tap Night,
+    // then Glam before Night's own duck-and-reveal finishes) — without
+    // this, a stale run's callback could fire after a newer one already
+    // landed the correct color, reverting the ghost card to the wrong
+    // texture and starting a second swing-back animation on top of the
+    // current one. Set true by the cleanup function, which React calls
+    // right before the *next* run of this same effect (or on unmount) —
+    // never during this run itself.
+    let cancelled = false
     // Duck: cancel the parent's current tilt (see this component's own
     // doc comment for why `-parentRotate.get()` lands the *combined*
     // rotation at exactly 0) while fading the outgoing texture out, in
     // parallel — both finish together, not staggered.
     const duck = animateValue(behindRotate, -parentRotate.get(), {
       duration: 0.2,
-      ease: [0.25, 1, 0.5, 1],
+      ease: EASE_OUT_QUART,
     })
-    animateValue(imgOpacity, 0, { duration: 0.2, ease: [0.25, 1, 0.5, 1] })
+    animateValue(imgOpacity, 0, { duration: 0.2, ease: EASE_OUT_QUART })
     duck.then(() => {
+      if (cancelled) return
       setDisplayedLookType(lookType)
       // Swing back out: this card's own contribution returns to 0 (i.e.
       // back to just the parent's own tilt, its ordinary peek pose),
       // fading the new texture in over the same window.
-      animateValue(behindRotate, 0, { duration: 0.2, ease: [0.25, 1, 0.5, 1] })
-      animateValue(imgOpacity, 1, { duration: 0.2, ease: [0.25, 1, 0.5, 1] })
+      animateValue(behindRotate, 0, { duration: 0.2, ease: EASE_OUT_QUART })
+      animateValue(imgOpacity, 1, { duration: 0.2, ease: EASE_OUT_QUART })
     })
+    return () => {
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on lookType alone: parentRotate/behindRotate/imgOpacity are read/written here, not reacted to.
   }, [lookType])
   return (
@@ -1074,6 +1096,17 @@ export type MotionTuning = {
    *  150ms (button-press-feedback range, not exposed as a slider — it's
    *  not the part anyone described as feeling wrong). */
   gripScale: number
+  /** Restart flip's spring duration (seconds) — see handleStartOverTap.
+   *  Same "settled on by feel" status as flyOffDuration. */
+  flipDuration: number
+  /** Restart flip's spring bounce (0 = no overshoot) — same considerations
+   *  as flyOffBounce. */
+  flipBounce: number
+  /** Fraction of flyOffDuration the disappear-faster fade/shrink/z-dive
+   *  actually takes (see flyOff's FLIGHT_FADE_DURATION) — smaller means the
+   *  card visually vanishes sooner relative to how long the physical
+   *  fly-off itself runs. */
+  flightFadeFraction: number
 }
 
 export const DEFAULT_MOTION_TUNING: MotionTuning = {
@@ -1084,6 +1117,9 @@ export const DEFAULT_MOTION_TUNING: MotionTuning = {
   cancelDuration: 0.4,
   rotationRange: 20,
   gripScale: 0.96, // settled on by feel (unchanged from the first guess)
+  flipDuration: 0.7, // settled on by feel
+  flipBounce: 0.15, // settled on by feel
+  flightFadeFraction: 0.45, // settled on by feel
 }
 
 /** What this card slot actually renders/does. The Start Over slot (see
@@ -1517,17 +1553,17 @@ function TutorialStackCard({
     // sells "gone" well before the translate spring's long tail actually
     // finishes — and reads as the card receding into the stack rather
     // than just sailing off-screen.
-    const FLIGHT_FADE_DURATION = tuning.flyOffDuration * 0.45
-    // [0.25, 1, 0.5, 1] — the numeric form of this file's own
-    // --ease-out-quart token (tokens.css), same curve already used for the
+    const FLIGHT_FADE_DURATION = tuning.flyOffDuration * tuning.flightFadeFraction
+    // EASE_OUT_QUART — this file's own --ease-out-quart token (tokens.css)
+    // in its numeric (JS array) form, same curve already used for the
     // card's press-feedback transition below. Was 'easeIn', which starts
     // slow and accelerates at the *end* — for a fade-to-0 that meant the
     // card stayed near-fully-visible for most of this window and only
     // actually vanished right at the end, undermining the "sells gone
     // quickly" intent above. A strong ease-out front-loads the drop instead.
-    const flightFade = animateValue(flightOpacity, 0, { duration: FLIGHT_FADE_DURATION, ease: [0.25, 1, 0.5, 1] })
-    animateValue(flightScale, 0.55, { duration: FLIGHT_FADE_DURATION, ease: [0.25, 1, 0.5, 1] })
-    animateValue(flightZDrop, 1, { duration: FLIGHT_FADE_DURATION, ease: [0.25, 1, 0.5, 1] })
+    const flightFade = animateValue(flightOpacity, 0, { duration: FLIGHT_FADE_DURATION, ease: EASE_OUT_QUART })
+    animateValue(flightScale, 0.55, { duration: FLIGHT_FADE_DURATION, ease: EASE_OUT_QUART })
+    animateValue(flightZDrop, 1, { duration: FLIGHT_FADE_DURATION, ease: EASE_OUT_QUART })
     // Hand the stack forward once the card has actually *disappeared*
     // (the fade, not the translate) — see comment above. flightX/flightY
     // keep animating in the background and get cut off by the resets
@@ -1566,7 +1602,7 @@ function TutorialStackCard({
     // Tap-driven engagement with the stack — same as handleDragStart, see
     // onInteraction's own doc comment: holds off the next swipe-hint repeat.
     onInteraction()
-    const flip = animateValue(flipRotateY, 180, { type: 'spring', bounce: 0.15, duration: 0.7 })
+    const flip = animateValue(flipRotateY, 180, { type: 'spring', bounce: tuning.flipBounce, duration: tuning.flipDuration })
     // Once the flip has actually turned all the way (back face now facing
     // the viewer, showing the same first-tutorial content this card's own
     // back face just displayed), hand off to the real, interactive card 0
@@ -2079,7 +2115,7 @@ export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackPr
         className="mx-auto flex w-[338px] flex-col gap-4"
         initial={playEntrance ? { opacity: 0 } : false}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
+        transition={{ duration: 0.2, ease: EASE_OUT_QUART }}
       >
         {tutorials.map((tutorial) => (
           <TutorialLookCard
@@ -2122,7 +2158,7 @@ export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackPr
       style={{ width: CARD_WIDTH, height: CARD_HEIGHT, perspective: 1000 }}
       initial={playEntrance ? { opacity: 0, transform: 'translateY(16px) scale(0.96)' } : false}
       animate={{ opacity: 1, transform: 'translateY(0px) scale(1)' }}
-      transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+      transition={{ duration: 0.35, ease: EASE_OUT_QUART }}
     >
       {tutorials.map((tutorial, index) => (
         <TutorialStackCard

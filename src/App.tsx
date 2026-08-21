@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { EASE_OUT_QUART } from './components/TutorialCard'
 import { HomeScreen } from './components/HomeScreen'
 import { TutorialFlow } from './TutorialFlow'
 
@@ -13,11 +14,12 @@ type Screen = 'home' | 'tutorial'
  *  what makes it read as a real push/pop rather than "new screen covers
  *  old." Percent-based translateX (not pixels) — relative to each
  *  screen's own width, correct whether the layout is at its mobile
- *  max-w-[402px] column or some other size later. `--ease-out-quart`'s
- *  numeric form + 350ms (`--duration-layout`'s value) — this file has no
- *  tokens of its own to import as CSS custom properties, so the numbers
- *  are inlined, but they're TutorialCard.tsx's own established "large
- *  layout/content change" pair, not invented for this.
+ *  max-w-[402px] column or some other size later. `EASE_OUT_QUART`
+ *  (imported from TutorialCard.tsx — the shared JS-array form of
+ *  tokens.css's --ease-out-quart, see its own doc comment) + 350ms
+ *  (`--duration-layout`'s value, inlined since this file has no tokens of
+ *  its own to import as CSS custom properties) — TutorialCard.tsx's own
+ *  established "large layout/content change" pair, not invented for this.
  *
  *  `reduceMotion` is folded into the *same* `custom` payload (not a
  *  competing `style` override applied alongside `variants` — two things
@@ -96,7 +98,7 @@ function App() {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: reduceMotion ? 0.2 : 0.35, ease: [0.25, 1, 0.5, 1] }}
+            transition={{ duration: reduceMotion ? 0.2 : 0.35, ease: EASE_OUT_QUART }}
           >
             {screen === 'home' ? <HomeScreen onSelectLook={goToTutorial} /> : <TutorialFlow onExit={goToHome} />}
           </motion.div>
