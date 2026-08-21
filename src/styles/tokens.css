@@ -139,6 +139,7 @@
   --color-tutorial-card-text: #2c2926; /* V4: also reused as the home header/title/filter-chip ink color (node 635:4792 uses this same #2c2926, not --color-text-primary) — one warm-ink token shared by both surfaces now */
   --color-timer-badge-bg: rgba(44, 41, 38, 0.05);
   --color-card-behind-tint: #e3b345; /* deprecated: CardBehind (TutorialCard.tsx) now uses the real card-ghost-texture.jpg photo asset directly instead of this flat swatch + blend-mode tint */
+  --color-product-placeholder: #e5e5e7; /* ProductsPreview (TutorialCard.tsx) — the flipped card's product-photo thumbnails, before real product photography exists. Not an invented color: this is Figma's own placeholder-gray fill for the same not-yet-real image slots in the source design. */
   --radius-tutorial-card: 32px;
   --radius-tutorial-card-behind: 24px;
   --shadow-tutorial-card: 0px 0px 8px 2px rgba(14, 11, 6, 0.03);

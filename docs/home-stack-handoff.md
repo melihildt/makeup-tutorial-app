@@ -1,159 +1,259 @@
 # Handoff — Home screen tutorial stack & motion
 
 Written to carry context into a fresh session/window without re-deriving
-everything from scratch. Originally scoped to the **HomeScreen card
-stack** (drag, tilt, fly-off, loop) and its motion tuning — a separate
-area from `docs/handoff.md` (the step-flow/illustration doc, now stale on
-the "no home page" point — a home page exists now, see below). That
-original scope is the active task again as of this update (see
-"Immediate next task" below) after a detour through the rest of the home
-screen.
+everything from scratch. Scoped to the **HomeScreen card stack** (drag,
+tilt, fly-off, flips, filter-driven color) and its motion — a separate area
+from `docs/handoff.md` (the step-flow/illustration doc, stale on the "no
+home page" point — a home page exists now).
 
-**Committed** on branch `feature/home-tutorial-stack` (off `main`, which
-is untouched — still on the commit before this feature). Latest relevant
-commit: `628b8b7` — "Redesign home header/filters, add real card photos,
-bookmark toggle, chip press-flash." Check `git log`/`git status` on a
-fresh session start: if there are *more* uncommitted changes on top of
-that, they're from later than whenever this doc was last updated — read
-the diff before assuming this doc is fully current.
+**Git state — read this before assuming anything else in this doc is
+current.** Branch `feature/home-tutorial-stack` (off `main`, untouched).
+Latest **commit**: `150ca7b` — "Fix fly-off easing, redesign Start Over as
+a two-face flip, add swipe hint, recolor ghost card by filter." **On top of
+that, uncommitted as of this doc's last update**: the tutorial-card
+flip-to-details feature (level/duration/products/CTA — see its own section
+below) — `src/components/TutorialCard.tsx` and `src/styles/tokens.css` both
+show as modified in `git status`. Run `git status`/`git diff --stat` on a
+fresh session start; if there's more beyond that uncommitted diff, it's
+from later than this doc — read the diff before trusting this doc's
+"current state" claims over the actual code.
 
-**Immediate next task, per the user directly**: "iterate the swipe" — back
-to the drag/tilt/fly-off motion this doc was originally written for (see
-"MotionTuning / MotionTuner" and "Bugs fixed" below, both still fully
-current). The "rest of the page" detour this doc used to point to as the
-next task (colors, filter chips, header, real photos, a bookmark toggle)
-is now **done and committed** (`628b8b7`) — see that commit message for
-the detailed "why" behind each piece rather than duplicating it here; the
-short version, if useful context for swipe work: the filter sheet moved
-from a bottom sheet to directly under the header, chips got a photo-
-texture + per-type tint + press-flash treatment, all four tutorial cards
-now have real photos, and the heart icon became a real bookmark
-save/unsaved toggle (which is why `TutorialLookCard`'s root changed from
-a `<button>` to a `role="button"` div — see Architecture below). None of
-that touched the drag/motion mechanics this doc is actually about, with
-one exception: **`CARD_HEIGHT` moved 346 → 359** (a bottom-padding fix,
-unrelated to motion) which feeds `FLY_OFF_DISTANCE` — the fly-off
-diagonal is very slightly longer now than the numbers below were tuned
-against. Probably imperceptible, but worth knowing if fly-off distance
-ever feels subtly off from what's documented.
+**Immediate next tasks, per the user directly** — two concrete, scoped
+fixes (see their own sections below for full detail):
+1. Swipe-hint nudge fires too eagerly — needs to treat *any* interaction
+   with the stack (not just a drag) as "the user found it." See "Swipe-hint
+   nudge" below.
+2. A card swiped away while flipped fades out still showing its detail
+   (back) face, which looks odd — should fade out showing the front face
+   instead. See "Tutorial detail flip" below.
+
+Neither is implemented yet — both were raised in conversation, not yet
+built. Everything else in "What's shipped" below **is** implemented (the
+last item pending only a commit).
 
 The Figma file used throughout is `Tech-Experimentation`, file key
-`6Mr7K0RONTS8SltZRJtqYj` — nodes already pulled and worth reusing rather
-than re-fetching: `642:5092` (the `BigCard` component + its "Unfold"
-ghost variant), `651:5362` (the full "Cards" composition, card
-placement/rotation reference), `635:4792` (header/filter chips, now
-implemented — see `628b8b7`).
+`6Mr7K0RONTS8SltZRJtqYj`. Nodes pulled and worth reusing rather than
+re-fetching: `642:5092` (front-card `BigCard` + "Unfold" ghost variant),
+`651:5362` (full "Cards" composition, placement/rotation reference),
+`635:4792` (header/filter chips), `665:2571` (Start Over card),
+`673:3767`/`674:3974`/`674:3975` (tutorial detail/"Unfold" back face, its
+level-icon variants, and the CTA-color update to black).
 
 ## What this covers
 
 The home screen (`HomeScreen.tsx`) shows a stack of tutorial cards
-(`TutorialCard.tsx`) — a front card plus one peeking card behind it. You
-can tap the front card to open its tutorial, or drag/swipe it (any
-direction) to advance to the next one, looping back to the first after
-the last. Only "Soft Smokey Eye" has a real tutorial behind it
-(`TutorialFlow`); the other three tutorials have real photos and a real
-bookmark toggle now, but are still not wired to an actual tutorial flow —
-same "looks real, not functional yet" spirit as the Day/Night/Glam filter
-chips above the stack (which also got real photo-texture styling and a
-press-flash effect, `628b8b7`, but still don't filter anything).
+(`TutorialCard.tsx`) — a front card plus one peeking card behind it,
+drag-native (swipe any direction to advance). Only "Soft Smokey Eye" has a
+real tutorial behind it (`TutorialFlow`); the other three have real photos
+and bookmark toggles but aren't wired to real content — same "looks real,
+not functional yet" spirit as the Day/Night/Glam filter chips (which do
+now change the stack's own ghost-card color, see below, but still don't
+filter which tutorials show — see "Ghost card recolor" for the exact
+scope call on that).
+
+**No more infinite loop.** Swiping past the last tutorial lands on a
+**Start Over** card instead of silently wrapping back to the first — see
+its own section below.
+
+**Tapping the front card no longer opens the tutorial directly** — it
+flips the card in place to a detail face (level, duration, products, a
+real CTA) — see "Tutorial detail flip" below.
 
 ## Architecture — `src/components/TutorialCard.tsx`
 
-One file, several pieces, roughly back-to-front:
+One file, most pieces still roughly back-to-front:
 
-- **`Tutorial` type + `TUTORIALS` array** — the 4 tutorials' data (title,
-  brand, duration, real images for all four now — `placeholderColors` is
-  unused/legacy at this point, kept on the type rather than deleted in
-  case a future entry ships without photos).
-- **`TutorialLookCard`** — one card's look, at rest. Dumb about
-  scroll/drag; just renders a card given a `tutorial`, plus optional
-  `detailsOpacity` (for the reveal system, below) and `saved`/
-  `onToggleSave` (the bookmark toggle, `628b8b7` — state is owned by
-  `TutorialStack`, not local, so it survives this exact card instance
-  staying mounted as it cycles through peek/front/peek). **Root is a
-  `role="button"` div, not a `<button>`** — changed when the bookmark
-  needed its own independently-tappable nested control, and a real
-  `<button>` can't validly nest inside another `<button>`. Reproduces
-  Enter/Space activation and tab order by hand; if you're touching tap
-  behavior here, read that component's own module comment before
-  assuming it's still a plain button.
-- **`CardBehind`** — the peek/ghost layer, embedded inside each card's
-  own peek presentation, not a separate static prop like the first
-  version — see "Ghost reveal system," now locked in. Renders a real
-  photo texture (`card-ghost-texture.jpg`, `628b8b7`) now, not the flat
-  yellow tint swatch described in older versions of this doc.
-- **`useCardMotion(activeIndex, cardIndex, total)`** — the core per-card
-  pose math. Takes an index value (see `effectiveIndex` in
-  `TutorialStackCard` — not always literally the stack's `activeIndex`,
-  read that comment before assuming) and a card's own index, returns
-  motion values for rotation, opacity, z-index, and the content-reveal
-  band. `circularLocal()` is the key helper: signed distance from
-  `cardIndex` to the index value, **wrapped** so the loop (last card →
-  first card) doesn't produce a huge stale distance — this was a real,
-  hard-to-spot bug (see "Bugs fixed" below).
-- **`TutorialStackCard`** — one card's full behavior: composes rotation,
-  drag position, grip scale into one `transform`; owns the drag gesture
-  (`handleDragStart`/`handleDrag`/`handleDragEnd`); decides commit vs.
-  cancel; only the front card is ever interactive. Also where
-  `dragProgress` gets folded into (or excluded from) this card's own pose
-  — see bug #6 below, it's not optional plumbing.
-- **`TutorialStack`** — owns `activeCardIndex` (state), `activeIndex` (the
-  settled motion value), and `dragProgress` (the live one) — advances on
-  a committed drag, handles the wrap-to-first loop. Also renders the
-  `MotionTuner` panel, currently commented out (see below).
+- **`Tutorial` type + `TUTORIALS` array** — title/brand/duration/images as
+  before, plus (new, uncommitted) `level: TutorialLevel`
+  (`'easy'|'medium'|'experienced'`) and `productsUsedCount: number` for the
+  detail flip. All four tutorials currently carry **placeholder** level/
+  product-count values — real ones wait until the other three tutorials
+  have real content behind them the way Soft Smokey Eye does (user's own
+  call). `placeholderColors` is still unused/legacy, kept on the type.
+- **`TutorialLookCard`** — the front face, at rest. `onSelect` prop now
+  means "flip this card" (wired to `handleCardTap`, not the real
+  navigation) — the real "open tutorial" action moved to the CTA on
+  `TutorialDetailCard`'s back face. Root is still a `role="button"` div,
+  not a `<button>` (bookmark needs its own nested tappable control) — see
+  its own module comment before touching tap behavior here.
+- **`TutorialDetailCard`** (new, uncommitted) — the tutorial card's back
+  face: a `DetailPill` for level (`LevelIcon` + label) and one for
+  duration, a `ProductsPreview` (3 placeholder-swatch thumbnails +
+  "+N products used" caption — see its own comment for why that number is
+  *remaining*, not the raw total), and `StartTutorialButton` (black CTA,
+  real `fi-rr-play` icon, `stopPropagation` so it doesn't also flip the
+  card back). Same whole-card-tappable pattern as `TutorialLookCard` —
+  tapping anywhere except the CTA flips back to front.
+- **`LevelIcon`** (new) — the 3-bar "signal strength" level icon, real
+  path data (5 distinct bar/state SVGs pulled via `download_assets`).
+  Shortest bar always filled; middle bar filled from 'medium' up; tallest
+  bar filled only at 'experienced'. Verified programmatically (not just
+  visually) that the right bars render solid vs. hollow per level.
+- **`StartOverCard`** — the terminal slot's front face (icon + "Start
+  Over" label on the ghost texture). See "Start Over" section below for
+  the full flip mechanism it's part of.
+- **`CardBehind`** — the peek/ghost layer. Now takes a `lookType` prop and
+  picks its texture from `GHOST_TEXTURES` (gold/blue/green) instead of a
+  single hardcoded image — see "Ghost card recolor" below.
+- **`useCardMotion(activeIndex, cardIndex, total)`** — unchanged core
+  per-card pose math; `circularLocal()` still the key wrapped-distance
+  helper (see "Bugs fixed" below, still fully current).
+- **`TutorialStackCard`** — one card's full behavior. Now owns **two**
+  different flips sharing the same `flipRotateY` motion value (never both
+  on one card instance, since a card is exactly one `variant.kind`):
+  `handleStartOverTap` (Start Over's one-shot reveal) and `handleCardTap`
+  (a tutorial card's bidirectional front↔detail toggle, `isFlipped`
+  state). Also owns the swipe-hint nudge effect and `onInteraction`.
+- **`TutorialStack`** — owns `activeCardIndex`/`activeIndex`/
+  `dragProgress` as before, plus `total = tutorials.length + 1` (the extra
+  slot is Start Over), `hintTrigger`/`hasInteractedRef` (swipe-hint), and
+  `lookType` (threaded down from `HomeScreen`'s `selectedType`). Still
+  renders the `MotionTuner` panel commented out (see below, unchanged).
 
-`HomeScreen.tsx` just renders `<TutorialStack tutorials={TUTORIALS}
-onSelect={onSelectLook} />` — no scroll container, no ref threading. An
-earlier version *was* scroll-linked (pin-and-scrub through the deck via
-real page scroll) but that fought the page's own vertical scroll on a
-real touchscreen constantly; it's fully drag-native now, no scroll
-involvement at all. If "scroll to browse" ever comes back as a request,
-re-read that reasoning in `TutorialStack`'s own module comment before
-resurrecting the old approach — it was replaced for concrete, tested
-reasons, not on a whim.
+`HomeScreen.tsx` renders `<TutorialStack tutorials={TUTORIALS}
+onSelect={onSelectLook} lookType={selectedType} />`. `LookType` is now
+`export`ed from `HomeScreen.tsx` (single source of truth — `TutorialCard.tsx`
+imports it as a type-only import, no runtime circular-dependency issue).
+Still no scroll container/ref threading — fully drag-native, see
+`TutorialStack`'s own module comment if "scroll to browse" ever comes back
+as a request before resurrecting the old scroll-linked approach.
+
+## Start Over card — two-face flip (not a fly-off)
+
+Swiping past the last tutorial lands on a **Start Over** slot
+(`total = tutorials.length + 1`) instead of wrapping. Tapping it used to
+make it fly away like a swiped card — that read as "the card just
+vanishes" instead of "it flips to reveal what's next," so it was rebuilt:
+
+**Tapping Start Over now flips the card itself in place** — a real
+two-sided card, front face "Start Over" (icon + label on the ghost
+texture), back face a static, non-interactive render of the first
+tutorial. `handleStartOverTap` deliberately does **not** advance
+`activeCardIndex` until the flip settles — the card stays `isFrontCard` for
+its whole ~0.7s flip, which is what lets its normal pose math (rest
+rotation 0, opacity 1, zIndex 1000) stay correct with zero overrides. Once
+the flip completes, `onAdvance()` fires (an instant `.set()`, not a tween —
+the existing wrapped-jump path, now covering this transition instead of a
+plain modulo wrap) and hands off to the real, separately-rendered card-0
+instance that's been sitting in its normal front pose underneath the whole
+time, occluded by Start Over's own z-index ceiling.
+
+This *replaced* an earlier version that routed through `flyOff()` — if you
+see `flyOff` referenced only for tutorial-card drag commits now, that's
+correct; Start Over no longer calls it at all.
+
+## Ghost card recolor by filter
+
+The ghost card (peek layer + Start Over's own front face) now recolors to
+match the selected Day/Night/Glam chip — gold/blue/green, via
+`GHOST_TEXTURES: Record<LookType, string>`. Assets: `card-ghost-texture.jpg`
+(day, original), `card-ghost-texture-night.png`, `card-ghost-texture-glam.png`
+(both `src/assets/looks/`, added and renamed by the user this session — the
+files as first delivered were misnamed relative to which chip they visually
+matched; matched by actual pixel color instead, confirmed against the
+user's own reference mock). Swap driven by `key={lookType}` +
+`check-ring-in` (reused, not a new keyframe) for a quick fade+scale-in
+instead of an instant pop.
+
+**Scope, per the user's own framing**: this is ghost-card color only —
+"until we add more cards" — Day/Night/Glam still don't filter which
+tutorials actually show. Don't read the recolor as a sign that filtering
+is coming next; it's a separate, larger task the user has not asked for
+yet.
+
+## Swipe-hint nudge
+
+A small upward tug on the front card if it sits untouched, repeating every
+4s per idle card (not a one-time tooltip) — re-arms fresh for whichever
+card is front next, cancels the moment that card is touched. Direction is
+up (this file's established canonical swipe direction). Skipped entirely
+under `prefers-reduced-motion`. Excludes the Start Over card (swiping it
+never does anything, so a swipe-shaped hint there would be misleading).
+
+**Pending fix (not yet implemented) — the interaction-detection is too
+narrow.** Right now `onInteraction()` (which resets `hasInteractedRef` and
+holds off the next nudge) is only called from `handleDragStart` — meaning
+**tapping a card to flip it does not count as an interaction**, so the hint
+could still fire while the user is actively engaging with the stack via
+taps rather than drags. Fix: call `onInteraction()` from `handleCardTap`
+too (and consider `handleToggleSave`/the bookmark, and `handleStartOverTap`
+— any tap-driven engagement with the stack, not just a drag). The user's
+own framing: *"the flick should work only when I'm not interacting with the
+page at all."* Scope call to make when picking this up: whether "the page"
+means just the card stack (flip/bookmark/Start Over taps — the narrower,
+safer reading) or something broader like the filter chips in `HomeScreen`
+too (would need new prop threading between `HomeScreen` and
+`TutorialStack`, not just within `TutorialCard.tsx`) — the user's example
+was specifically about tapping to flip, so the narrower reading is the
+safer default absent further clarification.
+
+## Tutorial detail flip (level/duration/products/CTA) — uncommitted
+
+Tapping the front card now flips it (not navigates) to reveal:
+level (`LevelIcon` + label), duration (reusing `durationMinutes`), a
+3-thumbnail product preview + "+N products used" caption, and a real
+"Start Tutorial" CTA (black, per the user's update to the source Figma —
+was gold in the first pull) that's what actually opens the tutorial now.
+Tapping anywhere else on the flipped card flips it back to front.
+`isFlipped` resets to `false` the instant a card stops being front (swiped
+away or otherwise), so a card always starts fresh next time it cycles back
+around.
+
+Mechanically this reuses the *exact* `preserve-3d`/`backfaceVisibility`/
+`flipRotateY` machinery Start Over's flip already established — bidirectional
+here (`isFlipped` state + `handleCardTap` toggle) rather than one-shot, and
+much simpler than Start Over's version since it never touches
+`activeCardIndex` at all (purely local to the card, no stack-advance
+involved, so none of the z-index/opacity overrides Start Over's flip
+needed). Duration is 0.45s, deliberately snappier than Start Over's 0.7s —
+this is a browsing interaction someone might trigger repeatedly, not a
+rare once-a-cycle reveal.
+
+**Content status**: level/product data is **placeholder** on all four
+tutorials (see the `Tutorial` type comment) — Soft Smokey Eye's values
+(easy/8 products) match the source Figma mockup's own example exactly
+(25min/Easy/8 products → "+5" remaining). Product thumbnails are flat
+placeholder swatches (`--color-product-placeholder`, `#e5e5e7` — Figma's
+own placeholder-gray for the same not-yet-real image slots, not an
+invented color), not real product photos — those don't exist yet.
+
+**Pending fix (not yet implemented) — the departing-card visual gap.** If
+you swipe away a card *while it's flipped* (showing details), it currently
+flies off still showing the detail/back face, then fades out that way —
+looks odd, since the user would expect to see "the card that's leaving,"
+i.e. its normal front face, not whatever it happened to be showing at the
+moment of swipe. The reset-to-front (`isFlipped` → `false`) currently only
+fires once `isFrontCard` becomes `false`, which happens *after* the whole
+fly-off (once `onAdvance()` runs) — too late to affect what's visible
+during the fly-off itself. Fix direction: force `flipRotateY` back to 0
+(and `isFlipped` to `false`) at the *start* of a committed drag/fly-off
+(inside `flyOff()` or right where it's called from `handleDragEnd`'s
+committed branch), not just once the card fully stops being front — so a
+flipped card visually un-flips to its front face as part of leaving,
+before or during the fly-off, rather than carrying its back face all the
+way through the fade.
 
 ## Ghost reveal system — locked in
 
 While a card is the peek (not yet front), its real content doesn't show
-immediately — it reveals over the *last* ~55% of its approach
-(`CONTENT_REVEAL_BAND` in `useCardMotion`), photos slightly before text.
-Before that, it shows `CardBehind`'s photo-texture ghost layer instead
-(a real image now, `card-ghost-texture.jpg` — was a flat yellow tint
-swatch in older versions of this doc, see Architecture above) —
-**the reveal *mechanism* is the final, locked-in choice**, independent of
-what `CardBehind` itself happens to render. Two alternatives to the
-mechanism were explored and explicitly rejected, and their code is gone,
-not just hidden:
-
-- A dark "mask" scrim over the still-visible real content (apple-design's
-  "dim to focus" pattern) — user's own idea initially, but decided
-  against it after comparing live.
-- No treatment at all (real content visible immediately).
-
-If either comes back as a request, it's a rebuild, not an un-hide — check
-git history around this commit for the removed `GhostStyle`
-type/`MASK_MAX_OPACITY`/mask-scrim JSX if reference code would help
-rather than starting from scratch.
+immediately — it reveals over the *last* ~35% of its approach
+(`CONTENT_REVEAL_BAND` in `useCardMotion` — narrowed from 0.55 to 0.35 this
+session per the user's own request to see more of the yellow/ghost color
+before the real card takes over). Before that, `CardBehind`'s ghost
+texture shows instead (now per-filter, see above) — **the reveal
+*mechanism* is the locked-in choice**, independent of what `CardBehind`
+renders. Two alternatives were explored and explicitly rejected, code
+gone, not just hidden: a dark "mask" scrim over still-visible real content,
+and no treatment at all. If either comes back as a request, it's a
+rebuild — check git history for the removed `GhostStyle` type if reference
+code would help.
 
 ## MotionTuning / MotionTuner (temporary — hidden, not removed)
 
-Every drag/spring/reveal number is a field on the `MotionTuning` type
-(`DEFAULT_MOTION_TUNING` for current values). There's still a
-`MotionTuner` component with live sliders over all of them, and
-`TutorialStack` still holds `tuning` state and threads it down — **but
-the panel itself is currently commented out**, not rendered, per the
-user's request to see the stack uninterrupted while iterating on the
-rest of the page. To bring it back: uncomment the `<MotionTuner
-tuning={tuning} onChange={setTuning} />` line in `TutorialStack` (search
-"Hidden for now" in `TutorialCard.tsx`). Once the user settles on truly
-final numbers (they may still want to adjust after seeing the rest of
-the page redesigned around the stack), hardcode them into
-`DEFAULT_MOTION_TUNING` and delete `MotionTuner` + the `tuning`
-prop-threading entirely — same end-of-life pattern as `SegmentTuner` and
-`StackDebugReadout` before it, both fully removed once their job was
-done. Don't mistake "hidden" for "done with."
-
-**Current values**:
+Unchanged from before: every drag/spring/reveal number lives on
+`MotionTuning`/`DEFAULT_MOTION_TUNING`, `MotionTuner` still has live
+sliders over all of them, still commented out in `TutorialStack` (search
+"Hidden for now"). Current values:
 
 ```
 commitDistance: CARD_WIDTH * 0.35 (~118px)
@@ -165,155 +265,100 @@ rotationRange:  20deg
 gripScale:      0.96      — settled on by feel
 ```
 
-## Bugs fixed this session (worth knowing before you "fix" them again)
+Plus (not yet in `MotionTuning`, only informally settled): Start Over's
+flip `{bounce: 0.15, duration: 0.7}`, tutorial-card flip
+`{bounce: 0.15, duration: 0.45}`, swipe-hint nudge `{bounce: 0.35, duration: 0.35}`
+out / `{bounce: 0.25, duration: 0.4}` back. `plans/003-fold-flip-values-into-motion-tuning.md`
+(see "Animation audit" below) already specs folding some of these in.
 
-Framer Motion has a few sharp edges that produced real, confusing bugs.
-If something in this area looks broken again, check these first:
+## Bugs fixed (worth knowing before you "fix" them again)
+
+Framer Motion sharp edges that produced real, confusing bugs. Still fully
+current — nothing here has changed:
 
 1. **Never swap *which* MotionValue is bound to a style key across
-   renders.** The wraparound bug (a stray blank tilted card appearing)
-   traced back to `style.transform` being conditionally bound to one of
-   two different MotionValue objects (`dragTransform` vs. `restTransform`)
-   depending on `isActive`. Whichever wasn't currently bound could go
-   stale — a card dragged once early in the session could render at its
-   old flown-off position forever once it became the "rest" case again.
-   Fix: always bind *one* continuous, composed transform; make the
-   inactive contributions (drag offset when not dragging, rest-rotation
-   when dragging) resolve to 0/no-op instead of switching bindings.
-
+   renders.** Always bind one continuous, composed transform; make
+   inactive contributions resolve to 0/no-op instead of switching bindings.
 2. **A bare `.set()` doesn't stop an in-flight `animate()` on the same
-   value.** The fly-off spring (`duration` + `bounce`) has a real settle
-   time longer than its nominal duration. Calling `dragX.set(0)` while
-   that spring is still ticking wins for exactly one frame before the
-   spring's own next tick overwrites it right back toward its target.
-   Fix: call `animate(dragX, 0, { duration: 0 })` instead — a new
-   `animate()` call interrupts/replaces the prior one first, `.set()`
-   does not.
-
-3. **A custom composed `transform` string needs its own `onDrag` handler.**
-   Framer's drag gesture auto-syncs motion values bound via the *reserved*
-   `style.x`/`style.y` keys. A custom `useMotionTemplate`-composed
-   `transform` string doesn't use those keys, so nothing auto-updates your
-   own `dragX`/`dragY` during the live gesture — only at
-   `onDragEnd`, when you first touch them yourself. Symptom: a visible
-   "flick"/pop right at release (two different systems handing off:
-   Framer's own untracked internal drag positioning, then yours). Fix:
-   wire `onDrag` to manually `dragX.set(info.offset.x)` etc.
-
-4. **`useTransform`'s combiner doesn't reliably react to a plain closed-
-   over variable — only to its *listed* MotionValue inputs.** Branching
-   inside a `useTransform(...)` combiner on a prop like `ghostStyle`
-   (`useTransform([opacity, contentOpacity], ([s,c]) => ghostStyle ===
-   'mask' ? ... : 0)`) can go stale: toggling `ghostStyle` alone doesn't
-   necessarily re-invoke the combiner, only a change to `opacity`/
-   `contentOpacity` does. Fix: compute all variants unconditionally as
-   separate motion values, then *pick* between them with a plain JS
-   ternary at the top level (`ghostStyle === 'mask' ? maskBase : zero`) —
-   an ordinary React re-render (which a prop change always causes)
-   decides the binding, not the derivation itself.
-
+   value.** Use `animate(x, target, { duration: 0 })` to interrupt, not
+   `.set()`.
+3. **A custom composed `transform` string needs its own `onDrag` handler**
+   — Framer's drag gesture only auto-syncs motion values bound via the
+   *reserved* `style.x`/`style.y` keys.
+4. **`useTransform`'s combiner doesn't reliably react to a plain closed-over
+   variable — only to its *listed* MotionValue inputs.** Compute variants
+   unconditionally, pick with a plain JS ternary at the top level instead.
 5. **Circular/looping stacks need wrapped distance math, not plain
-   subtraction.** `circularLocal()` in `useCardMotion` — see its own
-   comment for the exact reasoning (a card just passed after a wrap has a
-   *huge* plain distance that reads as "still upcoming" instead of "just
-   departed" without wrapping into `(-total/2, total/2]`).
-
-6. **A "flick" can survive every per-card transform fix if the *rest of
-   the stack* doesn't track the live gesture at all.** After fixing 1-3
-   above, the user still saw a flick — root cause this time: `activeIndex`
-   (which every non-dragged card's pose is computed from) sat completely
-   frozen for the whole drag, only starting to animate *after* release.
-   So the peek had to accelerate from a standing start at the exact
-   instant the dragged card was already flying at real velocity — two
-   very different motion states meeting at one frame. Fixed with a live
-   `dragProgress` value (0..1, distance dragged ÷ commitDistance) added to
-   `activeIndex` for every card *except* the one currently being dragged
-   (folding it into that card's own rest-pose would be a feedback loop —
-   its own drag would make it also react to its own drag). On commit, the
-   settled `activeIndex` jumps to match wherever the live preview had
-   already gotten to (same tick, invisible) before springing the
-   remaining — usually much shorter — distance, instead of restarting the
-   whole journey from the old integer. This is also the apple-design
-   principle directly: "always animate from the presentation value, never
-   the target/logical value."
-
+   subtraction** — `circularLocal()`.
+6. **A "flick" can survive every per-card transform fix if the *rest of the
+   stack* doesn't track the live gesture at all** — fixed with a live
+   `dragProgress` value folded into every *other* card's own pose.
 7. **A live-tracking peek can numerically tie the dragged card's z-index**
-   — direct consequence of #6: as `dragProgress` approaches 1, the peek's
-   own z-index formula approaches the same value the front card's has,
-   and a CSS tie resolves by DOM order, which could put the peek
-   *in front of* the card the user is physically holding. Fixed by giving
-   the actively-interactive card an unambiguous fixed ceiling (`1000`)
-   instead of computing its z-index the same way as everyone else.
+   — the actively-interactive card gets an unambiguous fixed ceiling
+   (`1000`) instead of the shared formula.
 
-## Known deferred issue (not part of this session's fixes)
+(Full original reasoning for each preserved in git history / earlier
+versions of this doc if you need the blow-by-blow, not just the summary.)
 
-**Ghost-card clipping on narrow phones** — a separate, older issue, on
-hold per the user's explicit call, tracked in Claude's own memory file
-(`tutorial-stack-ghost-card-clipping.md` in this project's memory dir).
-Root cause (numbers below are pre-`628b8b7` — `CARD_HEIGHT` moved
-346 → 359 since, see "Immediate next task" above; the bounding-box math
-hasn't been re-verified against the new height): a rotated 338×346 card
-has a ~377.6px bounding box, wider than the ~351px of room on a 375px
-phone (`375 - 2×12px` padding), so a tilted peek card's corners clip on
-real narrow phones. Surface this again
-once the stack/motion work is otherwise done.
+## Known deferred issues
+
+**Ghost-card clipping on narrow phones** — old, on hold per the user's
+explicit call, tracked in Claude's own memory file
+(`tutorial-stack-ghost-card-clipping.md`). Numbers not re-verified against
+the current `CARD_HEIGHT` (359). Surface again once the stack/motion work
+is otherwise done.
+
+**Animation audit** (`plans/` directory, from an `improve-animations` pass
+this session) — 5 findings, 2 already executed and folded into "Bugs
+fixed"-adjacent work above (fly-off fade easing, a since-superseded
+restart-flip lock window). **3 still open**, full self-contained plans
+already written: `003` (fold flip/hint feel-values into `MotionTuning`),
+`004` (Start Over's drag resistance is flat linear damping, not real
+rising rubber-band friction), `005` (a transform-composition consistency
+nit, low-confidence/low-priority). See `plans/README.md` for the summary
+table and execution-order notes (004 before 003 if both are done).
 
 ## Testing notes — important limitation
 
-**The browser automation tool in this environment cannot reliably
-trigger Framer Motion's drag gesture.** Confirmed multiple times: neither
-the tool's own `left_click_drag` nor a hand-built `pointerdown` →
-`pointermove` × N → `pointerup` sequence dispatched via
-`javascript_tool` reaches Framer's gesture recognizer (zero `onDrag`/
-`onDragEnd` firing despite correct on-element coordinates) — plain clicks
-work fine against the same page, so it's specifically a drag/gesture gap,
-not a general input problem. **Any change to drag/tilt/fly-off physics
-needs the user to test on their own phone or a real mouse drag** — verify
-what you can via computed styles / DOM inspection (`getComputedStyle`,
-reading motion-value snapshots) and static rendering, but don't claim a
-gesture "works" without the user confirming the actual feel.
+**The browser automation tool in this environment cannot reliably trigger
+Framer Motion's drag gesture.** Confirmed multiple times across sessions —
+plain clicks work fine (and were used to verify the Start Over flip,
+tutorial detail flip, ghost recolor, and bookmark toggle live, this
+session), but drag/swipe cannot be simulated. **Any change to drag/tilt/
+fly-off physics needs the user to test on their own phone or a real mouse
+drag** — verify what you can via computed styles/DOM inspection and static
+rendering, but don't claim a gesture "works" without the user confirming
+the actual feel. Separately (also confirmed this session): rapid automated
+DOM polling right after a state change can read stale paint, since Framer
+flushes motion-value changes on the browser's animation-frame loop and
+this environment throttles rAF for background/automated tabs — if a
+programmatic `animate()`/`.set()` seems to not reach the DOM under
+automated polling, suspect this before assuming the code is broken; a
+`.on('change', ...)` subscription or a deliberately shortened delay for
+testing purposes can help confirm the underlying value really is moving.
 
-LAN dev server: `vite.config.ts` already has `host: true`. Typical flow
-this session: `npm run dev` (or the `makeup-tutorial-dev` preview_start
-config), find the Mac's LAN IP (`ipconfig getifaddr en0`), give the user
-`http://<ip>:5173` to open on their phone (same WiFi). If it doesn't load,
-that's most likely the Mac's firewall — the user has to allow it
-themselves, it's not something fixable from here.
-
-## Done since this doc was last "not yet touched" — see `628b8b7`
-
-Everything this section used to list as untouched is now done: the
-filter chips (real photo texture + per-type tint + press-flash, moved
-from a bottom sheet to directly under the header), the heart icon (now a
-real bookmark save/unsaved toggle), and the header text (32px Cactus
-Classical Serif + a new info/user icon row). Full "why" for each is in
-the commit message, not repeated here.
-
-**Still open, not part of this doc's original scope**: general mobile
-viewport polish beyond the one deferred clipping issue below — worth a
-fresh look once the swipe/motion feel is finalized again. A horizontal
-scroll/bounce bug *was* found and fixed properly this round (two real
-causes: iOS's page-level rubber-band, and a genuine scrollable-surface
-gap the fly-off animation could trigger in `HomeScreen`'s own scroll
-container) — if anything like it resurfaces, check `overflow-x` is still
-set everywhere `overflow-y-auto` is, and that `html`/`body` are still
-locked in `index.css`, before re-diagnosing from scratch.
+LAN dev server: `vite.config.ts` already has `host: true`. Typical flow:
+`npm run dev` (or the `makeup-tutorial-dev` preview_start config), find the
+Mac's LAN IP (`ipconfig getifaddr en0`), give the user `http://<ip>:5173`
+to open on their phone (same WiFi). If it doesn't load, that's most likely
+the Mac's firewall — the user has to allow it themselves.
 
 ## Quick file map
 
 ```
 docs/home-stack-handoff.md   This file
-docs/handoff.md              Older doc — step-flow/illustration work, now stale on "no home page"
+docs/handoff.md              Older doc — step-flow/illustration work, stale on "no home page"
 docs/figma-v2-redesign.md    Step-flow Figma reference (unrelated to this feature)
+plans/                       improve-animations audit — plans/README.md for the summary + execution order
 
 src/components/
-  HomeScreen.tsx              Header + filter chips (LookSelector) + <TutorialStack>, top to bottom
+  HomeScreen.tsx              Header + filter chips (LookSelector, owns `selectedType`/LookType) + <TutorialStack>
   TutorialCard.tsx            Everything described above — the whole stack feature lives here
   TutorialFlow.tsx            The step-by-step tutorial screen (only reachable via Soft Smokey Eye)
 
 src/assets/
-  looks/                      Per-tutorial photo pairs (all 4 tutorials now) + card-ghost-texture.jpg
+  looks/                      Per-tutorial photo pairs + card-ghost-texture.jpg (day) + -night.png/-glam.png
   filter-chips/                Shared woven texture, tinted per chip via mix-blend-mode
 
-src/styles/tokens.css         --radius-tutorial-card, --shadow-tutorial-card, --duration-*/--ease-out-quart, etc. — search "tutorial-card". --color-card-behind-tint is deprecated (CardBehind uses a real photo now, see Architecture above).
+src/styles/tokens.css         --radius-tutorial-card, --shadow-tutorial-card, --duration-*/--ease-out-quart, --color-timer-badge-bg, --color-product-placeholder (new), etc. — search "tutorial-card". --color-card-behind-tint is deprecated.
 ```
