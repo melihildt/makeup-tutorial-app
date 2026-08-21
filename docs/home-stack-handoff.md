@@ -8,28 +8,25 @@ home page" point — a home page exists now).
 
 **Git state — read this before assuming anything else in this doc is
 current.** Branch `feature/home-tutorial-stack` (off `main`, untouched).
-Latest **commit**: `150ca7b` — "Fix fly-off easing, redesign Start Over as
-a two-face flip, add swipe hint, recolor ghost card by filter." **On top of
-that, uncommitted as of this doc's last update**: the tutorial-card
-flip-to-details feature (level/duration/products/CTA — see its own section
-below) — `src/components/TutorialCard.tsx` and `src/styles/tokens.css` both
-show as modified in `git status`. Run `git status`/`git diff --stat` on a
-fresh session start; if there's more beyond that uncommitted diff, it's
-from later than this doc — read the diff before trusting this doc's
-"current state" claims over the actual code.
+Latest **commit**: `6248f65` — "Add tutorial-card flip-to-details, refresh
+handoff docs." **On top of that, uncommitted as of this doc's last
+update**: this doc itself, plus `TutorialCard.tsx` changes from the same
+session — the ghost-click fix, the `cardFrontOpacity`/`cardBackOpacity`
+symmetry fix, the WebKit flip-flicker fix, the `CardBack` border, and real
+product photos on Soft Smokey Eye's `CardBack` (see "Bugs fixed" #8-#10
+and "Known deferred issues" below for the full story). Run
+`git status`/`git diff --stat` on a fresh session start; if there's more
+beyond that uncommitted diff, it's from later than this doc — read the
+diff before trusting this doc's "current state" claims over the actual
+code.
 
-**Immediate next tasks, per the user directly** — two concrete, scoped
-fixes (see their own sections below for full detail):
-1. Swipe-hint nudge fires too eagerly — needs to treat *any* interaction
-   with the stack (not just a drag) as "the user found it." See "Swipe-hint
-   nudge" below.
-2. A card swiped away while flipped fades out still showing its detail
-   (back) face, which looks odd — should fade out showing the front face
-   instead. See "Tutorial detail flip" below.
-
-Neither is implemented yet — both were raised in conversation, not yet
-built. Everything else in "What's shipped" below **is** implemented (the
-last item pending only a commit).
+**Immediate next task, per the user directly** — see "Known deferred
+issues" below (the `CardBack`-fly-off-reads-abrupt entry) for the full
+story: several real fixes landed chasing it, none confirmed to close it,
+and the user asked to document rather than keep iterating blind. Pick up
+there, don't re-derive from scratch. The other item this doc used to list
+here (the swipe-hint nudge not counting tap-driven engagement) **is now
+fixed** — see "Bugs fixed" and "Swipe-hint nudge" below.
 
 The Figma file used throughout is `Tech-Experimentation`, file key
 `6Mr7K0RONTS8SltZRJtqYj`. Nodes pulled and worth reusing rather than
@@ -217,21 +214,21 @@ placeholder swatches (`--color-product-placeholder`, `#e5e5e7` — Figma's
 own placeholder-gray for the same not-yet-real image slots, not an
 invented color), not real product photos — those don't exist yet.
 
-**Pending fix (not yet implemented) — the departing-card visual gap.** If
-you swipe away a card *while it's flipped* (showing details), it currently
-flies off still showing the detail/back face, then fades out that way —
-looks odd, since the user would expect to see "the card that's leaving,"
-i.e. its normal front face, not whatever it happened to be showing at the
-moment of swipe. The reset-to-front (`isFlipped` → `false`) currently only
-fires once `isFrontCard` becomes `false`, which happens *after* the whole
-fly-off (once `onAdvance()` runs) — too late to affect what's visible
-during the fly-off itself. Fix direction: force `flipRotateY` back to 0
-(and `isFlipped` to `false`) at the *start* of a committed drag/fly-off
-(inside `flyOff()` or right where it's called from `handleDragEnd`'s
-committed branch), not just once the card fully stops being front — so a
-flipped card visually un-flips to its front face as part of leaving,
-before or during the fly-off, rather than carrying its back face all the
-way through the fade.
+**Resolved, then reversed — the departing-card visual gap.** If you swipe
+away a card *while it's flipped* (showing details), the original ask was
+for it to un-flip to front as it leaves rather than carrying its detail
+face through the fade. That was built (an instant `flipRotateY`/`isFlipped`
+reset at the top of `flyOff()`), but on real-phone testing the user called
+it wrong the other way — seeing the card snap to front on release read as
+the bug, not the fix. **Reverted**: `flyOff()` now deliberately leaves
+`isFlipped`/`flipRotateY` alone, so a flipped card keeps showing its detail
+face for the whole fly-off, only resetting to front once it's safely
+off-screen (the existing `isFrontCard`-driven effect near `isFlipped`'s
+declaration, which fires after `onAdvance()`). If this comes back as a
+request, it's the front-face-during-flyoff version described above,
+already implemented once — check git history (the commit right after "Add
+tutorial-card flip-to-details, refresh handoff docs") for the diff to
+reapply rather than re-deriving it.
 
 ## Ghost reveal system — locked in
 
@@ -296,11 +293,202 @@ current — nothing here has changed:
 7. **A live-tracking peek can numerically tie the dragged card's z-index**
    — the actively-interactive card gets an unambiguous fixed ceiling
    (`1000`) instead of the shared formula.
+8. **Not a Framer bug — a real WebKit one, confirmed fixed on a real
+   phone, not reproducible in this environment's browser tool at all.**
+   Near the end of a `rotateY` flip (either direction), CardFront/CardBack
+   (this file's names for the flip's front/back layers) would briefly show
+   the *wrong, mirrored* face for a frame — Safari failing to honor
+   `backface-visibility: hidden` reliably *while* the rotation is actively
+   animating, only once it settles, so for a frame there's nothing telling
+   the browser not to render that face's own mirrored "back" (no distinct
+   back texture is defined on the face itself — that's what the sibling
+   layer is for). `WebkitTransformStyle`/`willChange`/`WebkitBackfaceVisibility`
+   (vendor-prefixed duplicates + forced GPU layer) were a first pass at
+   this and weren't the fix that actually closed it. **What worked:**
+   stop relying on `backface-visibility` timing at all — cross-fade real
+   `opacity` in sync with `flipRotateY` itself (`cardFrontFlipOpacity`/
+   `cardBackFlipOpacity`, a 30° window straddling the 90° crossover), so
+   both faces are already near-invisible right at the moment any culling
+   glitch could show, independent of whatever Safari's doing underneath.
+   The vendor-prefixed properties are still in place as defense in depth,
+   just no longer load-bearing.
+9. **A committed (or cancelled) drag can spawn a real, native `click` on
+   whatever nested element sits under the finger at release — not a Framer
+   bug either, but a real DOM one.** Framer's `drag` only suppresses *its
+   own* internal tap gesture on the exact element it's bound to; it does
+   nothing about the browser's ordinary click synthesis on a *different*
+   nested element (here, CardFront's/CardBack's own whole-card `onClick`,
+   see `handleCardTap`/`handleStartOverTap`) — and since `drag` already
+   sets `touch-action: none`, the browser never engages the scroll/pan
+   heuristics that would normally suppress a trailing synthetic click on
+   mobile. Symptom this actually caused: swiping away a flipped card, the
+   ghost click's `handleCardTap` call un-flipped it *during* the fly-off,
+   at the same time flyOff's own translate/fade was running — looked like
+   "the fade shows the front face, not the back one," a totally different
+   bug from #8 above despite a superficially similar description. Fixed
+   with `justDraggedRef` (own doc comment at its declaration): set the
+   instant Framer recognizes a real drag (`handleDragStart`, which only
+   fires past Framer's own movement threshold — never for a genuine tap),
+   checked and swallowed once by `handleCardTap`/`handleStartOverTap`,
+   reset via `setTimeout(0)` in `handleDragEnd` so the reset lands *after*
+   the synchronous ghost click has already had its chance to fire and be
+   caught.
+10. **CardFront's departure fade had a backstop CardBack didn't.** Fixed
+    #8's crossfade (`cardFrontOpacity`/what's now `cardBackOpacity`) composed
+    CardFront with `contentFinalOpacity` (the ordinary per-card, distance-
+    from-front fade — the same one that governs a normal, non-flipped
+    card's whole ~0.7s departure) but composed CardBack with *only* the
+    flip-crossfade value, no `contentFinalOpacity`. Consequence: right when
+    `flyOff`'s own quick fade (~0.3s) finishes and several motion values get
+    reset to their neutral "at rest" state for reuse next cycle (see
+    `flightFade.then()` in `flyOff`) — a deliberate, pre-existing pattern,
+    not itself a bug — CardFront stayed hidden anyway because
+    `contentFinalOpacity` was independently, still fading it out over the
+    full advance; CardBack had nothing backing it up, so it could pop back
+    toward full opacity right at that reset instant before the stack
+    caught up. Fix: compose `cardBackOpacity` the same way as
+    `cardFrontOpacity` — `contentFinalOpacity * cardBackFlipOpacity`, not
+    `cardBackFlipOpacity` alone. **A real, worthwhile fix on its own merits
+    — but not what was actually causing the user's reported symptom** (see
+    #11 immediately below); don't revert it chasing #11's own cause.
+11. **The "CardBack's fly-off just disappears, CardFront scales-and-fades"
+    complaint (raised even after #10 above) — root cause was contrast, not
+    motion, confirmed with real on-device data, not guessed.** Two rounds
+    of guessing (a ghost-click theory, then re-confirming #10's math) both
+    failed to fix it, so instead of a third guess, temporary `console.log`
+    instrumentation went into `handleDragStart`/`handleCardTap`/`flyOff`/
+    the `flightFade.then()` callback, plus live `.on('change', ...)`
+    subscriptions on `cardBackOpacity`/`flightOpacity`/`flightScale` — the
+    user connected their phone via Safari's remote Web Inspector (Mac:
+    Develop menu → the connected iPhone → the page; needs Settings →
+    Safari → Advanced → Web Inspector on, USB connection was needed to get
+    the phone to actually show up in the menu) and sent back real console
+    output. That data **fully exonerated the motion system**: `isFlipped`/
+    `flipRotateY` never move during a real fly-off (no ghost click, ever),
+    and `flightOpacity`/`flightScale` animate perfectly smoothly (logged
+    dozens of intermediate values) over the full ~300ms window, identical
+    in form to what the front face gets — there is no code-level asymmetry
+    left between the two paths, full stop. The actual cause: `CardBack`'s
+    `--color-surface` fill is `#ffffff`, fading against this app's own
+    page gradient (`--gradient-bg-screen`, bottoms out at `#fbf7f5` —
+    visually near-identical to white) and a barely-there 3%-opacity shadow
+    (`--shadow-tutorial-card`) — so it crosses below *perceptible* well
+    before its opacity numerically reaches 0, while the front face's photo
+    stays trackable through nearly the whole fade. Same animation, very
+    different perceived duration — a content/contrast problem, not a
+    timing bug. Fix: a low-alpha dark border on `TutorialDetailCard`'s
+    root (`border-[0.5px] border-solid`, `rgba(44, 41, 38, 0.1)` — reused
+    from `StartTutorialButton`'s own existing border rather than a new
+    value), since a dark element blended over a near-white background
+    stays visibly darker as it fades, unlike a near-white fill blending
+    into a near-white background regardless of alpha. **Not verified on a
+    real phone as of this writing** — the border is confirmed applied
+    (computed style checked), but whether it actually reads as long enough
+    now needs a real swipe to confirm, same limitation as every other fix
+    in this doc.
 
 (Full original reasoning for each preserved in git history / earlier
 versions of this doc if you need the blow-by-blow, not just the summary.)
 
 ## Known deferred issues
+
+**CardBack's fly-off reads as more abrupt than CardFront's — unresolved
+after several real fixes, paused per the user's own call to document
+instead of keep iterating.** ("CardFront"/"CardBack" are this doc's own
+names for `TutorialLookCard`/`TutorialDetailCard` as they render inside
+`TutorialStackCard` — the flip's two faces.) User's report, consistent
+across every retest: swiping away a non-flipped card visibly scales back
+and fades; swiping away a flipped card (showing its detail face) just
+disappears, no visible fade/shrink read.
+
+Three separate, real bugs were found and fixed along the way chasing this
+— all worth keeping, none of them turned out to be *the* cause:
+
+1. A ghost native `click` (not a Framer gesture) that a completed drag
+   could spawn on `CardBack`'s own whole-card tappable root, capable of
+   un-flipping a departing card mid-flight. Fixed with `justDraggedRef`
+   (see "Bugs fixed" #9 above). **Ruled out as this issue's cause**,
+   confirmed directly: real on-device console logs (Safari's remote Web
+   Inspector, connected over USB) across multiple actual swipes show
+   `isFlipped`/`flipRotateY` staying rock-solid (`true`/`180`) all the way
+   from `flyOff` starting to `flightFade` resolving — the ghost click
+   never fires during a real fly-off.
+2. `cardBackOpacity` was missing the `contentFinalOpacity` factor
+   `cardFrontOpacity` already had (see "Bugs fixed" #10). Fixed to mirror
+   `cardFrontOpacity`'s composition exactly. **Also ruled out as this
+   issue's cause** — the user retested after this fix and still saw the
+   same difference.
+3. Real on-device logging additionally confirmed `flightOpacity` fades
+   smoothly 1→0 and `flightScale` shrinks smoothly 1→0.55 over the full
+   ~300ms window, and `dragX`/`dragY` genuinely translate toward the
+   fly-off target — all identical in form and timing to what the shared
+   code path already does for `CardFront`. There is no remaining
+   *numeric* asymmetry between the two faces' departure — confirmed with
+   real data, not inferred from reading the code.
+
+**What actually explains the visible difference** (from a real screen
+recording, examined via `ffmpeg`-extracted frames at 30fps, comparing two
+`CardFront` swipes against two `CardBack` swipes): `CardFront` visibly
+ghosts/turns translucent over several frames before it's gone — a
+graceful dissolve, matching the numbers. `CardBack` shrinks and tilts over
+a comparable number of frames, but stays fully opaque and legible (badge,
+thumbnails, CTA all readable) the *entire* time, then vanishes in exactly
+one frame — no dissolve phase visible at all, despite `flightOpacity`
+animating identically underneath. Working theory: a flat, low-contrast
+white fill (`CardBack`'s `--color-surface` background, close in tone to
+the page's own gradient) doesn't give the eye the "internal detail
+washing out" cue a colorful photo provides as it fades via CSS opacity —
+so the fade is numerically real but not perceptually visible, and the
+*shrink*, which stops at scale 0.55 (still a decent, legible size), is
+all that's left to notice — cutting to nothing from there reads as
+abrupt.
+
+Two changes were made on that theory, both worth keeping, **neither
+confirmed to close the gap** per the user's own retest:
+
+- A low-alpha dark border on `TutorialDetailCard`'s root
+  (`rgba(44, 41, 38, 0.1)`, reusing `StartTutorialButton`'s own existing
+  border value) — a dark element fading against a light background stays
+  perceptible further into a fade than a near-white fill blending into a
+  near-white background does, regardless of alpha.
+- Real product photos (3, reused from the step-by-step flow's own
+  photography in `src/data/stepContent.ts`) on Soft Smokey Eye's
+  `CardBack`, replacing its flat gray placeholder swatches — gives the
+  card actual color/detail to fade with, on top of being a real feature
+  ask on its own merits. Scoped to Soft Smokey Eye only (`Tutorial.
+  productImages`, optional) since the other three tutorials don't have
+  real content behind them yet — see `level`'s own comment for the same
+  scope call already established.
+
+**Proposed but not yet tried**: shrink `flightScale`'s target further
+(currently `0.55`) so there's no large, legible shape left by the time the
+mid-flight reset happens — this would make the final "cut" smaller and
+likely less noticeable regardless of whether the opacity fade itself ever
+becomes perceptually visible. Untried because the user paused here to
+document rather than keep iterating blind.
+
+**Where this actually stands**: genuinely at an impasse, worth being
+honest about rather than declaring solved. Every plausible *code-level*
+cause has been checked with real on-device evidence (console logs from an
+actual phone, plus a screen recording examined frame-by-frame) and ruled
+out or fixed — the shared motion values are confirmed correct and
+identical between the two paths. The user still perceives a difference
+after all of it. Claude cannot independently confirm whether a difference
+still remains: this environment cannot simulate a real drag/swipe gesture
+at all (see "Testing notes" below), and comparing extracted video frames
+is a much coarser instrument than a person actually feeling the
+interaction live on their own device. If this resurfaces:
+(a) try the untried `flightScale` fix above first, it's low-risk and
+independently justified regardless of whether it's the real cause;
+(b) get a side-by-side video of both swipes performed with *matched*
+gesture speed/distance — every comparison so far has been between
+different individual swipes, never a true apples-to-apples pair, so some
+of the perceived difference could still be ordinary swipe-to-swipe
+variance rather than a `CardFront`/`CardBack` difference at all;
+(c) consider that this might be a felt/perceptual quality genuinely
+outside what static frames or motion-value logs can surface, and ask the
+user to pin down one exact frame or moment rather than adding more
+instrumentation, which has now been tried three times without closing it.
 
 **Ghost-card clipping on narrow phones** — old, on hold per the user's
 explicit call, tracked in Claude's own memory file

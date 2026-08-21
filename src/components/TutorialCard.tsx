@@ -20,6 +20,14 @@ import mattesImage2 from '../assets/looks/everyday-mattes-2.jpg'
 import cardGhostTexture from '../assets/looks/card-ghost-texture.jpg'
 import cardGhostTextureNight from '../assets/looks/card-ghost-texture-night.png'
 import cardGhostTextureGlam from '../assets/looks/card-ghost-texture-glam.png'
+// Real product photography, already shot/cropped for the step-by-step flow
+// (src/data/stepContent.ts) — reused here rather than re-sourced, for
+// CardBack's own product preview. Three of the seven, picked for visual
+// variety (a palette, a red-tubed mascara, a gold compact) rather than
+// story order — this row is a preview, not a step sequence.
+import previewEyeshadowImg from '../assets/product-images/Product_Eyeshadow.png'
+import previewMascaraImg from '../assets/product-images/Product_Mascara.png'
+import previewHighlightImg from '../assets/product-images/Product_Highlight.png'
 import type { LookType } from './HomeScreen'
 
 /**
@@ -66,6 +74,17 @@ export type Tutorial = {
    *  products → "+5"), the other three are invented for visual variety
    *  across the three levels while placeholder, not real counts yet. */
   productsUsedCount: number
+  /** Real photos for the flipped card's product-preview row (ProductsPreview)
+   *  — undefined falls back to the flat placeholder swatch there, same
+   *  fallback pattern ProductCard already uses for a product with no
+   *  `image`. Only Soft Smokey Eye has any (reused from the step-by-step
+   *  flow's own product photography, src/data/stepContent.ts) — the other
+   *  three don't have real tutorial content behind them yet (see `level`'s
+   *  own comment), so a real photo here would be a specific claim about
+   *  products this app doesn't actually have data for. Exactly
+   *  PRODUCTS_PREVIEW_COUNT (3) when present — that's the array this row
+   *  renders, not a separate cropped-down list. */
+  productImages?: [string, string, string]
 }
 
 export const TUTORIALS: Tutorial[] = [
@@ -79,6 +98,7 @@ export const TUTORIALS: Tutorial[] = [
     placeholderColors: null,
     level: 'easy',
     productsUsedCount: 8,
+    productImages: [previewEyeshadowImg, previewMascaraImg, previewHighlightImg],
   },
   {
     id: 'mia-odyssey',
@@ -484,11 +504,13 @@ const PRODUCTS_PREVIEW_COUNT = 3
 /** The flipped card's product-photo row + caption, node 673:3751
  *  ("Images"). Three overlapping thumbnails (∓7° tilt on the outer two,
  *  matching ImagePair's own tilt-the-outer-two-oppositely shape above) —
- *  placeholder swatches for now (--color-product-placeholder — Figma's
- *  own placeholder-gray, see the token's own comment, tokens.css), not
- *  invented photos: real product photography doesn't exist yet, and a
- *  fabricated "photo" would be actively misleading rather than an obvious
- *  stand-in the way a flat swatch is.
+ *  real photos when `tutorial.productImages` has them (currently only Soft
+ *  Smokey Eye, reused from the step-by-step flow's own product photography
+ *  — see the type's own comment), a flat placeholder swatch
+ *  (--color-product-placeholder — Figma's own placeholder-gray, see the
+ *  token's own comment, tokens.css) otherwise: still not an *invented*
+ *  photo for a tutorial with no real content behind it — same reasoning
+ *  ProductCard already uses for a product with no `image`.
  *
  *  Not a pixel-for-pixel reproduction of the source's compound
  *  absolute+translate positioning for the row-then-caption stack — a
@@ -505,18 +527,23 @@ const PRODUCTS_PREVIEW_COUNT = 3
 function ProductsPreview({ tutorial }: { tutorial: Tutorial }) {
   const shadow = '0px 2px 8px 0px rgba(67, 48, 35, 0.1)'
   const remaining = Math.max(0, tutorial.productsUsedCount - PRODUCTS_PREVIEW_COUNT)
-  const thumbnail = (rotateDeg: number) => (
+  const thumbnail = (rotateDeg: number, image?: string) => (
     <div
-      className="h-[108px] w-[96px] shrink-0 rounded-[18px] border-[3px] border-solid border-white"
+      className="h-[108px] w-[96px] shrink-0 overflow-hidden rounded-[18px] border-[3px] border-solid border-white"
       style={{ background: 'var(--color-product-placeholder)', boxShadow: shadow, transform: rotateDeg ? `rotate(${rotateDeg}deg)` : undefined }}
-    />
+    >
+      {image && <img src={image} alt="" className="size-full object-cover" />}
+    </div>
   )
+  const [imageA, imageB, imageC] = tutorial.productImages ?? []
   return (
     <div className="flex w-full flex-col items-center gap-2 px-6 pt-6">
       <div className="flex items-center justify-center">
-        <div className="mr-[-16px] flex h-[119px] w-[108px] shrink-0 items-center justify-center">{thumbnail(-7)}</div>
-        <div className="mr-[-16px]">{thumbnail(0)}</div>
-        <div className="flex h-[119px] w-[108px] shrink-0 items-center justify-center">{thumbnail(7)}</div>
+        <div className="mr-[-16px] flex h-[119px] w-[108px] shrink-0 items-center justify-center">
+          {thumbnail(-7, imageA)}
+        </div>
+        <div className="mr-[-16px]">{thumbnail(0, imageB)}</div>
+        <div className="flex h-[119px] w-[108px] shrink-0 items-center justify-center">{thumbnail(7, imageC)}</div>
       </div>
       <p
         className="text-center text-[12px] opacity-70"
@@ -574,7 +601,23 @@ function StartTutorialButton({ onStart, disabled }: { onStart?: () => void; disa
  *  a card is already fully front and settled (see TutorialStackCard's
  *  isFlipped — flipping is only ever wired up once isInteractive), at
  *  which point the ordinary ghost-reveal opacity is already 1 regardless,
- *  so there's no crossfade band left to narrow. */
+ *  so there's no crossfade band left to narrow.
+ *
+ *  `border` (new) — pure diagnostic finding, not a guess: real on-device
+ *  logging (Safari Web Inspector, a whole session's worth) proved
+ *  flightOpacity/flightScale/cardBackOpacity all animate identically and
+ *  correctly for this face during a fly-off, same as the front face's —
+ *  no code asymmetry left to find. The user's "it just disappears" was a
+ *  *contrast* problem, not a timing one: --color-surface (#ffffff) fading
+ *  against this app's own page gradient (bottoms out at #fbf7f5, near-
+ *  identical to white) crosses below perceptible well before its opacity
+ *  numerically reaches 0 — while the front face's photo stays trackable
+ *  through nearly the whole fade. A low-alpha *dark* border keeps enough
+ *  contrast to stay visible much further into the fade than a near-white
+ *  fill can (blending dark-over-light shows clearly at low alpha; near-
+ *  white-over-near-white doesn't, regardless of alpha) — same rgba this
+ *  card's own CTA button already uses (StartTutorialButton's borderColor),
+ *  reused here rather than inventing a second value. */
 function TutorialDetailCard({
   tutorial,
   onFlipBack,
@@ -602,11 +645,12 @@ function TutorialDetailCard({
               }
             }
       }
-      className={`relative flex h-full w-[338px] flex-col items-center gap-1 overflow-hidden pb-6 text-left active:scale-[0.97] ${disabled ? '' : 'cursor-pointer'}`}
+      className={`relative flex h-full w-[338px] flex-col items-center gap-1 overflow-hidden border-[0.5px] border-solid pb-6 text-left active:scale-[0.97] ${disabled ? '' : 'cursor-pointer'}`}
       style={{
         background: 'var(--color-surface)',
         borderRadius: 'var(--radius-tutorial-card)',
         boxShadow: 'var(--shadow-tutorial-card)',
+        borderColor: 'rgba(44, 41, 38, 0.1)',
         transition: 'transform var(--duration-instant) var(--ease-out-quart)',
       }}
     >
@@ -1070,13 +1114,20 @@ function TutorialStackCard({
    *  — see the hint effect's own comment for why Start Over opts out)
    *  rather than TutorialStack singling one out. */
   hintTrigger: number
-  /** Fires on this card's own handleDragStart — TutorialStack's signal that
-   *  the current front card has been touched, used to hold off the next
-   *  repeat of the hint (see its own comment) until this card stops being
-   *  front. Not scoped to the front card specifically in the type (every
-   *  card technically has it available) because only the interactive one
-   *  can ever actually call it — `isInteractive` already gates whether
-   *  `handleDragStart` runs at all. */
+  /** Fires on any tap-driven engagement with this card — handleDragStart,
+   *  handleCardTap, handleStartOverTap — as well as the bookmark toggle
+   *  (TutorialStack's own handleToggleSave calls it directly, since that
+   *  handler lives up there, not on this component). TutorialStack's signal
+   *  that the current front card has been touched, used to hold off the
+   *  next repeat of the hint (see its own comment) until this card stops
+   *  being front. Scope call: "any interaction with the *card stack*", not
+   *  the filter chips in HomeScreen — narrower reading, per the user's own
+   *  framing ("the flick should work only when I'm not interacting with the
+   *  page at all") being specifically about tapping to flip. Not scoped to
+   *  the front card specifically in the type (every card technically has it
+   *  available) because only the interactive one can ever actually call
+   *  it — `isInteractive` already gates whether `handleDragStart`/
+   *  `handleCardTap`/`handleStartOverTap` run at all. */
   onInteraction: () => void
 }) {
   // Two different questions, again (see isFrontCard/isInteractive below,
@@ -1133,6 +1184,45 @@ function TutorialStackCard({
   // rotation 0, opacity 1, zIndex 1000) is already correct with zero
   // special-casing either way.
   const flipRotateY = useMotionValue(0)
+  // Explicit opacity crossfade tied to flipRotateY, layered on top of (not
+  // instead of) `backfaceVisibility: 'hidden'` on both faces below. Reason:
+  // a real WebKit bug (found on a real phone, not reproducible in this
+  // environment's own browser tool) where backface culling isn't reliably
+  // honored *while* the rotateY transform is actively animating, only once
+  // it settles — for a frame near the crossover, CardFront's own back side
+  // (nothing authored for it, so the browser mirrors CardFront's own
+  // content) can bleed through before CardBack visibly takes over. Fading
+  // each face to 0 over a window straddling the 90°-crossover (where
+  // "looking at the back" starts) means that whatever the browser is doing
+  // with culling right at that moment, both faces are already close to
+  // invisible — the glitch stops being visible regardless of whether the
+  // underlying browser timing bug is actually fixed. 75–105 (a 30° window,
+  // not a hair-trigger one) rather than something tighter around exactly
+  // 90: gives enough real time (~40ms of a ~0.45s flip) to reliably cover
+  // a dropped frame, while still reading as a snappy flip, not a slow
+  // dissolve — and if a bounce spring lingers near 90° for a moment, this
+  // window is wide enough to still be fully faded through that too.
+  const cardFrontFlipOpacity = useTransform(flipRotateY, [0, 75, 105, 180], [1, 1, 0, 0])
+  const cardBackFlipOpacity = useTransform(flipRotateY, [0, 75, 105, 180], [0, 0, 1, 1])
+  // Ghost-click guard. CardFront's/CardBack's own tap-to-flip (handleCardTap,
+  // via onSelect/onFlipBack below) and Start Over's tap-to-flip
+  // (handleStartOverTap) are both plain native `onClick` handlers on nested
+  // DOM elements, not Framer's own drag-aware gesture system — Framer only
+  // suppresses *its own* internal tap gesture when a drag on the *same*
+  // element wins, it does nothing about the browser's ordinary click
+  // synthesis on a *different*, nested element. On a real touchscreen (this
+  // card already sets touch-action: none via `drag`, so the browser never
+  // treats the gesture as a scroll/pan to begin with, which is normally
+  // what suppresses a trailing synthetic click), a real committed swipe can
+  // still spawn a genuine click on whatever's under the finger at release —
+  // here, CardBack's whole-card tappable root — *at the same moment* the
+  // card is flying away, which is exactly what un-flipped a departing
+  // flipped card back to front mid-fade. Fixed by tracking "did a real drag
+  // just happen" (handleDragStart only fires past Framer's own movement
+  // threshold, so a genuine tap never touches this) and having
+  // handleCardTap/handleStartOverTap swallow the very next call while it's
+  // true — see handleDragEnd for where it resets.
+  const justDraggedRef = useRef(false)
   // Bidirectional flip state for a tutorial card specifically (see
   // handleCardTap) — Start Over doesn't need an equivalent; its own flip
   // only ever goes one direction, once, and never needs to remember "am I
@@ -1162,6 +1252,32 @@ function TutorialStackCard({
   // only on approach; see contentOpacity's own comment in useCardMotion).
   const ghostOpacity = useTransform([opacity, contentOpacity], ([slot, content]) => slot * (1 - content))
   const contentFinalOpacity = useTransform([opacity, contentOpacity], ([slot, content]) => slot * content)
+  // CardFront's actual rendered opacity — contentFinalOpacity (peek-reveal/
+  // departure fade, unrelated to flipping) composed with cardFrontFlipOpacity
+  // (the anti-flicker crossfade, see flipRotateY's own comment). Same
+  // "always one continuous composed value" approach this file uses
+  // everywhere else rather than picking between two competing opacities.
+  const cardFrontOpacity = useTransform(
+    [contentFinalOpacity, cardFrontFlipOpacity],
+    ([content, flip]) => content * flip,
+  )
+  // CardBack's own equivalent — same reasoning as cardFrontOpacity just
+  // above, composed with cardBackFlipOpacity instead. Without
+  // contentFinalOpacity factored in here too, CardBack's visibility during
+  // a fly-off rested entirely on the fly-off's own quick flightOpacity fade
+  // (~0.3s) and the flip crossfade (pinned at 1 the whole time, since a
+  // departing flipped card no longer un-flips mid-flight) — with nothing
+  // backing it up once flightOpacity gets reset to its neutral "at rest"
+  // value partway through onAdvance (a deliberate, existing reuse-for-next-
+  // cycle pattern, see flyOff's flightFade.then() comment). CardFront never
+  // showed that pop because contentFinalOpacity was *independently* still
+  // fading it out over the full, longer stack-advance (~0.7s) at that exact
+  // moment — CardBack had no equivalent backstop, so the reset read as an
+  // abrupt cut instead of the same graceful fade CardFront gets.
+  const cardBackOpacity = useTransform(
+    [contentFinalOpacity, cardBackFlipOpacity],
+    ([content, flip]) => content * flip,
+  )
   // isFrontCard itself is computed above (needed earlier, for
   // effectiveIndex). Second question here: which card is allowed to
   // actually start a *new* gesture right now (blocked while locked,
@@ -1178,6 +1294,25 @@ function TutorialStackCard({
   // composition to reason about.
   const dragX = useMotionValue(0)
   const dragY = useMotionValue(0)
+  // TEMP DEBUG — remove once the CardBack-stays-in-place bug is diagnosed.
+  // Real on-device evidence showed flightOpacity/flightScale animating
+  // correctly, but the card visually not traveling anywhere — this checks
+  // the one thing not yet directly observed: does the actual translation
+  // (dragX/dragY) run at all for a flipped card's fly-off?
+  useEffect(() => {
+    if (variant.kind !== 'tutorial') return
+    const unsubX = dragX.on('change', (v) => {
+      console.log('[flip-debug] dragX change', v.toFixed(1), performance.now().toFixed(0))
+    })
+    const unsubY = dragY.on('change', (v) => {
+      console.log('[flip-debug] dragY change', v.toFixed(1), performance.now().toFixed(0))
+    })
+    return () => {
+      unsubX()
+      unsubY()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- TEMP DEBUG only, subscribed once for this card instance's lifetime.
+  }, [])
   // "Picked up" feedback — see MotionTuning.gripScale. Also part of the
   // one-continuous-transform composition, same reasoning as totalRotate
   // below: never a second, separately-bound style value.
@@ -1224,6 +1359,11 @@ function TutorialStackCard({
     // onInteraction's own doc comment). Harmless to call on every drag
     // start, not just the first on this card.
     onInteraction()
+    // See justDraggedRef's own doc comment (near its declaration) — this
+    // only fires once Framer has actually recognized a drag (past its own
+    // small internal movement threshold), never for a plain tap, which is
+    // exactly what makes it safe to gate ghost-click suppression on.
+    justDraggedRef.current = true
   }
 
   // Keeps dragX/dragY (and therefore totalRotate/gripScale, since they're
@@ -1273,6 +1413,15 @@ function TutorialStackCard({
   // handleStartOverTap's own dedicated flip.
   function flyOff(angle: number, velocity: { x: number; y: number }) {
     onCommitStart()
+    // Deliberately does NOT touch isFlipped/flipRotateY here — a card
+    // swiped away while flipped keeps showing its detail face for the
+    // whole fly-off, un-flipping only once it's safely off-screen (the
+    // isFrontCard-driven reset near isFlipped's declaration, which fires
+    // after onAdvance). An earlier version forced an instant un-flip to
+    // front right here, on the theory that the departing card should show
+    // its "normal" face — reverted per the user's own live-testing call
+    // (on a real phone, seeing it snap to front read as wrong, not seeing
+    // the detail face read as expected instead).
     // Fly-off continues in whatever direction was actually given (any
     // angle, not just left/right) — momentum-driven when there is any, so
     // a little bounce, and the release velocity is handed straight to the
@@ -1281,6 +1430,16 @@ function TutorialStackCard({
     // Not captured into a variable (used to be, for Promise.all below) —
     // see the fade-gates-onAdvance comment further down for why waiting
     // on these specifically was the actual cause of the lingering.
+    // TEMP DEBUG — remove once the CardBack-stays-in-place bug is diagnosed.
+    console.log('[flip-debug] flyOff translate targets', {
+      isFlipped,
+      angle,
+      velocity,
+      targetX: (Math.cos(angle) * FLY_OFF_DISTANCE).toFixed(1),
+      targetY: (Math.sin(angle) * FLY_OFF_DISTANCE).toFixed(1),
+      currentDragX: dragX.get().toFixed(1),
+      currentDragY: dragY.get().toFixed(1),
+    })
     animateValue(dragX, Math.cos(angle) * FLY_OFF_DISTANCE, {
       type: 'spring',
       velocity: velocity.x,
@@ -1345,7 +1504,14 @@ function TutorialStackCard({
   // whole ~0.7s: nothing about *this* card's own position/visibility ever
   // needs to react to "having advanced" until the swap below.
   function handleStartOverTap() {
+    // See justDraggedRef's own doc comment — a real drag that just settled
+    // back to center can still spawn a ghost click here at release; swallow
+    // it rather than letting it trigger a real flip.
+    if (justDraggedRef.current) return
     onCommitStart()
+    // Tap-driven engagement with the stack — same as handleDragStart, see
+    // onInteraction's own doc comment: holds off the next swipe-hint repeat.
+    onInteraction()
     const flip = animateValue(flipRotateY, 180, { type: 'spring', bounce: 0.15, duration: 0.7 })
     // Once the flip has actually turned all the way (back face now facing
     // the viewer, showing the same first-tutorial content this card's own
@@ -1382,6 +1548,17 @@ function TutorialStackCard({
   // quicker end of this file's spring durations rather than matching the
   // rare one's leisurely pace.
   function handleCardTap() {
+    // See justDraggedRef's own doc comment — the actual bug this guards
+    // against: a real committed (or cancelled) swipe can spawn a ghost
+    // click on this card's own root right at release, which — without this
+    // — un-flips (or flips) the card via the exact same handler at the
+    // exact moment it's flying away or settling back.
+    if (justDraggedRef.current) return
+    // Tap-driven engagement with the stack — see onInteraction's own doc
+    // comment. This was the actual gap: the swipe-hint used to only listen
+    // for handleDragStart, so flipping a card to browse its details didn't
+    // count as "found it" and the nudge could still fire mid-browse.
+    onInteraction()
     animateValue(flipRotateY, isFlipped ? 0 : 180, { type: 'spring', bounce: 0.15, duration: 0.45 })
     setIsFlipped(!isFlipped)
   }
@@ -1417,6 +1594,22 @@ function TutorialStackCard({
   }, [hintTrigger])
 
   function handleDragEnd(_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    // See justDraggedRef's own doc comment. Deliberately NOT reset
+    // synchronously here — a browser's native "click" (the ghost click this
+    // whole guard exists for) dispatches synchronously right after this
+    // handler returns, still within the same task, so resetting the flag
+    // now would clear it before that click ever gets a chance to check it.
+    // setTimeout(0) defers the reset to the *next* task, after the ghost
+    // click (if there is one) has already been swallowed by
+    // handleCardTap/handleStartOverTap — same "let the synchronous
+    // consequence happen first, tidy up after" pattern, just via a real
+    // event-loop tick instead of a Promise, since there's no animation to
+    // await here. Applies uniformly to every branch below (committed,
+    // cancelled, and the start-over early return), so it's done once here
+    // rather than duplicated in each.
+    setTimeout(() => {
+      justDraggedRef.current = false
+    }, 0)
     animateValue(gripScale, 1, { duration: 0.15 })
     if (variant.kind === 'start-over') {
       // Never commits, regardless of distance/velocity — this card only
@@ -1472,8 +1665,23 @@ function TutorialStackCard({
       // own 3D space, which is what makes their `backfaceVisibility:
       // 'hidden'` mean anything at all (see the transform comment above,
       // and the back-face layer's own comment below). Harmless for every
-      // card that never rotates on Y.
-      style={{ transform, zIndex: zIndexFinal, opacity: flightOpacity, transformStyle: 'preserve-3d' }}
+      // card that never rotates on Y. WebkitTransformStyle + willChange:
+      // fixes a real flicker reported on a phone — Safari can fail to
+      // GPU-promote a `preserve-3d` element *before* its rotateY animation
+      // starts, and ends up compositing the flip mid-flight instead, which
+      // reads as a one-frame flash of the wrong face right near the end.
+      // will-change: transform forces the layer to exist up front; this
+      // element already animates transform constantly (drag alone), so
+      // there's no added cost from making that promotion permanent instead
+      // of on-demand.
+      style={{
+        transform,
+        zIndex: zIndexFinal,
+        opacity: flightOpacity,
+        transformStyle: 'preserve-3d',
+        WebkitTransformStyle: 'preserve-3d',
+        willChange: 'transform',
+      }}
       // Free in both axes, per "it should feel more free, even
       // vertically" — `drag={true}` (not `"x"`) also sets touch-action:
       // none on this element, which is what actually stops it from
@@ -1499,7 +1707,16 @@ function TutorialStackCard({
           that moved to the CTA on its back face below. */}
       <motion.div
         className="absolute inset-0"
-        style={{ opacity: contentFinalOpacity, backfaceVisibility: 'hidden' }}
+        style={{
+          opacity: cardFrontOpacity,
+          backfaceVisibility: 'hidden',
+          // See the parent's own WebkitTransformStyle/willChange comment —
+          // same Safari flicker, other half of the fix: the *unprefixed*
+          // backfaceVisibility alone isn't reliably honored mid-animation
+          // on every WebKit build tested, only once settled. cardFrontOpacity
+          // (see its own comment) is the actual fix, this is defense in depth.
+          WebkitBackfaceVisibility: 'hidden',
+        }}
       >
         {variant.kind === 'tutorial' ? (
           <TutorialLookCard
@@ -1540,21 +1757,42 @@ function TutorialStackCard({
             other side.
           Either way, hidden (backface-culled) at flipRotateY===0 for
           exactly the same reason the content layer above is visible
-          there; the two swap places as the parent crosses 90°. */}
+          there; the two swap places as the parent crosses 90°.
+          cardBackOpacity mirrors cardFrontOpacity's own composition (see
+          its own comment) — same anti-flicker crossfade *and* the same
+          distance-based departure backstop, so this needs to be a
+          motion.div now, not a plain div, to take a MotionValue as its
+          opacity. */}
       {variant.kind === 'start-over' && (
-        <div className="absolute inset-0" style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}>
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            transform: 'rotateY(180deg)',
+            opacity: cardBackOpacity,
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+          }}
+        >
           <TutorialLookCard tutorial={variant.firstTutorial} disabled saved={variant.firstTutorialSaved} />
-        </div>
+        </motion.div>
       )}
       {variant.kind === 'tutorial' && (
-        <div className="absolute inset-0" style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}>
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            transform: 'rotateY(180deg)',
+            opacity: cardBackOpacity,
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+          }}
+        >
           <TutorialDetailCard
             tutorial={variant.tutorial}
             onFlipBack={isInteractive ? handleCardTap : undefined}
             onStart={isInteractive ? onSelect : undefined}
             disabled={!isInteractive}
           />
-        </div>
+        </motion.div>
       )}
     </motion.div>
   )
@@ -1724,6 +1962,11 @@ export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackPr
   const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set())
 
   function handleToggleSave(id: string) {
+    // Tap-driven engagement with the stack — see TutorialStackCard's
+    // onInteraction prop doc comment. Called directly (not via a card's own
+    // onInteraction prop) since this handler lives up here, not on
+    // TutorialStackCard itself.
+    handleInteraction()
     setSavedIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) {
