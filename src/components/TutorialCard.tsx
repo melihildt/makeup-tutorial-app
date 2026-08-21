@@ -697,9 +697,7 @@ const GHOST_TEXTURES: Record<LookType, string> = {
  *  — originally a fixed, separately-positioned/rotated static prop behind
  *  the front card (rotate(7deg), exact value from the Figma inspector).
  *  Now embedded *inside* each TutorialStackCard instead, at that card's
- *  own size and position with no rotation of its own — the parent already
- *  applies the card's live rotation, so this just needs to fill that same
- *  box; a second hardcoded rotate here would double up on top of it.
+ *  own size and position, filling that same box.
  *  --radius-tutorial-card (32px, matching the real card), not the
  *  original --radius-tutorial-card-behind (24px) — that number was right
  *  for a separately-sized static prop, but this now sits exactly inside
@@ -715,29 +713,92 @@ const GHOST_TEXTURES: Record<LookType, string> = {
  *  --color-card-behind-tint overlay: the day photo is already gold-toned
  *  on its own, so the flat-swatch tint it stood in for is retired rather
  *  than kept as a redundant second layer on top of a photo that already
- *  reads as gold. `lookType` (new) picks which of GHOST_TEXTURES actually
- *  shows — see the map's own comment; `key={lookType}` + check-ring-in
- *  (index.css, the same "new content settling in after a state swap"
- *  keyframe LookSelectorChip's own icon already uses) gives the swap a
- *  quick fade+scale-in instead of an instant pop, since a bare `src`
- *  change on an already-mounted `<img>` has nothing to transition from —
- *  same "animation, not transition" reasoning as every other
- *  structurally-different-content swap in this app (see check-pop's own
- *  comment, index.css). `opacity` drives the reveal — see useCardMotion's
+ *  reads as gold. `opacity` drives the peek reveal — see useCardMotion's
  *  contentOpacity. `backfaceVisibility: 'hidden'` is a permanent no-op for
  *  every card except the first tutorial slot mid-restart-flip (see
- *  TutorialStackCard's flipRotateY) — this layer never rotates on its own
- *  axis, so it only ever turns away from the viewer when its *parent*
- *  does, which happens nowhere else. */
+ *  TutorialStackCard's flipRotateY) — this layer's *inherited* rotation
+ *  only ever turns it away from the viewer when its *parent* does, which
+ *  happens nowhere else; its *own* rotation (below) never approaches 90°,
+ *  so backface culling is irrelevant to that part.
+ *
+ *  `parentRotate` + the filter-swap effect below: `lookType` changing
+ *  (Day/Night/Glam) plays a "duck behind the front card, swap, swing back
+ *  out" gesture instead of the old flat pop-in — the user's own read that
+ *  a plain crossfade didn't lean into this card's actual spatial role
+ *  (it's a *tilted card sitting behind the front one*, not a static
+ *  swatch). Verified against the real pose math before building this:
+ *  the peek card has *zero* position offset from the front card
+ *  (useCardMotion/TutorialStackCard's transform — only rotation and
+ *  z-index/opacity differ), so this card's own rotation reaching exactly
+ *  0° *relative to the front card* really does mean pixel-for-pixel
+ *  alignment, not an approximation. `behindRotate` is this card's own
+ *  *additional* rotation, composed on top of whatever the parent
+ *  TutorialStackCard's own transform is already contributing (ordinary
+ *  nested-transform composition, not a Framer trick) — animating it to
+ *  `-parentRotate.get()` cancels the parent's current tilt out exactly,
+ *  landing the combined rotation at 0 regardless of which card (front,
+ *  ±7° peek, or anywhere mid-drag) happens to be calling this at the
+ *  time. Reads `parentRotate.get()` once, at the moment the swap starts —
+ *  not a live subscription — so a filter tap mid-drag (this card's own
+ *  tilt actively changing that same instant) would target a value that's
+ *  already stale by the time the duck settles; deliberately not solved,
+ *  a real edge case but a rare one for a two-tap, discrete filter-chip
+ *  action, not worth the extra live-tracking complexity it'd take to
+ *  close. Scope: only this component gets the treatment — StartOverCard
+ *  keeps its own separate, plain fade+pop swap (its own literal `<img
+ *  key={lookType}>` + check-ring-in, not a CardBehind reuse) even while
+ *  it's peeking, per the user's own explicit call not to extend this
+ *  there too. */
 export function CardBehind({
   opacity,
   lookType,
+  parentRotate,
   className,
 }: {
   opacity?: MotionValue<number>
   lookType: LookType
+  /** This card's own TutorialStackCard's composed rotation (totalRotate)
+   *  — read once per swap to cancel out, see this component's own comment
+   *  above. */
+  parentRotate: MotionValue<number>
   className?: string
 }) {
+  const behindRotate = useMotionValue(0)
+  const imgOpacity = useMotionValue(1)
+  // The texture actually rendered — deliberately NOT just `lookType`
+  // directly: swapping this happens at the *ducked* midpoint (see the
+  // effect below), not the instant the filter chip is tapped, so the
+  // visible content change lands while this card is aligned with (hidden
+  // behind) the front card, same as the rotation reaching 0 is timed to.
+  const [displayedLookType, setDisplayedLookType] = useState(lookType)
+  // Skips the very first render — this plays on *changing* filters, not
+  // on initial mount (every card mounts already "at" its starting
+  // lookType, nothing to duck-and-reveal there).
+  const isFirstRender = useRef(true)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    // Duck: cancel the parent's current tilt (see this component's own
+    // doc comment for why `-parentRotate.get()` lands the *combined*
+    // rotation at exactly 0) while fading the outgoing texture out, in
+    // parallel — both finish together, not staggered.
+    const duck = animateValue(behindRotate, -parentRotate.get(), {
+      duration: 0.2,
+      ease: [0.25, 1, 0.5, 1],
+    })
+    animateValue(imgOpacity, 0, { duration: 0.2, ease: [0.25, 1, 0.5, 1] })
+    duck.then(() => {
+      setDisplayedLookType(lookType)
+      // Swing back out: this card's own contribution returns to 0 (i.e.
+      // back to just the parent's own tilt, its ordinary peek pose),
+      // fading the new texture in over the same window.
+      animateValue(behindRotate, 0, { duration: 0.2, ease: [0.25, 1, 0.5, 1] })
+      animateValue(imgOpacity, 1, { duration: 0.2, ease: [0.25, 1, 0.5, 1] })
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on lookType alone: parentRotate/behindRotate/imgOpacity are read/written here, not reacted to.
+  }, [lookType])
   return (
     <motion.div
       aria-hidden="true"
@@ -746,15 +807,15 @@ export function CardBehind({
         borderRadius: 'var(--radius-tutorial-card)',
         boxShadow: 'var(--shadow-tutorial-card)',
         opacity,
+        rotate: behindRotate,
         backfaceVisibility: 'hidden',
       }}
     >
-      <img
-        key={lookType}
+      <motion.img
         alt=""
-        src={GHOST_TEXTURES[lookType]}
+        src={GHOST_TEXTURES[displayedLookType]}
         className="size-full object-cover"
-        style={{ animation: 'check-ring-in var(--duration-base) var(--ease-out-quart)' }}
+        style={{ opacity: imgOpacity }}
       />
     </motion.div>
   )
@@ -1695,7 +1756,7 @@ function TutorialStackCard({
       onDrag={isInteractive ? handleDrag : undefined}
       onDragEnd={isInteractive ? handleDragEnd : undefined}
     >
-      <CardBehind opacity={ghostOpacity} lookType={lookType} />
+      <CardBehind opacity={ghostOpacity} lookType={lookType} parentRotate={totalRotate} />
       {/* No rotation of its own — this is the "front face" in the
           reference implementation's terms (`.thefront`, no extra
           transform), always facing the viewer at flipRotateY===0 and

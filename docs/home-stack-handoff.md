@@ -148,9 +148,38 @@ match the selected Day/Night/Glam chip — gold/blue/green, via
 (both `src/assets/looks/`, added and renamed by the user this session — the
 files as first delivered were misnamed relative to which chip they visually
 matched; matched by actual pixel color instead, confirmed against the
-user's own reference mock). Swap driven by `key={lookType}` +
-`check-ring-in` (reused, not a new keyframe) for a quick fade+scale-in
-instead of an instant pop.
+user's own reference mock).
+
+**The swap itself, `CardBehind` only** — StartOverCard keeps its own
+separate, plain fade+pop swap (its own `<img key={lookType}>` +
+`check-ring-in`, unchanged) even while peeking, per the user's own
+explicit call not to extend the treatment below there. `CardBehind`'s own
+swap was rebuilt this session from a flat `key={lookType}` + `check-ring-in`
+pop into a "duck behind the front card, swap, swing back out" gesture —
+the user's own read that a plain crossfade didn't lean into this card's
+actual spatial role (a tilted card sitting behind the front one, not a
+static swatch). Verified against the real pose math *before* building:
+`useCardMotion`/`TutorialStackCard`'s transform gives the peek card *zero*
+position offset from the front card — only rotation and z-index/opacity
+differ — so this card's own rotation landing at exactly 0° really does
+mean pixel-for-pixel alignment with (hidden behind) the front card, not
+an approximation. Mechanically: `behindRotate` (`CardBehind`'s own,
+*additional* rotation, layered on top of the parent `TutorialStackCard`'s
+own `totalRotate` via ordinary nested-transform composition) animates to
+`-parentRotate.get()` — read once, at the moment the swap starts, not a
+live subscription — landing the *combined* rotation at 0 regardless of
+which card (front, ±7° peek, mid-drag) is calling it; the texture
+(`displayedLookType` state, separate from the `lookType` prop) swaps at
+that ducked midpoint, alongside a fade (`imgOpacity`, JS-driven via
+Framer, not `check-ring-in` — a scale-pop on a whole card-sized ghost
+layer read as too busy layered on top of the rotation), then both ease
+back to 0/1 to swing out and reveal. 0.2s per phase (duck+fade-out, then
+swing+fade-in), `--ease-out-quart`'s numeric form throughout. Known,
+accepted gap: a filter tap that lands exactly mid-drag (this card's own
+tilt actively changing that same instant) targets an already-stale
+cancel-out value by the time the duck settles — deliberately not solved,
+too rare an overlap (two-tap filter chip + a live drag, at the same time)
+to justify live-tracking `parentRotate` for.
 
 **Scope, per the user's own framing**: this is ghost-card color only —
 "until we add more cards" — Day/Night/Glam still don't filter which
