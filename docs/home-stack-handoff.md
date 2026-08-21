@@ -7,26 +7,27 @@ from `docs/handoff.md` (the step-flow/illustration doc, stale on the "no
 home page" point — a home page exists now).
 
 **Git state — read this before assuming anything else in this doc is
-current.** Branch `feature/home-tutorial-stack` (off `main`, untouched).
-Latest **commit**: `6248f65` — "Add tutorial-card flip-to-details, refresh
-handoff docs." **On top of that, uncommitted as of this doc's last
-update**: this doc itself, plus `TutorialCard.tsx` changes from the same
-session — the ghost-click fix, the `cardFrontOpacity`/`cardBackOpacity`
-symmetry fix, the WebKit flip-flicker fix, the `CardBack` border, and real
-product photos on Soft Smokey Eye's `CardBack` (see "Bugs fixed" #8-#10
-and "Known deferred issues" below for the full story). Run
-`git status`/`git diff --stat` on a fresh session start; if there's more
-beyond that uncommitted diff, it's from later than this doc — read the
-diff before trusting this doc's "current state" claims over the actual
-code.
+current.** Branch `feature/home-tutorial-stack` (off `main`, untouched),
+pushed to `origin` and up to date with it as of this doc's last update.
+Latest **commit**: `dca8144` — "Add stack entrance + screen transition,
+remove dev-tuner and dead code." Working tree clean (only untracked,
+unrelated tooling scaffolding — `.agents/`, `.claude/skills/`,
+`skills-lock.json` — sit outside this). Run `git status`/`git log
+--oneline -5` on a fresh session start regardless; if there's anything
+beyond a clean tree at this commit, it's from later than this doc — read
+the diff before trusting this doc's "current state" claims over the
+actual code.
 
-**Immediate next task, per the user directly** — see "Known deferred
-issues" below (the `CardBack`-fly-off-reads-abrupt entry) for the full
-story: several real fixes landed chasing it, none confirmed to close it,
-and the user asked to document rather than keep iterating blind. Pick up
-there, don't re-derive from scratch. The other item this doc used to list
-here (the swipe-hint nudge not counting tap-driven engagement) **is now
-fixed** — see "Bugs fixed" and "Swipe-hint nudge" below.
+**Immediate next task, per the user directly**: the animation-audit plans
+— `plans/003-fold-flip-values-into-motion-tuning.md`,
+`004-start-over-rubber-band-friction.md`, `005-content-layer-composed-transform.md`
+(see "Animation audit" further down and `plans/README.md` for the summary
++ execution order — 004 before 003 if both are done). Two other items were
+explicitly **deferred to later, lower priority, per the user's own
+call**: the `CardBack`-fly-off-reads-abrupt issue (see "Known deferred
+issues" below — several real fixes landed chasing it already, none
+confirmed to close it, don't re-derive from scratch) and ghost-card
+clipping on narrow phones (older, lower priority still).
 
 The Figma file used throughout is `Tech-Experimentation`, file key
 `6Mr7K0RONTS8SltZRJtqYj`. Nodes pulled and worth reusing rather than
@@ -60,27 +61,33 @@ real CTA) — see "Tutorial detail flip" below.
 
 One file, most pieces still roughly back-to-front:
 
-- **`Tutorial` type + `TUTORIALS` array** — title/brand/duration/images as
-  before, plus (new, uncommitted) `level: TutorialLevel`
+- **`Tutorial` type + `TUTORIALS` array** — title/brand/duration/images
+  (now non-nullable, all four have real photos — `placeholderColors` was
+  removed once that stopped being a real case), plus `level: TutorialLevel`
   (`'easy'|'medium'|'experienced'`) and `productsUsedCount: number` for the
   detail flip. All four tutorials currently carry **placeholder** level/
   product-count values — real ones wait until the other three tutorials
   have real content behind them the way Soft Smokey Eye does (user's own
-  call). `placeholderColors` is still unused/legacy, kept on the type.
+  call). `hasContent: boolean` is declared per-tutorial but not consumed
+  anywhere yet — the CTA/tap on any tutorial opens the same hard-coded
+  `TutorialFlow` regardless (see the type's own comment) — known, accepted
+  for now, not a bug to fix today.
 - **`TutorialLookCard`** — the front face, at rest. `onSelect` prop now
   means "flip this card" (wired to `handleCardTap`, not the real
   navigation) — the real "open tutorial" action moved to the CTA on
   `TutorialDetailCard`'s back face. Root is still a `role="button"` div,
   not a `<button>` (bookmark needs its own nested tappable control) — see
   its own module comment before touching tap behavior here.
-- **`TutorialDetailCard`** (new, uncommitted) — the tutorial card's back
-  face: a `DetailPill` for level (`LevelIcon` + label) and one for
-  duration, a `ProductsPreview` (3 placeholder-swatch thumbnails +
-  "+N products used" caption — see its own comment for why that number is
-  *remaining*, not the raw total), and `StartTutorialButton` (black CTA,
-  real `fi-rr-play` icon, `stopPropagation` so it doesn't also flip the
-  card back). Same whole-card-tappable pattern as `TutorialLookCard` —
-  tapping anywhere except the CTA flips back to front.
+- **`TutorialDetailCard`** — the tutorial card's back face: a `DetailPill`
+  for level (`LevelIcon` + label) and one for duration, a `ProductsPreview`
+  (3 thumbnails — real photos for Soft Smokey Eye via `Tutorial.productImages`
+  reused from the step-by-step flow, a flat placeholder swatch for the
+  other three — plus "+N products used" caption, see its own comment for
+  why that number is *remaining*, not the raw total), and
+  `StartTutorialButton` (black CTA, real `fi-rr-play` icon,
+  `stopPropagation` so it doesn't also flip the card back). Same
+  whole-card-tappable pattern as `TutorialLookCard` — tapping anywhere
+  except the CTA flips back to front.
 - **`LevelIcon`** (new) — the 3-bar "signal strength" level icon, real
   path data (5 distinct bar/state SVGs pulled via `download_assets`).
   Shortest bar always filled; middle bar filled from 'medium' up; tallest
