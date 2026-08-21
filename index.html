@@ -5,15 +5,14 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>vite-scaffold</title>
-    <!-- Beauty Notes home title font (--font-family-serif) + tutorial card
-         title font (--font-family-serif-card, new in the V3 stacked-card
-         redesign, node 642:5092) — one stylesheet request for both. -->
+    <!-- Cactus Classical Serif: tutorial card title (--font-family-serif-card,
+         node 642:5092) and, since the V4 LookSelector redesign, the home
+         title too (node 635:4792/648:2) — one shared font, one request.
+         Goudy Bookletter 1911 (--font-family-serif) dropped from this fetch:
+         nothing uses it anymore, see tokens.css. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Goudy+Bookletter+1911&family=Cactus+Classical+Serif&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Cactus+Classical+Serif&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>

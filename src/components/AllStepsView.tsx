@@ -90,8 +90,15 @@ export function AllStepsView({
           bottom fade overlay stays a true sibling, outside the scroll —
           it doesn't need anything to scroll underneath it since it's
           pinned to the viewport bottom regardless of scroll position. */}
+      {/* overflow-x-hidden alongside overflow-y-auto: setting only
+          overflow-y leaves overflow-x at its default `visible`, making
+          this a latent horizontally-scrollable surface even though
+          nothing here currently overflows sideways — see HomeScreen.tsx's
+          matching comment for the real bug this pattern caused there
+          (the tutorial card stack's fly-off animation). Applied here too,
+          defensively, since this container has the exact same shape. */}
       <div
-        className="relative flex-1 overflow-y-auto"
+        className="relative flex-1 overflow-y-auto overflow-x-hidden"
         onScroll={(e) => setIsScrolled(e.currentTarget.scrollTop > 0)}
       >
         {/* Sticky header — solid background (#e6d6d1, --gradient-bg-screen's

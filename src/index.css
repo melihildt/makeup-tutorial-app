@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Lock the page from scrolling/bouncing at all — nothing in this app ever
+   needs document/body-level scroll, horizontal or vertical: every screen
+   is a single centered max-w-[402px] column that's exactly h-dvh tall,
+   with its own internal overflow-y-auto region for content that runs long
+   (see App.tsx + each screen's own root). overflow-x: hidden +
+   overscroll-behavior-x: none (the first attempt at this, see git history)
+   was not enough on real iOS Safari — WebKit's overscroll-behavior support
+   at the document level is unreliable, and the elastic rubber-band bounce
+   came back once the card stack's drag gesture (free in both axes,
+   TutorialCard.tsx) started right near a screen edge again. Locking body
+   to position: fixed + 100% is the standard, more robust version of this
+   same fix — it doesn't just discourage document scroll, it removes the
+   document as a scrollable surface entirely, which is safe here precisely
+   because nothing relies on it (confirmed: no window/document/body scroll
+   calls anywhere in src/, only AllStepsView's own internal scrollTop). */
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  height: 100%;
+}
+body {
+  position: fixed;
+  width: 100%;
+}
+
 /* Used by ScreenHeader's Search/Widget toggle — see the comment above its
    indicator span for why this has to be a CSS *animation* (plays on
    mount, driven by --slide-from/--slide-to custom properties) rather than
@@ -40,6 +66,44 @@
      draws in to its real length, never a guessed/approximate one. */
   from { stroke-dashoffset: var(--check-draw-length, 19); }
   to { stroke-dashoffset: 0; }
+}
+
+/* Press-flash sweep on HomeScreen's LookSelectorChip (Glam only for now,
+   per the exact gradient the user supplied — Day/Night can get their own
+   once given). A "shimmer" in the strict sense is a loading-state sheen;
+   this reuses the identical technique (an oversized 3-stop gradient,
+   background-position animated across a fixed window) as a one-shot
+   press-confirmation flash instead, same as a native refresh spinner's
+   sweep. linear, not --ease-out-quart: this is a traveling motion (the
+   glossary's own guidance — "Linear: reserve for spinners or marquees"),
+   not a state transition settling into place, so the app's one easing
+   curve doesn't apply here.
+
+   background-position 100% → 0%, not the other way — that's what actually
+   sweeps the bright middle stop from the chip's left edge to its right
+   edge (the direction is *not* symmetric with the reverse even though the
+   gradient's own colors are, since which edge the visible window
+   starts/ends over flips) — verified against the standard shimmer-loader
+   recipe, not guessed. Given the current background-size/stop values
+   (HomeScreen.tsx), this position range is already a complete edge-to-edge
+   sweep on its own: the bright stop sits exactly at the chip's left edge
+   at 0% and exits exactly at its right edge at 100%, with no help needed
+   from opacity to fake an entrance/exit.
+
+   Opacity is flat at 1 for that reason — an earlier version faded it in
+   over the first 15% and out over the last 15%, meant to soften the
+   edges, but that only clipped off the part of the sweep that was
+   already a clean arrival/departure: the flash became visible mid-sweep
+   (already 15% of the way across) and vanished before finishing the last
+   15%, reading as a blob fading in and out mid-chip instead of a flash
+   crossing it — plus quietly wasting 30% of the animation's own duration
+   on invisible motion. Removed rather than tuned narrower, since the
+   position sweep needs no help here. The element's own resting opacity
+   (0, set in HomeScreen.tsx, not via fill-mode) is still what hides it
+   before the first press and the instant this animation ends. */
+@keyframes chip-flash-sweep {
+  0% { background-position: 100% 0; opacity: 1; }
+  100% { background-position: 0% 0; opacity: 1; }
 }
 
 /* ActionButton press/hover feedback — plain transition is correct here

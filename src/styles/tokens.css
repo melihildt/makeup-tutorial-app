@@ -69,6 +69,7 @@
   --duration-instant: 150ms; /* button press, toggle */
   --duration-base: 200ms;    /* hover, small state changes */
   --duration-layout: 350ms;  /* larger layout/content changes */
+  --duration-shimmer: 350ms; /* LookSelectorChip's press-flash sweep (HomeScreen.tsx) — was 700ms, then 400ms, then 500ms. That 500ms had an opacity fade eating its first/last 15% (75ms each) as invisible motion, so only ~350ms of it was ever actually seen — removing that fade (index.css) means the full duration is now visible motion, so the number itself had to come back down to land at roughly the same felt speed as before, not faster than the audit intended. */
 
   /* ---------- Typography ---------- */
   /* Font is "Inter 18pt" specifically — confirm you have that exact
@@ -101,18 +102,30 @@
      reuses --gradient-bg-screen, --radius-card, --shadow-card, --color-surface,
      --space-* etc. from the tutorial tokens above where the design matches;
      these are the values genuinely new to this screen. */
-  --font-family-serif: 'Goudy Bookletter 1911', Georgia, 'Times New Roman', serif; /* title only — loaded via Google Fonts, see index.html; Georgia/serif are the fallback while it loads or if the request fails */
-  --font-size-home-title: 24px;
-  --letter-spacing-home-title: -0.24px;
-  --font-size-home-description: 12px;
+  --font-family-serif: 'Goudy Bookletter 1911', Georgia, 'Times New Roman', serif; /* deprecated: V4 switched the home title to --font-family-serif-card (Cactus Classical Serif) below, matching node 635:4792's actual font — Goudy Bookletter is no longer used anywhere, kept for reference rather than deleted */
+  --font-size-home-title: 32px; /* V4 (was 24px) — node 635:4792, "LookSelector" redesign */
+  --letter-spacing-home-title: -0.64px; /* V4 (was -0.24px, briefly -1.28px) — corrected against the exact CSS the user copied from Figma Dev Mode for the "BeautyNotes/H1" style (node 648:2); the -1.28px value derived from get_design_context's own inline `tracking-` class was wrong */
+  --font-size-home-description: 12px; /* deprecated: V4 dropped the header description line entirely — the "which type of look" filter question now sits directly under the title/icon row, see node 635:4792 */
   --color-look-card-bg: rgba(75, 116, 209, 0.08); /* deprecated: V3's BigCard is flat white (--color-surface), see below */
   --color-look-card-text: #133991; /* deprecated: V3's BigCard text is warm near-black (--color-tutorial-card-text), see below */
-  --color-filter-chip-bg: #f5f5f5; /* chip background, selected and not — confirmed still current per node 615:2884 */
-  --color-filter-chip-border-selected: rgba(0, 0, 0, 0.7);
+  --color-filter-chip-bg: #f5f5f5; /* deprecated: V4 chips use a photo-texture + mix-blend-mode tint instead of a flat bg, see --color-filter-chip-border below */
+  --color-filter-chip-border: rgba(44, 41, 38, 0.1); /* V4: unselected chip border (was transparent) */
+  --color-filter-chip-border-selected: rgba(44, 41, 38, 0.5); /* V4 (was rgba(0,0,0,0.7)) */
   --radius-look-card: 16px; /* deprecated: V3's BigCard uses --radius-tutorial-card (32px), see below */
-  --radius-filter-chip: 12px; /* V2 (was 16px) — node 572:3875/615:2884, smaller filter sheet */
-  --shadow-filter-chip: 0px 0px 8px rgba(14, 11, 6, 0.03); /* also used on the look card, see node 615:2884 */
-  --shadow-filter-chip-selected: 0 0 0 1.5px rgba(14, 11, 6, 0.25), 0px 0px 8px rgba(14, 11, 6, 0.03); /* deprecated: a shadow-ring selection state was tried against an isolated pull (572:3875) that turned out to omit the sheet's real border/bg — node 615:2884 (fuller context) confirmed selection is still --color-filter-chip-border-selected */
+  --radius-filter-chip: 12px; /* V2 (was 16px) — node 572:3875/615:2884, smaller filter sheet; V4 reuses this same radius for the header icon boxes too */
+  --shadow-filter-chip: 0px 0px 8px rgba(14, 11, 6, 0.03); /* unselected chip shadow — also used on the look card, see node 615:2884 */
+  --shadow-filter-chip-selected: 0 0 0 1.5px rgba(14, 11, 6, 0.25), 0px 0px 8px rgba(14, 11, 6, 0.03); /* deprecated: a shadow-ring selection state was tried against an isolated pull (572:3875) that turned out to omit the sheet's real border/bg — node 615:2884 (fuller context) confirmed selection is still --color-filter-chip-border-selected. V4 superseded this again: selection now reads via border weight + a per-type colored glow (LOOK_TYPES.glow in HomeScreen.tsx), not a shadow ring. */
+  --color-header-icon-bg: rgba(255, 255, 255, 0.6); /* V4: info/profile icon boxes, node 635:4792 */
+  --color-header-icon-border: rgba(44, 41, 38, 0.2); /* V4: 0.5px hairline on those same boxes */
+
+  /* V4 background — node 635:4792 ("Updated UI" / LookSelector redesign). Home-
+     screen-only: deliberately NOT folded into --gradient-bg-screen above, since
+     that token is still shared by StepScreen/AllStepsView and this gradient is
+     a materially different gold/cream family, not a refinement of the same one.
+     Two color stops only — flat --color-home-bg-end for the rest of the
+     screen once the top ~7% fades in, unlike --gradient-bg-screen's 3-stop
+     fade across the full height. */
+  --gradient-bg-home: linear-gradient(180deg, #f7e9ca 0%, #f9f3eb 7.179%);
 
   /* ---------- Tutorial stack card (V3) ----------
      "BigCard" component, node 642:5092 (Tech-Experimentation) — replaces
@@ -122,10 +135,10 @@
      --color-surface, --shadow-page-frame-style shadows, --space-* etc.
      from the tokens above where the design matches; these are the values
      genuinely new to this card. */
-  --font-family-serif-card: 'Cactus Classical Serif', Georgia, 'Times New Roman', serif; /* tutorial card title only — loaded via Google Fonts, see index.html */
-  --color-tutorial-card-text: #2c2926;
+  --font-family-serif-card: 'Cactus Classical Serif', Georgia, 'Times New Roman', serif; /* V4: also the home title's font now (node 635:4792/648:2 both use Cactus Classical Serif, not a separate home serif) — loaded via Google Fonts, see index.html */
+  --color-tutorial-card-text: #2c2926; /* V4: also reused as the home header/title/filter-chip ink color (node 635:4792 uses this same #2c2926, not --color-text-primary) — one warm-ink token shared by both surfaces now */
   --color-timer-badge-bg: rgba(44, 41, 38, 0.05);
-  --color-card-behind-tint: #e3b345; /* flat placeholder for the ghost stack layer — source design uses a photo texture + this color as a mix-blend-overlay tint, simplified to a flat swatch for now (no photo assets yet) */
+  --color-card-behind-tint: #e3b345; /* deprecated: CardBehind (TutorialCard.tsx) now uses the real card-ghost-texture.jpg photo asset directly instead of this flat swatch + blend-mode tint */
   --radius-tutorial-card: 32px;
   --radius-tutorial-card-behind: 24px;
   --shadow-tutorial-card: 0px 0px 8px 2px rgba(14, 11, 6, 0.03);

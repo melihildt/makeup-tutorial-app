@@ -11,6 +11,13 @@ import {
 } from 'framer-motion'
 import lookImage1 from '../assets/looks/soft-smokey-eye-1.jpg'
 import lookImage2 from '../assets/looks/soft-smokey-eye-2.jpg'
+import miaImage1 from '../assets/looks/mia-odyssey-1.jpg'
+import miaImage2 from '../assets/looks/mia-odyssey-2.jpg'
+import autumnImage1 from '../assets/looks/autumn-hermes-1.jpg'
+import autumnImage2 from '../assets/looks/autumn-hermes-2.jpg'
+import mattesImage1 from '../assets/looks/everyday-mattes-1.jpg'
+import mattesImage2 from '../assets/looks/everyday-mattes-2.jpg'
+import cardGhostTexture from '../assets/looks/card-ghost-texture.jpg'
 
 /**
  * Tutorial stack card — "BigCard" component, node 642:5092
@@ -21,12 +28,12 @@ import lookImage2 from '../assets/looks/soft-smokey-eye-2.jpg'
  * module comment for why this isn't scroll-linked).
  *
  * Only "Soft Smokey Eye" has a real tutorial behind it (TutorialFlow is
- * hard-coded to that content) — the other three are decorative placeholder
- * entries for now, same "not wired up yet" spirit as HomeScreen's Day/
- * Night/Glam filter chips. `images` is only set for the one entry that has
- * real photos; the rest fall back to `placeholderColors` per the "different
- * color rectangles for now" scope call — swap in real photos later without
- * changing the card's layout.
+ * hard-coded to that content) — the other three now have real photos too
+ * (all four `images` are set, `placeholderColors` is unused/legacy at this
+ * point, kept on the type rather than deleted in case a future entry needs
+ * to fall back to it) but are still decorative taps, same "not wired up
+ * yet" spirit as HomeScreen's Day/Night/Glam filter chips: looking real
+ * now, not functional yet.
  */
 export type Tutorial = {
   id: string
@@ -41,7 +48,7 @@ export type Tutorial = {
 export const TUTORIALS: Tutorial[] = [
   {
     id: 'soft-smokey-eye',
-    title: 'Soft smokey Eye',
+    title: 'Soft Smokey Eye',
     brand: 'Tom Ford SS 2019',
     durationMinutes: 25,
     hasContent: true,
@@ -54,8 +61,11 @@ export const TUTORIALS: Tutorial[] = [
     brand: 'Nina Park',
     durationMinutes: 15,
     hasContent: false,
-    images: null,
-    placeholderColors: ['#d8c3a5', '#8a9a7c'],
+    // Swapped from [miaImage1, miaImage2]: images[0] is ImagePair's right/
+    // shorter slot, images[1] is the left/taller one — reversing the pair
+    // moves what was on the left over to the right, and vice versa.
+    images: [miaImage2, miaImage1],
+    placeholderColors: null,
   },
   {
     id: 'autumn-hermes',
@@ -63,8 +73,8 @@ export const TUTORIALS: Tutorial[] = [
     brand: 'Gregoris Pyrpylis',
     durationMinutes: 15,
     hasContent: false,
-    images: null,
-    placeholderColors: ['#b5654a', '#3a2e3d'],
+    images: [autumnImage2, autumnImage1],
+    placeholderColors: null,
   },
   {
     id: 'everyday-mattes',
@@ -72,22 +82,44 @@ export const TUTORIALS: Tutorial[] = [
     brand: 'Westman Gucci',
     durationMinutes: 15,
     hasContent: false,
-    images: null,
-    placeholderColors: ['#c98f6b', '#e8d9c4'],
+    images: [mattesImage2, mattesImage1],
+    placeholderColors: null,
   },
 ]
 
-/** fi-rr-heart, node 635:5073's Vector — path taken directly from the
- *  exported asset (same approach as HomeScreen's Sun/Moon/Diamond icons),
- *  not hand-drawn. Decorative only for now, same "not wired up yet" pattern
- *  as HomeScreen's filter-sheet close icon — no like state yet. */
-function HeartIcon() {
+/** Bookmark toggle icon — replaces the old decorative HeartIcon.
+ *  `filled=false` is node 663:5946 ("Name=Bookmark, State=Normal", from
+ *  the BigCard reference node 648:2): the hollow-ribbon outline,
+ *  fill-opacity 0.5. `filled=true` is the real node 663:6184
+ *  ("State=Selected") — user supplied the direct link after the tools
+ *  available here couldn't surface it themselves (no Code Connect access
+ *  on this file's plan, and a design-system search came back empty; ask
+ *  next time instead of guessing). Turns out to be the *same* outline
+ *  path's outer boundary (the ribbon silhouette, notch included) with its
+ *  inner hole-cutout subpath dropped — i.e. the identical shape, just
+ *  solid instead of hollow — painted at full opacity (Figma's "Dark/100%",
+ *  no dimming), not the hand-approximated curve this had before. */
+function BookmarkIcon({ filled }: { filled: boolean }) {
   return (
-    <svg width={24} height={21} viewBox="0 0 24.0097 21.096" fill="none" className="opacity-50" aria-hidden="true">
-      <path
-        d="M17.5048 0C16.3788 0.0175149 15.2773 0.331853 14.3116 0.911271C13.3459 1.49069 12.5502 2.31467 12.0048 3.3C11.4595 2.31467 10.6638 1.49069 9.69808 0.911271C8.73238 0.331853 7.63089 0.0175149 6.50484 0C4.70978 0.0779907 3.01855 0.863254 1.80062 2.18423C0.582701 3.50521 -0.0629094 5.25453 0.0048411 7.05C0.0048411 11.597 4.79084 16.563 8.80484 19.93C9.70106 20.6831 10.8342 21.096 12.0048 21.096C13.1755 21.096 14.3086 20.6831 15.2048 19.93C19.2188 16.563 24.0048 11.597 24.0048 7.05C24.0726 5.25453 23.427 3.50521 22.2091 2.18423C20.9911 0.863254 19.2999 0.0779907 17.5048 0ZM13.9198 18.4C13.3838 18.8514 12.7056 19.0989 12.0048 19.0989C11.3041 19.0989 10.6259 18.8514 10.0898 18.4C4.95184 14.089 2.00484 9.953 2.00484 7.05C1.93648 5.78472 2.37121 4.54373 3.2142 3.5977C4.0572 2.65167 5.24007 2.07735 6.50484 2C7.76961 2.07735 8.95248 2.65167 9.79548 3.5977C10.6385 4.54373 11.0732 5.78472 11.0048 7.05C11.0048 7.31522 11.1102 7.56957 11.2977 7.75711C11.4853 7.94464 11.7396 8.05 12.0048 8.05C12.2701 8.05 12.5244 7.94464 12.7119 7.75711C12.8995 7.56957 13.0048 7.31522 13.0048 7.05C12.9365 5.78472 13.3712 4.54373 14.2142 3.5977C15.0572 2.65167 16.2401 2.07735 17.5048 2C18.7696 2.07735 19.9525 2.65167 20.7955 3.5977C21.6385 4.54373 22.0732 5.78472 22.0048 7.05C22.0048 9.953 19.0578 14.089 13.9198 18.396V18.4Z"
-        fill="var(--color-tutorial-card-text)"
-      />
+    <svg
+      width={22}
+      height={24}
+      viewBox="0 0 22.0003 24.0035"
+      fill="none"
+      className={filled ? undefined : 'opacity-50'}
+      aria-hidden="true"
+    >
+      {filled ? (
+        <path
+          d="M19.1371 24C18.7672 23.999 18.4011 23.9247 18.0601 23.7814C17.719 23.638 17.4097 23.4285 17.1501 23.165L11.0001 17.051L4.85012 23.169C4.45515 23.5697 3.94861 23.8422 3.39654 23.9508C2.84447 24.0594 2.27247 23.9992 1.75512 23.778C1.23264 23.5678 0.785669 23.205 0.472582 22.7369C0.159494 22.2688 -0.00515925 21.7171 0.000123236 21.154V5C0.000123236 3.67392 0.526908 2.40215 1.46459 1.46447C2.40227 0.526784 3.67404 0 5.00012 0L17.0001 0C17.6567 0 18.3069 0.129329 18.9135 0.380602C19.5202 0.631876 20.0714 1.00017 20.5357 1.46447C21 1.92876 21.3683 2.47996 21.6195 3.08658C21.8708 3.69321 22.0001 4.34339 22.0001 5V21.154C22.0057 21.7167 21.8417 22.268 21.5293 22.7361C21.217 23.2041 20.7709 23.5672 20.2491 23.778C19.8969 23.9253 19.5189 24.0008 19.1371 24Z"
+          fill="var(--color-tutorial-card-text)"
+        />
+      ) : (
+        <path
+          d="M19.1371 24C18.7672 23.999 18.4011 23.9247 18.0601 23.7814C17.719 23.638 17.4097 23.4285 17.1501 23.165L11.0001 17.051L4.85012 23.169C4.45515 23.5697 3.94861 23.8422 3.39654 23.9508C2.84447 24.0594 2.27247 23.9992 1.75512 23.778C1.23264 23.5678 0.785669 23.205 0.472582 22.7369C0.159494 22.2688 -0.00515925 21.7171 0.000123236 21.154V5C0.000123236 3.67392 0.526908 2.40215 1.46459 1.46447C2.40227 0.526784 3.67404 0 5.00012 0L17.0001 0C17.6567 0 18.3069 0.129329 18.9135 0.380602C19.5202 0.631876 20.0714 1.00017 20.5357 1.46447C21 1.92876 21.3683 2.47996 21.6195 3.08658C21.8708 3.69321 22.0001 4.34339 22.0001 5V21.154C22.0057 21.7167 21.8417 22.268 21.5293 22.7361C21.217 23.2041 20.7709 23.5672 20.2491 23.778C19.8969 23.9253 19.5189 24.0008 19.1371 24ZM5.00012 2C4.20447 2 3.44141 2.31607 2.8788 2.87868C2.31619 3.44129 2.00012 4.20435 2.00012 5V21.154C1.99976 21.3206 2.04879 21.4836 2.14102 21.6224C2.23325 21.7612 2.36455 21.8695 2.51831 21.9337C2.67208 21.9979 2.84143 22.0151 3.00496 21.9831C3.1685 21.9512 3.31888 21.8714 3.43712 21.754V21.754L10.3001 14.933C10.4875 14.7468 10.7409 14.6422 11.0051 14.6422C11.2693 14.6422 11.5228 14.7468 11.7101 14.933L18.5651 21.752C18.6834 21.8694 18.8338 21.9492 18.9973 21.9811C19.1608 22.0131 19.3302 21.9959 19.4839 21.9317C19.6377 21.8675 19.769 21.7592 19.8612 21.6204C19.9535 21.4816 20.0025 21.3186 20.0021 21.152V5C20.0021 4.20435 19.6861 3.44129 19.1234 2.87868C18.5608 2.31607 17.7978 2 17.0021 2H5.00012Z"
+          fill="var(--color-tutorial-card-text)"
+        />
+      )}
     </svg>
   )
 }
@@ -112,11 +144,11 @@ function TimerBadge({ minutes }: { minutes: number }) {
   )
 }
 
-/** The two overlapping photos (or placeholder swatches). One shared
- *  geometry reused across every tutorial — the source design varies these
- *  numbers slightly per variant, but with no real photos yet for 3 of the
- *  4 entries, matching one variant's exact sub-pixel layout isn't worth
- *  chasing; revisit once real photography is in. */
+/** The two overlapping photos (or placeholder swatches, if a future entry
+ *  ever ships without real photos — all four `TUTORIALS` entries have them
+ *  now). One shared geometry reused across every tutorial — the source
+ *  design varies these numbers slightly per variant, but matching each
+ *  variant's exact sub-pixel layout individually isn't worth chasing. */
 function ImagePair({ tutorial }: { tutorial: Tutorial }) {
   const shadow = '0px 4px 20px 0px rgba(67, 48, 35, 0.2)'
   return (
@@ -185,23 +217,63 @@ type TutorialLookCardProps = {
    *  the front one, not for the whole time it's peeking. Undefined (the
    *  static, non-stacked usage) means always fully opaque. */
   detailsOpacity?: MotionValue<number>
+  /** Bookmark toggle state — lifted all the way up to TutorialStack (see
+   *  its own module comment) rather than local, so it survives this exact
+   *  card staying mounted as it cycles through peek/front/peek again. */
+  saved?: boolean
+  onToggleSave?: () => void
 }
 
 /** The look of one card, at rest. TutorialStack (below) is what actually
  *  drives it through the scroll-linked stack — this component itself
- *  stays dumb about scroll/drag, it just renders a card. */
-export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity }: TutorialLookCardProps) {
+ *  stays dumb about scroll/drag, it just renders a card.
+ *
+ *  Root is a `role="button"` div, not a real `<button>`: the bookmark
+ *  toggle needs its own independently-tappable control (open the tutorial
+ *  vs. save the look are two different actions now), and nesting a real
+ *  `<button>` inside a `<button>` is invalid HTML — React's DOM API will
+ *  still render it without the browser silently relocating it the way
+ *  parsing raw HTML would, but it's broken for keyboard/screen-reader
+ *  navigation (two activatable controls collapsed into one stop) and for
+ *  click bubbling (the inner tap would also fire the outer one without
+ *  careful stopPropagation everywhere). A div with role="button" +
+ *  explicit tabIndex/onKeyDown reproduces exactly what the native button
+ *  gave up (Enter/Space activation, tab order, disabled state), while
+ *  leaving room for one real nested `<button>` for the bookmark. */
+export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity, saved, onToggleSave }: TutorialLookCardProps) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      disabled={disabled}
+    <div
+      role="button"
+      aria-disabled={disabled || undefined}
       tabIndex={disabled ? -1 : 0}
-      className="relative flex h-full w-[338px] flex-col items-center gap-1 overflow-hidden pb-6 text-left"
+      onClick={disabled ? undefined : onSelect}
+      onKeyDown={
+        disabled
+          ? undefined
+          : (e) => {
+              // Space also scrolls the page on a native button unless the
+              // default is prevented — replicating that here since this
+              // is a div now, not a real button.
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onSelect?.()
+              }
+            }
+      }
+      // active:scale-[0.97] (motion audit, Home screen only): a plain tap
+      // used to get zero acknowledgment before the screen changed — only a
+      // drag got feedback, via gripScale on the wrapping motion.div in
+      // TutorialStackCard. Safe alongside that: a disabled card (every
+      // card but the front one) has no onClick/onKeyDown attached above,
+      // so :active only ever fires on the one card that's actually
+      // tappable, and stacks harmlessly with gripScale on the rare frame
+      // both are transiently true (pointerdown-before-drag-threshold).
+      className={`relative flex h-full w-[338px] flex-col items-center gap-1 overflow-hidden pb-6 text-left active:scale-[0.97] ${disabled ? '' : 'cursor-pointer'}`}
       style={{
         background: 'var(--color-surface)',
         borderRadius: 'var(--radius-tutorial-card)',
         boxShadow: 'var(--shadow-tutorial-card)',
+        transition: 'transform var(--duration-instant) var(--ease-out-quart)',
       }}
     >
       <motion.div className="w-full" style={detailsOpacity ? { opacity: detailsOpacity } : undefined}>
@@ -210,7 +282,7 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity 
       <div className="flex w-full flex-col items-center gap-6 px-6">
         <ImagePair tutorial={tutorial} />
         <motion.div
-          className="flex w-full items-end justify-between"
+          className="flex w-full items-start justify-between"
           style={detailsOpacity ? { opacity: detailsOpacity } : undefined}
         >
           <div className="flex flex-col items-start gap-1">
@@ -232,10 +304,37 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity 
               </p>
             </div>
           </div>
-          <HeartIcon />
+          {/* Real nested <button>, not a div — see this component's own
+              module comment for why the root had to stop being a <button>
+              to make this valid. stopPropagation so tapping the bookmark
+              doesn't also open the tutorial underneath it. key={saved...}
+              forces a remount on toggle (same pattern as CheckIndicator)
+              so check-pop reliably replays every time, not just the first —
+              a bare re-render wouldn't restart a CSS `animation`. disabled
+              mirrors the card's own disabled state: only the front card's
+              bookmark is ever tappable, matching every other control here. */}
+          <button
+            type="button"
+            disabled={disabled}
+            aria-pressed={saved}
+            aria-label={saved ? `Remove ${tutorial.title} from saved looks` : `Save ${tutorial.title}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleSave?.()
+            }}
+            className="relative shrink-0"
+          >
+            <span
+              key={saved ? 'saved' : 'unsaved'}
+              className="block"
+              style={{ animation: 'check-pop var(--duration-instant) var(--ease-out-quart)' }}
+            >
+              <BookmarkIcon filled={!!saved} />
+            </span>
+          </button>
         </motion.div>
       </div>
-    </button>
+    </div>
   )
 }
 
@@ -253,32 +352,45 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity 
  *  or the two curves visibly disagree at the crossfade edge.
  *
  *  Purely decorative: doesn't represent a specific tutorial, just "here's
- *  the next one, not shown yet." Source design uses a photo texture
- *  tinted gold via mix-blend-overlay; simplified to a flat
- *  --color-card-behind-tint swatch until there's a real asset to use.
+ *  the next one, not shown yet." Source design uses a photo texture tinted
+ *  gold via mix-blend-overlay — this now uses the real texture asset
+ *  (card-ghost-texture.jpg, downsized/recompressed PNG→JPEG from the
+ *  original ~618KB export down to ~58KB, no visible difference) directly
+ *  as the image, not layered under a separate --color-card-behind-tint
+ *  overlay: the source photo is already gold-toned on its own, so the
+ *  flat-swatch tint it stood in for is retired rather than kept as a
+ *  redundant second layer on top of a photo that already reads as gold.
  *  `opacity` drives the reveal — see useCardMotion's contentOpacity. */
 export function CardBehind({ opacity, className }: { opacity?: MotionValue<number>; className?: string }) {
   return (
     <motion.div
       aria-hidden="true"
-      className={`absolute inset-0 ${className ?? ''}`}
+      className={`absolute inset-0 overflow-hidden ${className ?? ''}`}
       style={{
-        background: 'var(--color-card-behind-tint)',
         borderRadius: 'var(--radius-tutorial-card)',
         boxShadow: 'var(--shadow-tutorial-card)',
         opacity,
       }}
-    />
+    >
+      <img alt="" src={cardGhostTexture} className="size-full object-cover" />
+    </motion.div>
   )
 }
 
-/** Card height is content-driven (~346px) on TutorialLookCard normally,
- *  but the stack below positions every card `absolute inset-0` on top of
- *  each other (so it can cross-fade/rotate between them), which needs an
+/** Card height is content-driven on TutorialLookCard normally, but the
+ *  stack below positions every card `absolute inset-0` on top of each
+ *  other (so it can cross-fade/rotate between them), which needs an
  *  explicit height to size that box. Every tutorial shares the same
  *  layout geometry (see ImagePair's module comment), so one constant is
- *  accurate for all of them, not an approximation. */
-const CARD_HEIGHT = 346
+ *  accurate for all of them, not an approximation.
+ *
+ *  359, not 346: the button's own `pb-6` (24px) was being silently
+ *  clipped down to an 11px rendered gap — this fixed height was 13px
+ *  short of what the content + a real 24px of bottom padding actually
+ *  need, and `overflow-hidden` on the button ate the difference instead
+ *  of erroring. Measured directly (byline bottom → card bottom) rather
+ *  than guessed. */
+const CARD_HEIGHT = 359
 const CARD_WIDTH = 338
 
 type TutorialStackProps = {
@@ -436,6 +548,8 @@ function TutorialStackCard({
   onSelect,
   onCommitStart,
   onAdvance,
+  saved,
+  onToggleSave,
 }: {
   tutorial: Tutorial
   index: number
@@ -466,6 +580,10 @@ function TutorialStackCard({
   onSelect?: () => void
   onCommitStart: () => void
   onAdvance: () => void
+  /** Bookmark state for *this* tutorial specifically — owned by
+   *  TutorialStack (see its module comment), just threaded through here. */
+  saved: boolean
+  onToggleSave: () => void
 }) {
   // Two different questions, again (see isFrontCard/isInteractive below,
   // same shape): which index value THIS card's own pose should react to.
@@ -656,6 +774,8 @@ function TutorialStackCard({
           onSelect={onSelect}
           disabled={!isInteractive}
           detailsOpacity={detailsOpacity}
+          saved={saved}
+          onToggleSave={onToggleSave}
         />
       </motion.div>
     </motion.div>
@@ -751,6 +871,31 @@ export function TutorialStack({ tutorials, onSelect }: TutorialStackProps) {
   // values just aren't editable live at the moment. Uncomment the
   // <MotionTuner> line below to bring the panel back.
   const [tuning, setTuning] = useState(DEFAULT_MOTION_TUNING)
+  // Bookmark state, per tutorial id. Owned here rather than inside
+  // TutorialLookCard itself: that component is instantiated twice per
+  // tutorial across the app's lifetime (once for the drag stack, once for
+  // the prefers-reduced-motion static list — see the `reduceMotion` branch
+  // below), and *within* the drag stack every card's own TutorialLookCard
+  // instance stays mounted continuously as it cycles through peek/front/
+  // peek again (only its pose changes) — so local state would technically
+  // survive that, but would NOT survive a live prefers-reduced-motion
+  // toggle switching which branch renders, and two independent copies of
+  // "the same" saved state (one per branch) was never the intent. A Set
+  // instead of Record<string, boolean>: only ever asking "is this id in
+  // it", never iterating/serializing it elsewhere yet.
+  const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set())
+
+  function handleToggleSave(id: string) {
+    setSavedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
 
   function handleCommitStart() {
     setIsAdvancing(true)
@@ -801,7 +946,13 @@ export function TutorialStack({ tutorials, onSelect }: TutorialStackProps) {
     return (
       <div className="mx-auto flex w-[338px] flex-col gap-4">
         {tutorials.map((tutorial) => (
-          <TutorialLookCard key={tutorial.id} tutorial={tutorial} onSelect={onSelect} />
+          <TutorialLookCard
+            key={tutorial.id}
+            tutorial={tutorial}
+            onSelect={onSelect}
+            saved={savedIds.has(tutorial.id)}
+            onToggleSave={() => handleToggleSave(tutorial.id)}
+          />
         ))}
       </div>
     )
@@ -825,6 +976,8 @@ export function TutorialStack({ tutorials, onSelect }: TutorialStackProps) {
           activeCardIndex={activeCardIndex}
           onSelect={onSelect}
           onAdvance={handleAdvance}
+          saved={savedIds.has(tutorial.id)}
+          onToggleSave={() => handleToggleSave(tutorial.id)}
         />
       ))}
     </div>

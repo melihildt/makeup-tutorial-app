@@ -22,7 +22,10 @@ function App() {
     // on a blank page. md:py-10 keeps some breathing room on short windows
     // before md:max-h-[90dvh] (on the inner frame) kicks in to shrink it
     // instead of overflowing.
-    <div className="flex min-h-dvh w-full flex-col items-center bg-[--color-page-backdrop] md:justify-center md:py-10">
+    // overflow-x-hidden here too, not just the inner frame below — belt and
+    // suspenders against horizontal scroll/bounce (see index.css's global
+    // html/body rule for the main fix and why).
+    <div className="flex min-h-dvh w-full flex-col items-center overflow-x-hidden bg-[--color-page-backdrop] md:justify-center md:py-10">
       <div className="h-dvh w-full max-w-[402px] overflow-hidden md:h-[874px] md:max-h-[90dvh] md:rounded-2xl md:shadow-[--shadow-page-frame]">
         {screen === 'home' ? (
           <HomeScreen onSelectLook={() => setScreen('tutorial')} />

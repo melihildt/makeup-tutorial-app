@@ -186,7 +186,14 @@ export function StepScreen({
           box (pushing nothing), and any step whose content is taller
           than that leftover space scrolls internally instead of growing
           the outer frame — the card's position never moves either way. */}
-      <div className="relative flex-1 overflow-y-auto">
+      {/* overflow-x-hidden alongside overflow-y-auto: setting only
+          overflow-y leaves overflow-x at its default `visible`, making
+          this a latent horizontally-scrollable surface even though
+          nothing here currently overflows sideways — see HomeScreen.tsx's
+          matching comment for the real bug this pattern caused there
+          (the tutorial card stack's fly-off animation). Applied here too,
+          defensively, since this container has the exact same shape. */}
+      <div className="relative flex-1 overflow-y-auto overflow-x-hidden">
         {/* Paper-texture mask above the illustration — originally
             positioned at top-[114px] (see the old V1 874px-canvas
             derivation this replaced), computed from mt-[40px] + gap-[52px]
