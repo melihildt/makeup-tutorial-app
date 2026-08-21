@@ -196,24 +196,14 @@ up (this file's established canonical swipe direction). Skipped entirely
 under `prefers-reduced-motion`. Excludes the Start Over card (swiping it
 never does anything, so a swipe-shaped hint there would be misleading).
 
-**Pending fix (not yet implemented) — the interaction-detection is too
-narrow.** Right now `onInteraction()` (which resets `hasInteractedRef` and
-holds off the next nudge) is only called from `handleDragStart` — meaning
-**tapping a card to flip it does not count as an interaction**, so the hint
-could still fire while the user is actively engaging with the stack via
-taps rather than drags. Fix: call `onInteraction()` from `handleCardTap`
-too (and consider `handleToggleSave`/the bookmark, and `handleStartOverTap`
-— any tap-driven engagement with the stack, not just a drag). The user's
-own framing: *"the flick should work only when I'm not interacting with the
-page at all."* Scope call to make when picking this up: whether "the page"
-means just the card stack (flip/bookmark/Start Over taps — the narrower,
-safer reading) or something broader like the filter chips in `HomeScreen`
-too (would need new prop threading between `HomeScreen` and
-`TutorialStack`, not just within `TutorialCard.tsx`) — the user's example
-was specifically about tapping to flip, so the narrower reading is the
-safer default absent further clarification.
+**Fixed** — `onInteraction()` now fires from `handleDragStart`,
+`handleCardTap`, `handleStartOverTap`, and `handleToggleSave` (the
+bookmark) — any tap-driven engagement with the stack, not just a drag.
+Scoped narrowly to the card stack itself, not `HomeScreen`'s filter chips
+(the user's own example was specifically about tapping to flip, so that's
+the reading this went with).
 
-## Tutorial detail flip (level/duration/products/CTA) — uncommitted
+## Tutorial detail flip (level/duration/products/CTA)
 
 Tapping the front card now flips it (not navigates) to reveal:
 level (`LevelIcon` + label), duration (reusing `durationMinutes`), a
@@ -235,13 +225,16 @@ needed). Duration is 0.45s, deliberately snappier than Start Over's 0.7s —
 this is a browsing interaction someone might trigger repeatedly, not a
 rare once-a-cycle reveal.
 
-**Content status**: level/product data is **placeholder** on all four
-tutorials (see the `Tutorial` type comment) — Soft Smokey Eye's values
-(easy/8 products) match the source Figma mockup's own example exactly
-(25min/Easy/8 products → "+5" remaining). Product thumbnails are flat
-placeholder swatches (`--color-product-placeholder`, `#e5e5e7` — Figma's
-own placeholder-gray for the same not-yet-real image slots, not an
-invented color), not real product photos — those don't exist yet.
+**Content status**: level/product-count data is **placeholder** on all
+four tutorials (see the `Tutorial` type comment) — Soft Smokey Eye's
+values (easy/8 products) match the source Figma mockup's own example
+exactly (25min/Easy/8 products → "+5" remaining). Product **thumbnails**:
+Soft Smokey Eye now shows real photos (`Tutorial.productImages`, reused
+from the step-by-step flow's own product photography — see "Bugs
+fixed"-adjacent work / `ProductsPreview`'s own comment); the other three
+still show a flat placeholder swatch (`--color-product-placeholder`,
+`#e5e5e7` — Figma's own placeholder-gray), since they don't have real
+tutorial content behind them yet.
 
 **Resolved, then reversed — the departing-card visual gap.** If you swipe
 away a card *while it's flipped* (showing details), the original ask was
@@ -274,12 +267,20 @@ and no treatment at all. If either comes back as a request, it's a
 rebuild — check git history for the removed `GhostStyle` type if reference
 code would help.
 
-## MotionTuning / MotionTuner (temporary — hidden, not removed)
+## MotionTuning (the `MotionTuner` dev panel is gone)
 
-Unchanged from before: every drag/spring/reveal number lives on
-`MotionTuning`/`DEFAULT_MOTION_TUNING`, `MotionTuner` still has live
-sliders over all of them, still commented out in `TutorialStack` (search
-"Hidden for now"). Current values:
+`MotionTuner` (the live-slider dev panel, already hidden/commented out)
+is now actually **removed**, per the user's own call once the numbers
+felt settled — check git history if a similar tuning UI is ever needed
+again. `MotionTuning`/`DEFAULT_MOTION_TUNING` themselves **stay** — every
+drag/spring/reveal number still lives there, `TutorialStackCard` still
+reads everything through `tuning.*`, and the pending animation-audit
+plans (003, 004 below) both operate on this exact shape, which is why it
+wasn't collapsed back into plain constants at the same time. `tuning`
+itself is now a plain `const = DEFAULT_MOTION_TUNING` inside
+`TutorialStack`, not `useState` — nothing has ever called a setter since
+the panel doesn't exist, so state with no writer was just indirection.
+Current values:
 
 ```
 commitDistance: CARD_WIDTH * 0.35 (~118px)
@@ -296,6 +297,52 @@ flip `{bounce: 0.15, duration: 0.7}`, tutorial-card flip
 `{bounce: 0.15, duration: 0.45}`, swipe-hint nudge `{bounce: 0.35, duration: 0.35}`
 out / `{bounce: 0.25, duration: 0.4}` back. `plans/003-fold-flip-values-into-motion-tuning.md`
 (see "Animation audit" below) already specs folding some of these in.
+
+## First-load entrance + screen transition (`App.tsx`)
+
+Two gaps flagged in a broader home-page audit, both closed this session
+— the first real motion work outside `TutorialCard.tsx` for this feature
+area, so `App.tsx` is now also in scope for this doc, not just the file
+map's "unrelated" framing of it before.
+
+**Stack entrance** (`TutorialStack`, `src/components/TutorialCard.tsx`):
+the whole stack fades + rises + gently scales up as one unit on mount —
+`{opacity: 0, transform: 'translateY(16px) scale(0.96)'}` →
+`{opacity: 1, transform: 'translateY(0px) scale(1)'}`, 0.35s,
+`--ease-out-quart`'s numeric form. Deliberately **not** per-card
+staggered (front/peek entering separately) — this plays every session,
+not once-ever, so it stays restrained rather than choreographed.
+Gated to true first load only via `hasPlayedStackEntrance`, a **module-level**
+flag (not `useState`/`useRef` — those wouldn't survive `TutorialStack`
+unmounting, which happens every time `App.tsx` swaps `HomeScreen` out for
+`TutorialFlow`): reads-and-flips it in one `useState` lazy initializer, so
+only the very first mount of the session plays it — returning from a
+tutorial back to Home does not replay it (the screen transition below
+already carries that "arriving back" motion instead). `prefers-reduced-motion`:
+keeps a plain opacity fade (no `y`/`scale`) rather than skipping outright,
+same "fewer and gentler, not zero" reasoning as everywhere else in this
+file. The `reduceMotion` static-list branch gets an equivalent, simpler
+opacity-only version.
+
+**Screen transition** (`App.tsx`): replaces a hard `screen === 'home' ?
+<A/> : <B/>` conditional (zero motion, a known gap from the earlier
+`improve-animations` pass, see "Animation audit" below) with a real
+push/pop — `AnimatePresence` + the standard Framer "directional
+navigation" recipe (a `direction: 1 | -1` set alongside `screen` in the
+same two handlers, fed through `custom` into per-key `variants`).
+Forward (Home → Tutorial): Tutorial slides in from the right while Home
+recedes left. Backward: reversed. Percent-based `translateX` (relative to
+each screen's own width), not pixels. Same 350ms/`--ease-out-quart` pair
+as the stack entrance. Reduced motion is folded into the *same* `custom`
+payload passed to `variants` (`{direction, reduceMotion}`) rather than a
+competing `style` override applied alongside `variants` — two things
+driving one CSS property is exactly the "never swap which value binds a
+style key" mistake this file's own "Bugs fixed" list already paid for
+once (see #1 there) — under reduced motion `translateX` stays pinned at
+0% throughout and `opacity` carries the swap instead; under normal motion
+it's the reverse emphasis, pure `translateX` with opacity pinned at 1
+throughout, matching a native push/pop's translate-only feel rather than
+fighting the slide with a simultaneous crossfade.
 
 ## Bugs fixed (worth knowing before you "fix" them again)
 
@@ -568,14 +615,19 @@ docs/handoff.md              Older doc — step-flow/illustration work, stale on
 docs/figma-v2-redesign.md    Step-flow Figma reference (unrelated to this feature)
 plans/                       improve-animations audit — plans/README.md for the summary + execution order
 
+src/App.tsx                  Home↔Tutorial screen swap — now a real AnimatePresence slide, not a hard conditional; see "First-load entrance + screen transition" above
+src/TutorialFlow.tsx         The step-by-step tutorial screen (only reachable via Soft Smokey Eye) — note: directly in src/, not src/components/
+
 src/components/
   HomeScreen.tsx              Header + filter chips (LookSelector, owns `selectedType`/LookType) + <TutorialStack>
   TutorialCard.tsx            Everything described above — the whole stack feature lives here
-  TutorialFlow.tsx            The step-by-step tutorial screen (only reachable via Soft Smokey Eye)
+
+src/data/stepContent.ts       Step-by-step flow's own product photography — reused by TutorialCard.tsx's ProductsPreview for Soft Smokey Eye's real thumbnails (see "Tutorial detail flip" above)
 
 src/assets/
   looks/                      Per-tutorial photo pairs + card-ghost-texture.jpg (day) + -night.png/-glam.png
   filter-chips/                Shared woven texture, tinted per chip via mix-blend-mode
+  product-images/              Real product photos (also src/data/stepContent.ts's own source)
 
 src/styles/tokens.css         --radius-tutorial-card, --shadow-tutorial-card, --duration-*/--ease-out-quart, --color-timer-badge-bg, --color-product-placeholder (new), etc. — search "tutorial-card". --color-card-behind-tint is deprecated.
 ```

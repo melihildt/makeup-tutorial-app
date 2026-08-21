@@ -39,12 +39,12 @@ Start Over's flip values) or treat that as separate follow-up scope — 003's
 own file only covers what existed at the time it was written, per its own
 "if the code has drifted, STOP and report" boundary.
 
-Missed opportunities from the original audit (additive, not corrective —
-not planned): tapping the front card hard-cuts into `TutorialFlow` with
-zero connecting motion (`src/App.tsx:30`, confirmed no `motion.`/animate
-usage anywhere in `TutorialFlow.tsx` — still true, unaddressed by the new
-detail-flip feature, which flips in place rather than navigating away
-directly now anyway); the stack has no first-load entrance animation.
+**Both of the original audit's "missed opportunities" are now built** —
+see `docs/home-stack-handoff.md`'s "First-load entrance + screen
+transition" section: `App.tsx`'s hard `screen === 'home' ? <A/> : <B/>`
+swap is now a real `AnimatePresence` push/pop slide, and the stack plays
+a fade+rise+scale entrance on true first load (gated to once per session
+via a module-level flag, not replayed on returning from a tutorial).
 
 **Two newer pending items are bug fixes from user testing, not audit
 findings — tracked in `docs/home-stack-handoff.md` directly, not here**:

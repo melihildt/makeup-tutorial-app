@@ -39,12 +39,11 @@ import type { LookType } from './HomeScreen'
  * module comment for why this isn't scroll-linked).
  *
  * Only "Soft Smokey Eye" has a real tutorial behind it (TutorialFlow is
- * hard-coded to that content) — the other three now have real photos too
- * (all four `images` are set, `placeholderColors` is unused/legacy at this
- * point, kept on the type rather than deleted in case a future entry needs
- * to fall back to it) but are still decorative taps, same "not wired up
- * yet" spirit as HomeScreen's Day/Night/Glam filter chips: looking real
- * now, not functional yet.
+ * hard-coded to that content, and doesn't even take a tutorial id — see
+ * `hasContent`'s own comment) — the other three now have real photos too
+ * (all four `images` are set) but are still decorative taps, same "not
+ * wired up yet" spirit as HomeScreen's Day/Night/Glam filter chips:
+ * looking real now, not functional yet.
  */
 /** Node 674:3974 ("Icons", the level pill's own icon) — 'easy' lights only
  *  the shortest of the three ascending bars, 'medium' adds the middle one,
@@ -56,9 +55,14 @@ export type Tutorial = {
   title: string
   brand: string
   durationMinutes: number
+  /** Not consumed anywhere yet — declared per-tutorial (true only for Soft
+   *  Smokey Eye) but nothing gates navigation on it: the CTA/tap on *any*
+   *  tutorial, `hasContent` or not, opens the same hard-coded TutorialFlow
+   *  (Soft Smokey Eye's real steps), mislabeled for the other three.
+   *  Known, accepted for now — real per-tutorial content is coming later,
+   *  not a bug to fix today. */
   hasContent: boolean
-  images: [string, string] | null
-  placeholderColors: [string, string] | null
+  images: [string, string]
   /** Drives the flipped card's level pill (LevelIcon + label) — see
    *  TutorialLevel. Placeholder values for now on all four, per the user's
    *  own call: real per-tutorial levels wait until the other three
@@ -95,7 +99,6 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 25,
     hasContent: true,
     images: [lookImage1, lookImage2],
-    placeholderColors: null,
     level: 'easy',
     productsUsedCount: 8,
     productImages: [previewEyeshadowImg, previewMascaraImg, previewHighlightImg],
@@ -110,7 +113,6 @@ export const TUTORIALS: Tutorial[] = [
     // shorter slot, images[1] is the left/taller one — reversing the pair
     // moves what was on the left over to the right, and vice versa.
     images: [miaImage2, miaImage1],
-    placeholderColors: null,
     level: 'medium',
     productsUsedCount: 6,
   },
@@ -121,7 +123,6 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 15,
     hasContent: false,
     images: [autumnImage2, autumnImage1],
-    placeholderColors: null,
     level: 'experienced',
     productsUsedCount: 9,
   },
@@ -132,7 +133,6 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 15,
     hasContent: false,
     images: [mattesImage2, mattesImage1],
-    placeholderColors: null,
     level: 'easy',
     productsUsedCount: 5,
   },
@@ -283,11 +283,13 @@ function TimerBadge({ minutes }: { minutes: number }) {
   )
 }
 
-/** The two overlapping photos (or placeholder swatches, if a future entry
- *  ever ships without real photos — all four `TUTORIALS` entries have them
- *  now). One shared geometry reused across every tutorial — the source
- *  design varies these numbers slightly per variant, but matching each
- *  variant's exact sub-pixel layout individually isn't worth chasing. */
+/** The two overlapping photos — every `TUTORIALS` entry has real ones now
+ *  (`images` is non-nullable; the placeholder-swatch fallback this used to
+ *  have was removed once that stopped being a real case, see git history
+ *  if a future tutorial genuinely ships without photos). One shared
+ *  geometry reused across every tutorial — the source design varies these
+ *  numbers slightly per variant, but matching each variant's exact
+ *  sub-pixel layout individually isn't worth chasing. */
 function ImagePair({ tutorial }: { tutorial: Tutorial }) {
   const shadow = '0px 4px 20px 0px rgba(67, 48, 35, 0.2)'
   return (
@@ -300,38 +302,24 @@ function ImagePair({ tutorial }: { tutorial: Tutorial }) {
           rounded 84px that left the pair further apart than the design. */}
       <div className="absolute left-1/2 top-[30px] h-[170.784px] w-[148.081px] -translate-x-1/2" style={{ marginLeft: '72.72px' }}>
         <div className="flex h-full w-full items-center" style={{ transform: 'rotate(1.773deg)' }}>
-          {tutorial.images ? (
-            <img
-              alt=""
-              src={tutorial.images[0]}
-              className="h-[166.44px] w-[143px] rounded-[20px] object-cover"
-              style={{ boxShadow: shadow }}
-            />
-          ) : (
-            <div
-              className="h-[166.44px] w-[143px] rounded-[20px]"
-              style={{ background: tutorial.placeholderColors![0], boxShadow: shadow }}
-            />
-          )}
+          <img
+            alt=""
+            src={tutorial.images[0]}
+            className="h-[166.44px] w-[143px] rounded-[20px] object-cover"
+            style={{ boxShadow: shadow }}
+          />
         </div>
       </div>
       {/* Taller image, left side. Exact Figma values: 143x213,
           rotate(-2.387deg). Offset -70.63px, same precision correction. */}
       <div className="absolute left-1/2 top-0 h-[218.771px] w-[151.747px] -translate-x-1/2" style={{ marginLeft: '-70.63px' }}>
         <div className="flex h-full w-full items-center" style={{ transform: 'rotate(-2.387deg)' }}>
-          {tutorial.images ? (
-            <img
-              alt={`Model wearing the ${tutorial.title} look`}
-              src={tutorial.images[1]}
-              className="h-[213px] w-[143px] rounded-[20px] object-cover"
-              style={{ boxShadow: shadow }}
-            />
-          ) : (
-            <div
-              className="h-[213px] w-[143px] rounded-[20px]"
-              style={{ background: tutorial.placeholderColors![1], boxShadow: shadow }}
-            />
-          )}
+          <img
+            alt={`Model wearing the ${tutorial.title} look`}
+            src={tutorial.images[1]}
+            className="h-[213px] w-[143px] rounded-[20px] object-cover"
+            style={{ boxShadow: shadow }}
+          />
         </div>
       </div>
     </div>
@@ -1049,9 +1037,14 @@ const FLY_OFF_DISTANCE = Math.hypot(CARD_WIDTH, CARD_HEIGHT)
  *  card visibly resisting instead of either extreme. */
 const START_OVER_RESIST_FACTOR = 0.35
 
-/** Every value below was a hardcoded guess before — now a single object so
- *  they can come from the (temporary) MotionTuner sliders instead. See
- *  MotionTuner's own comment for the "temporary" half of that story. */
+/** Every value below was a hardcoded guess before — now a single object,
+ *  originally so they could come from a live-slider dev panel
+ *  (`MotionTuner`, removed once the numbers settled — see git history if
+ *  a similar tuning UI is ever needed again). Still a single object
+ *  rather than folded back into plain constants: `TutorialStackCard`
+ *  reads every field through `tuning.*` throughout, and the pending
+ *  animation-audit plans (003, 004 — see `plans/README.md`) both operate
+ *  on this exact shape. */
 export type MotionTuning = {
   /** Total 2D drag distance (px) past which a release commits instead of
    *  cancelling. */
@@ -1893,51 +1886,26 @@ function TutorialStackCard({
  * content.
  */
 
-/** TEMPORARY — live sliders over MotionTuning, for feel-testing the drag/
- * fly-off/grip physics directly on a phone instead of guessing values and
- * redeploying (same pattern as the earlier, now-removed SegmentTuner).
- * Once numbers are settled on: report them back, and this + the `tuning`
- * prop threading in TutorialStack/TutorialStackCard should come out in
- * favor of plain DEFAULT_MOTION_TUNING constants again. */
-function MotionTuner({ tuning, onChange }: { tuning: MotionTuning; onChange: (next: MotionTuning) => void }) {
-  const rows: Array<{ key: keyof MotionTuning; label: string; min: number; max: number; step: number }> = [
-    { key: 'commitDistance', label: 'commit dist', min: 40, max: 250, step: 5 },
-    { key: 'commitVelocity', label: 'commit vel', min: 100, max: 1200, step: 25 },
-    { key: 'flyOffDuration', label: 'fly-off dur', min: 0.2, max: 1.5, step: 0.05 },
-    { key: 'flyOffBounce', label: 'fly-off bounce', min: 0, max: 0.6, step: 0.05 },
-    { key: 'cancelDuration', label: 'cancel dur', min: 0.15, max: 1, step: 0.05 },
-    { key: 'rotationRange', label: 'tilt range', min: 5, max: 40, step: 1 },
-    { key: 'gripScale', label: 'grip scale', min: 0.85, max: 1, step: 0.01 },
-  ]
-  return (
-    // fixed, not absolute — this used to be positioned relative to the
-    // stack's own 346px-tall box (`-top-8`, meant to sit just above it),
-    // which worked when it only had a few rows but started spilling down
-    // into the card itself once it grew to 8. Pinning to the viewport
-    // instead means its own height can never overlap the stack no matter
-    // how many rows get added.
-    <div className="fixed left-2 top-2 z-[999] w-[260px] rounded bg-black/80 px-2 py-1.5 font-mono text-[10px] leading-tight text-white">
-      {rows.map(({ key, label, min, max, step }) => (
-        <div key={key} className="flex items-center gap-1.5 py-0.5">
-          <span className="w-[80px] shrink-0">{label}</span>
-          <input
-            type="range"
-            min={min}
-            max={max}
-            step={step}
-            value={tuning[key]}
-            onChange={(e) => onChange({ ...tuning, [key]: Number(e.target.value) })}
-            className="h-3 flex-1 accent-white"
-          />
-          <span className="w-[34px] shrink-0 text-right tabular-nums">{tuning[key]}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
+// Module-level, not component state — deliberately survives a
+// TutorialStack unmount/remount (App.tsx swaps HomeScreen out entirely
+// while TutorialFlow is showing, so a fresh TutorialStack instance mounts
+// every time you return to Home), only resetting on an actual page
+// reload. That's what makes the entrance below genuinely "first load of
+// the session," not "every time you come back from a tutorial" — a
+// useRef inside the component wouldn't survive the remount, this has to
+// live outside it.
+let hasPlayedStackEntrance = false
 
 export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackProps) {
   const reduceMotion = useReducedMotion()
+  // Lazy initializer runs exactly once per mount, reading *and* flipping
+  // the module flag together — the next TutorialStack instance (a return
+  // from TutorialFlow) sees it already true and skips the entrance.
+  const [playEntrance] = useState(() => {
+    if (hasPlayedStackEntrance) return false
+    hasPlayedStackEntrance = true
+    return true
+  })
   // +1 for the Start Over slot (index === tutorials.length) — see this
   // component's own module comment above for why that's a real slot in
   // the cycle now instead of a plain `% tutorials.length` wrap.
@@ -2002,12 +1970,13 @@ export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackPr
   function handleInteraction() {
     hasInteractedRef.current = true
   }
-  // TEMPORARY — see MotionTuner. Panel is hidden (not rendered) for now,
-  // per request, so the stack is uninterrupted while iterating on the
-  // rest of the home screen — the mechanism itself is untouched, current
-  // values just aren't editable live at the moment. Uncomment the
-  // <MotionTuner> line below to bring the panel back.
-  const [tuning, setTuning] = useState(DEFAULT_MOTION_TUNING)
+  // Plain constant, not useState — nothing calls a setter to change this
+  // live any more now that MotionTuner's gone (see MotionTuning's own
+  // comment), so state with no writer was just indirection. 003/004
+  // (plans/README.md) still fold more values into `MotionTuning`/
+  // `DEFAULT_MOTION_TUNING` itself, unaffected by this being a plain
+  // reference instead of a state value.
+  const tuning = DEFAULT_MOTION_TUNING
   // Bookmark state, per tutorial id. Owned here rather than inside
   // TutorialLookCard itself: that component is instantiated twice per
   // tutorial across the app's lifetime (once for the drag stack, once for
@@ -2101,7 +2070,17 @@ export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackPr
 
   if (reduceMotion) {
     return (
-      <div className="mx-auto flex w-[338px] flex-col gap-4">
+      // Reduced motion keeps a plain opacity fade on first load rather
+      // than skipping the entrance outright — comprehension-neutral (it
+      // doesn't move anything, just appears a beat softer than an instant
+      // pop), which is what "fewer and gentler, not zero" means in
+      // practice, not literally no transition anywhere.
+      <motion.div
+        className="mx-auto flex w-[338px] flex-col gap-4"
+        initial={playEntrance ? { opacity: 0 } : false}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
+      >
         {tutorials.map((tutorial) => (
           <TutorialLookCard
             key={tutorial.id}
@@ -2111,7 +2090,7 @@ export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackPr
             onToggleSave={() => handleToggleSave(tutorial.id)}
           />
         ))}
-      </div>
+      </motion.div>
     )
   }
 
@@ -2123,9 +2102,28 @@ export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackPr
     // swap; every other card renders exactly as before, since perspective
     // is a no-op for children that never use a 3D transform in the first
     // place.
-    <div className="relative mx-auto" style={{ width: CARD_WIDTH, height: CARD_HEIGHT, perspective: 1000 }}>
-      {/* TEMPORARY — see MotionTuner's own comment above. Hidden for now:
-          <MotionTuner tuning={tuning} onChange={setTuning} /> */}
+    //
+    // First-load entrance (playEntrance): the whole stack settles in as
+    // one unit — fade + rise + a gentle scale-up, not scale(0) (nothing in
+    // the real world appears from nothing) — rather than choreographing
+    // the front/peek cards separately, which would over-produce a moment
+    // that should read as light, not showy (this plays every session, not
+    // once-ever, so it stays in the "occasional" tier, not "delight").
+    // initial={false} when playEntrance is false skips the animation
+    // entirely — the stack renders straight at its settled values, no
+    // wasted transition on a screen the user's already seen this session.
+    // Full `transform` string (not the x/y/scale shorthands), matching
+    // this file's own established GPU-only-properties discipline
+    // elsewhere. duration/ease reuse --duration-layout (350ms) and
+    // --ease-out-quart's numeric form — this file's own existing tokens
+    // for "larger layout/content change," not new ones invented for this.
+    <motion.div
+      className="relative mx-auto"
+      style={{ width: CARD_WIDTH, height: CARD_HEIGHT, perspective: 1000 }}
+      initial={playEntrance ? { opacity: 0, transform: 'translateY(16px) scale(0.96)' } : false}
+      animate={{ opacity: 1, transform: 'translateY(0px) scale(1)' }}
+      transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+    >
       {tutorials.map((tutorial, index) => (
         <TutorialStackCard
           key={tutorial.id}
@@ -2167,6 +2165,6 @@ export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackPr
         onInteraction={handleInteraction}
         lookType={lookType}
       />
-    </div>
+    </motion.div>
   )
 }
