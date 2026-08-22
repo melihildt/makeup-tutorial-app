@@ -14,18 +14,23 @@ regardless to confirm nothing's changed since; if there's anything beyond
 a clean tree, it's from later than this doc — read the diff before
 trusting this doc's "current state" claims over the actual code.
 
-**Immediate next task, per the user directly**: plan 004
-(`plans/004-start-over-rubber-band-friction.md`, real rubber-band
-friction on the Start Over card's drag) — 003, 006, and 007 are done (see
-"Animation audit" further down and `plans/README.md`), 005 is a
-low-priority consistency nit that needs a rewrite before it's even
-executable (its quoted code no longer exists — see `plans/README.md`'s
-own note). Two other items were explicitly **deferred to later, lower
-priority, per the user's own call**: the `CardBack`-fly-off-reads-abrupt
-issue (see "Known deferred issues" below — several real fixes landed
-chasing it already, none confirmed to close it, don't re-derive from
-scratch) and ghost-card clipping on narrow phones (older, lower priority
-still).
+**Plan 004 is now done** (`plans/004-start-over-rubber-band-friction.md`,
+real rubber-band friction on the Start Over card's drag — replaced the
+flat `0.35` linear multiplier with the standard `UIScrollView`-style
+`rubberBand()` curve, resistance now rises smoothly with drag distance
+instead of staying proportional; user tested on their own phone and
+confirmed it feels right). 003, 006, 007 were already done — see
+"Animation audit" further down and `plans/README.md`. **The only plan
+still open is 005** — a low-priority consistency nit that needs a rewrite
+before it's even executable (its quoted code, `contentOwnRotateY`/
+`flipProgress`, no longer exists anywhere in the file — see
+`plans/README.md`'s own note); not currently tasked as the immediate next
+thing, just the one remaining item in the queue. Two other items were
+explicitly **deferred to later, lower priority, per the user's own
+call**: the `CardBack`-fly-off-reads-abrupt issue (see "Known deferred
+issues" below — several real fixes landed chasing it already, none
+confirmed to close it, don't re-derive from scratch) and ghost-card
+clipping on narrow phones (older, lower priority still).
 
 **A second, follow-up animation audit ran this session** (against
 `TutorialCard.tsx` + `App.tsx` + `HomeScreen.tsx`, not just the original
@@ -296,10 +301,10 @@ is now actually **removed**, per the user's own call once the numbers
 felt settled — check git history if a similar tuning UI is ever needed
 again. `MotionTuning`/`DEFAULT_MOTION_TUNING` themselves **stay** — every
 drag/spring/reveal number still lives there, `TutorialStackCard` still
-reads everything through `tuning.*`, and the pending animation-audit
-plan 004 (below) still operates on this exact shape (003 already
-executed — see "Animation audit"), which is why it wasn't collapsed back
-into plain constants at the same time. `tuning` itself is now a plain
+reads everything through `tuning.*`, and this exact shape is what plans
+003 and 004 both operated on (both now executed — see "Animation audit"),
+which is why it wasn't collapsed back into plain constants at the same
+time. `tuning` itself is now a plain
 `const = DEFAULT_MOTION_TUNING` inside `TutorialStack`, not `useState` —
 nothing has ever called a setter since the panel doesn't exist, so state
 with no writer was just indirection. Current values:
@@ -316,16 +321,24 @@ flipDuration:       0.7s      — settled on by feel (Start Over's flip)
 flipBounce:         0.15      — settled on by feel (Start Over's flip)
 flightFadeFraction: 0.45      — settled on by feel (fraction of flyOffDuration
                                 the disappear-faster fade actually takes)
+startOverRubberBandCoefficient: 0.55 — the commonly-cited WebKit/UIKit
+                                constant for the rubberBand() curve, kept
+                                as a starting point (Start Over's drag
+                                resistance)
 ```
 
-The last three were folded in from bare literals by plan 003 (see
-"Animation audit" below) — a pure relocation, values unchanged. **Still
-not folded in** (postdate 003's own scope, deliberately left for
-follow-up rather than silently expanding 003 — see `plans/README.md`'s
-own note): the tutorial-card detail flip's spring (`{bounce: 0.15,
-duration: 0.45}`, `handleCardTap`) and the swipe-hint nudge's two springs
-(`{bounce: 0.35, duration: 0.35}` out / `{bounce: 0.25, duration: 0.4}`
-back).
+Three of these (`flipDuration`, `flipBounce`, `flightFadeFraction`) were
+folded in from bare literals by plan 003 (see "Animation audit" below) —
+a pure relocation, values unchanged. `startOverRubberBandCoefficient` is
+new as of plan 004 (also below), replacing what used to be a flat
+`START_OVER_RESIST_FACTOR = 0.35` constant outside this object entirely —
+not a relocation, a real behavior change (linear damping → real
+rubber-band friction), confirmed on a real phone. **Still not folded in**
+(postdate 003's own scope, deliberately left for follow-up rather than
+silently expanding 003 — see `plans/README.md`'s own note): the
+tutorial-card detail flip's spring (`{bounce: 0.15, duration: 0.45}`,
+`handleCardTap`) and the swipe-hint nudge's two springs (`{bounce: 0.35,
+duration: 0.35}` out / `{bounce: 0.25, duration: 0.4}` back).
 
 ## First-load entrance + screen transition (`App.tsx`)
 
@@ -618,13 +631,15 @@ is otherwise done.
 **Animation audit** (`plans/` directory) — two separate `improve-animations`
 passes now. **Original pass** (against `TutorialCard.tsx` alone, commit
 `628b8b7`): 5 findings — `001`/`002` done early, `003` (fold flip/hint
-feel-values into `MotionTuning`) and `006`/`007` (below) since done too,
-`004` (Start Over's drag resistance is flat linear damping, not real
-rising rubber-band friction) still open and is the current "immediate next
-task," `005` (a transform-composition consistency nit, low-priority) still
-open and needs a rewrite before it's executable — its quoted code
-(`contentOwnRotateY`/`flipProgress`) no longer exists anywhere in the
-file. **Follow-up pass this session** (`TutorialCard.tsx` + `App.tsx` +
+feel-values into `MotionTuning`), `006`/`007` (below), and now `004`
+(Start Over's drag resistance was flat linear damping, replaced with a
+real `rubberBand()` curve — asymptotic resistance rising with drag
+distance instead of a flat proportional multiplier; `startOverRubberBandCoefficient`
+folded into `MotionTuning` alongside it; real-phone-tested and confirmed
+by the user) all done. `005` (a transform-composition consistency nit,
+low-priority) is the only one still open, and needs a rewrite before it's
+executable — its quoted code (`contentOwnRotateY`/`flipProgress`) no
+longer exists anywhere in the file. **Follow-up pass this session** (`TutorialCard.tsx` + `App.tsx` +
 `HomeScreen.tsx`, commit `db1e1be`, prompted by how much had changed since
 the original pass): 2 findings, both executed — `006` consolidated a
 hand-typed `[0.25, 1, 0.5, 1]` cubic-bezier array (11 occurrences across 2

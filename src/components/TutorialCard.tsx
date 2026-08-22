@@ -1049,15 +1049,25 @@ function useCardMotion(activeIndex: MotionValue<number>, cardIndex: number, tota
  *  size), not a feel choice. */
 const FLY_OFF_DISTANCE = Math.hypot(CARD_WIDTH, CARD_HEIGHT)
 
-/** How much of the raw drag distance actually reaches the Start Over
- *  card's own position while it's being dragged — that card can never
- *  commit (see TutorialStackCard's handleDrag/handleDragEnd), so a 1:1
- *  drag would either do nothing (looking broken/unresponsive) or move
- *  exactly like a real swipe right up until it doesn't commit (a
- *  confusing bait-and-switch). Damping it to a fraction of the real
- *  travel — "light rubber-band" per the user's own call — reads as the
- *  card visibly resisting instead of either extreme. */
-const START_OVER_RESIST_FACTOR = 0.35
+/** Classic rubber-band curve (UIScrollView-style overscroll): resistance
+ *  rises smoothly as `offset` grows, asymptotically approaching `dimension`
+ *  px of visual travel no matter how far the raw drag goes — a small drag
+ *  moves almost freely, a large one is strongly damped, and there's a real
+ *  soft cap instead of unbounded proportional movement. `coefficient` is
+ *  the standard constant cited for this exact formula (WebKit/UIKit's own
+ *  overscroll uses ~0.55); lower = more resistance, higher = looser. */
+function rubberBand(offset: number, dimension: number, coefficient: number) {
+  const sign = offset < 0 ? -1 : 1
+  const distance = Math.abs(offset)
+  return sign * ((distance * dimension * coefficient) / (dimension + coefficient * distance))
+}
+
+/** How far (px) the Start Over card can ever visually travel under
+ *  resistance, no matter how far the raw drag goes — see rubberBand above.
+ *  A size-derived cap, not a feel dial (same status as FLY_OFF_DISTANCE):
+ *  CARD_WIDTH * 0.4 keeps the card's visible "give" comfortably inside its
+ *  own footprint. */
+const START_OVER_RUBBER_BAND_DIMENSION = CARD_WIDTH * 0.4
 
 /** Every value below was a hardcoded guess before — now a single object,
  *  originally so they could come from a live-slider dev panel
@@ -1107,6 +1117,11 @@ export type MotionTuning = {
    *  card visually vanishes sooner relative to how long the physical
    *  fly-off itself runs. */
   flightFadeFraction: number
+  /** rubberBand's coefficient for the Start Over card's drag resistance
+   *  (see the rubberBand helper's own comment) — lower means more
+   *  resistance, higher means looser. 0.55 is the commonly-cited WebKit/
+   *  UIKit constant for this exact formula; kept as a starting point. */
+  startOverRubberBandCoefficient: number
 }
 
 export const DEFAULT_MOTION_TUNING: MotionTuning = {
@@ -1120,6 +1135,7 @@ export const DEFAULT_MOTION_TUNING: MotionTuning = {
   flipDuration: 0.7, // settled on by feel
   flipBounce: 0.15, // settled on by feel
   flightFadeFraction: 0.45, // settled on by feel
+  startOverRubberBandCoefficient: 0.55,
 }
 
 /** What this card slot actually renders/does. The Start Over slot (see
@@ -1472,16 +1488,17 @@ function TutorialStackCard({
   // seam right at release.
   function handleDrag(_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
     if (variant.kind === 'start-over') {
-      // Resistance, not a real drag: damped well under the actual finger
-      // travel (START_OVER_RESIST_FACTOR, see its own comment) so it
-      // visibly gives a little without ever tracking 1:1 — and
-      // dragProgress deliberately never gets touched here. This card can
-      // never commit (handleDragEnd below always cancels it), so there's
-      // no genuine "progress toward advancing" for the peek behind it to
-      // preview; leaving dragProgress alone keeps that peek completely
-      // still through the whole resisting gesture.
-      dragX.set(info.offset.x * START_OVER_RESIST_FACTOR)
-      dragY.set(info.offset.y * START_OVER_RESIST_FACTOR)
+      // Resistance, not a real drag: a rubber-band curve (rubberBand, see
+      // its own comment) so it visibly gives more easily on a short pull
+      // and resists harder the further it's dragged, asymptotically
+      // capped, instead of tracking 1:1 — and dragProgress deliberately
+      // never gets touched here. This card can never commit (handleDragEnd
+      // below always cancels it), so there's no genuine "progress toward
+      // advancing" for the peek behind it to preview; leaving dragProgress
+      // alone keeps that peek completely still through the whole resisting
+      // gesture.
+      dragX.set(rubberBand(info.offset.x, START_OVER_RUBBER_BAND_DIMENSION, tuning.startOverRubberBandCoefficient))
+      dragY.set(rubberBand(info.offset.y, START_OVER_RUBBER_BAND_DIMENSION, tuning.startOverRubberBandCoefficient))
       return
     }
     dragX.set(info.offset.x)
@@ -1705,18 +1722,18 @@ function TutorialStackCard({
       // Never commits, regardless of distance/velocity — this card only
       // ever advances via handleStartOverTap above. Always the same
       // settle-back-to-center a cancelled tutorial-card drag uses; the
-      // velocity handed to it is scaled down to match the damped
-      // resistance in handleDrag; feeding in the raw, undamped velocity
+      // velocity handed to it goes through the same rubber-band curve as
+      // handleDrag's resistance; feeding in the raw, undamped velocity
       // would make it visually "spring past" where it actually was.
       animateValue(dragX, 0, {
         type: 'spring',
-        velocity: info.velocity.x * START_OVER_RESIST_FACTOR,
+        velocity: rubberBand(info.velocity.x, START_OVER_RUBBER_BAND_DIMENSION, tuning.startOverRubberBandCoefficient),
         bounce: 0,
         duration: tuning.cancelDuration,
       })
       animateValue(dragY, 0, {
         type: 'spring',
-        velocity: info.velocity.y * START_OVER_RESIST_FACTOR,
+        velocity: rubberBand(info.velocity.y, START_OVER_RUBBER_BAND_DIMENSION, tuning.startOverRubberBandCoefficient),
         bounce: 0,
         duration: tuning.cancelDuration,
       })

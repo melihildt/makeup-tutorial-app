@@ -20,7 +20,7 @@ README only tracks plan execution.
 | 001 | [Fix ease-in on the fly-off's disappear-faster fade](001-fly-off-fade-easing.md) | HIGH | Easing & duration | DONE |
 | 002 | [Close the interactive-before-flip-finishes window on the restart flip](002-restart-flip-lock-window.md) | MEDIUM | Interruptibility | DONE (superseded — see note below) |
 | 003 | [Fold the restart flip's feel values into MotionTuning](003-fold-flip-values-into-motion-tuning.md) | MEDIUM | Cohesion & tokens | DONE (one deviation — see note below) |
-| 004 | [Replace Start Over's linear drag damping with real rubber-band friction](004-start-over-rubber-band-friction.md) | LOW | Physicality & origin | TODO |
+| 004 | [Replace Start Over's linear drag damping with real rubber-band friction](004-start-over-rubber-band-friction.md) | LOW | Physicality & origin | DONE |
 | 005 | [Compose contentOwnRotateY into a full transform string](005-content-layer-composed-transform.md) | LOW | Performance | TODO — needs a rewrite, see note below |
 | 006 | [Consolidate the hand-typed ease-out-quart array into one constant](006-consolidate-ease-out-quart-array.md) | LOW | Cohesion & tokens | DONE |
 | 007 | [Guard CardBehind's duck-and-reveal against rapid filter switching](007-cardbehind-rapid-filter-race-guard.md) | MEDIUM | Interruptibility | DONE |
@@ -74,6 +74,26 @@ previously hand-typed the array now reference the constant instead — a
 pure relocation, no values changed. This introduced the first cross-import
 between `App.tsx` and `TutorialCard.tsx` in this codebase (previously
 `App.tsx` only imported whole components, `HomeScreen`/`TutorialFlow`).
+
+**004 executed** — `START_OVER_RESIST_FACTOR` (flat `0.35` multiplier)
+replaced with a `rubberBand(offset, dimension, coefficient)` helper (the
+standard UIScrollView-style overscroll curve) and a size-derived
+`START_OVER_RUBBER_BAND_DIMENSION` constant (`CARD_WIDTH * 0.4`, kept out
+of `MotionTuning` per the plan's own convention, same status as
+`FLY_OFF_DISTANCE`). All four call sites (`handleDrag`'s and
+`handleDragEnd`'s start-over branches, both axes) now go through
+`rubberBand(...)` instead of the flat multiply.
+`startOverRubberBandCoefficient: 0.55` added to `MotionTuning`/
+`DEFAULT_MOTION_TUNING`, appended after `flightFadeFraction` per this
+file's own ordering note above (003 had already landed). The
+`MotionTuner`-row step was skipped — that panel no longer exists (see
+003's own note). Build/lint baseline confirmed unchanged via `git stash`
+A/B (same pre-existing `tsc`/`oxlint` warnings, just shifted by line
+offset). **Real-device drag confirmed working** — the user tested on
+their own phone and reported it looks good, closing out this plan's own
+"feel check" verification step (the one thing this environment's browser
+tooling can never confirm itself, per `docs/home-stack-handoff.md`'s
+"Testing notes").
 
 **007 executed** — `CardBehind`'s duck-and-reveal `useEffect` (the
 filter-color swap gesture built earlier this session, see
