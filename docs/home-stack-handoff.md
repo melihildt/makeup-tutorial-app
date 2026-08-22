@@ -3,8 +3,11 @@
 Written to carry context into a fresh session/window without re-deriving
 everything from scratch. Scoped to the **HomeScreen card stack** (drag,
 tilt, fly-off, flips, filter-driven color) and its motion — a separate area
-from `docs/handoff.md` (the step-flow/illustration doc, stale on the "no
-home page" point — a home page exists now).
+from `docs/handoff.md` (the step-flow/illustration doc, covering
+`TutorialFlow.tsx` and everything under it — re-verified and rewritten
+2026-08-21, no longer stale on the "no home page" point or several others
+it used to get wrong; read that doc for anything in that file's own
+scope).
 
 **Git state — read this before assuming anything else in this doc is
 current.** Branch `feature/home-tutorial-stack` (off `main`, untouched).
