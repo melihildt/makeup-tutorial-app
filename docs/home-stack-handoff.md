@@ -20,14 +20,19 @@ flat `0.35` linear multiplier with the standard `UIScrollView`-style
 `rubberBand()` curve, resistance now rises smoothly with drag distance
 instead of staying proportional; user tested on their own phone and
 confirmed it feels right). 003, 006, 007 were already done — see
-"Animation audit" further down and `plans/README.md`. **The only plan
-still open is 005** — a low-priority consistency nit that needs a rewrite
-before it's even executable (its quoted code, `contentOwnRotateY`/
-`flipProgress`, no longer exists anywhere in the file — see
-`plans/README.md`'s own note); not currently tasked as the immediate next
-thing, just the one remaining item in the queue. Two other items were
-explicitly **deferred to later, lower priority, per the user's own
-call**: the `CardBack`-fly-off-reads-abrupt issue (see "Known deferred
+"Animation audit" further down and `plans/README.md`. **Plan 005 is now
+resolved too, but as moot, not executed** — its quoted target
+(`contentOwnRotateY`/`flipProgress` applied via a bare `rotateY:` style
+shorthand) no longer exists anywhere in the file; a fresh search
+confirmed zero bare `rotateY:` shorthands remain at all, because the
+flip-mechanism rebuild (see "Tutorial detail flip" below) collapsed the
+content layer's own rotation into the parent's single composed
+`transform` as a side effect of unrelated work, not by anyone executing
+this plan's own fix. See `plans/README.md`'s own note for the full
+trace. **All five plans from the original animation-audit pass are now
+closed out** (001/002/003/004 executed, 005 moot) — nothing left open
+from that queue. Two other items were explicitly **deferred to later,
+lower priority, per the user's own call**: the `CardBack`-fly-off-reads-abrupt issue (see "Known deferred
 issues" below — several real fixes landed chasing it already, none
 confirmed to close it, don't re-derive from scratch) and ghost-card
 clipping on narrow phones (older, lower priority still).
@@ -637,9 +642,12 @@ real `rubberBand()` curve — asymptotic resistance rising with drag
 distance instead of a flat proportional multiplier; `startOverRubberBandCoefficient`
 folded into `MotionTuning` alongside it; real-phone-tested and confirmed
 by the user) all done. `005` (a transform-composition consistency nit,
-low-priority) is the only one still open, and needs a rewrite before it's
-executable — its quoted code (`contentOwnRotateY`/`flipProgress`) no
-longer exists anywhere in the file. **Follow-up pass this session** (`TutorialCard.tsx` + `App.tsx` +
+low-priority) is **resolved as moot, not executed** — its quoted code
+(`contentOwnRotateY`/`flipProgress`) no longer exists anywhere in the
+file, and a search for the underlying anti-pattern (a bare `rotateY:`
+style shorthand) came back completely empty: the flip-mechanism rebuild
+already eliminated it as a side effect, before anyone got to this plan.
+All 5 findings from the original pass are now closed out. **Follow-up pass this session** (`TutorialCard.tsx` + `App.tsx` +
 `HomeScreen.tsx`, commit `db1e1be`, prompted by how much had changed since
 the original pass): 2 findings, both executed — `006` consolidated a
 hand-typed `[0.25, 1, 0.5, 1]` cubic-bezier array (11 occurrences across 2

@@ -21,7 +21,7 @@ README only tracks plan execution.
 | 002 | [Close the interactive-before-flip-finishes window on the restart flip](002-restart-flip-lock-window.md) | MEDIUM | Interruptibility | DONE (superseded — see note below) |
 | 003 | [Fold the restart flip's feel values into MotionTuning](003-fold-flip-values-into-motion-tuning.md) | MEDIUM | Cohesion & tokens | DONE (one deviation — see note below) |
 | 004 | [Replace Start Over's linear drag damping with real rubber-band friction](004-start-over-rubber-band-friction.md) | LOW | Physicality & origin | DONE |
-| 005 | [Compose contentOwnRotateY into a full transform string](005-content-layer-composed-transform.md) | LOW | Performance | TODO — needs a rewrite, see note below |
+| 005 | [Compose contentOwnRotateY into a full transform string](005-content-layer-composed-transform.md) | LOW | Performance | MOOT — target no longer exists, see note below |
 | 006 | [Consolidate the hand-typed ease-out-quart array into one constant](006-consolidate-ease-out-quart-array.md) | LOW | Cohesion & tokens | DONE |
 | 007 | [Guard CardBehind's duck-and-reveal against rapid filter switching](007-cardbehind-rapid-filter-race-guard.md) | MEDIUM | Interruptibility | DONE |
 
@@ -74,6 +74,33 @@ previously hand-typed the array now reference the constant instead — a
 pure relocation, no values changed. This introduced the first cross-import
 between `App.tsx` and `TutorialCard.tsx` in this codebase (previously
 `App.tsx` only imported whole components, `HomeScreen`/`TutorialFlow`).
+
+**005 checked, found moot — not executed, not rewritten.** Investigated
+picking this up (its quoted target, `contentOwnRotateY`/`flipProgress`,
+was already known-gone per the note below) by searching for whatever the
+*current* equivalent of the finding might be. There isn't one: a
+file-wide search for a bare `rotateY:` style shorthand (the actual
+anti-pattern this plan flags — an individual Framer transform prop
+competing with a separately-composed `transform` string on the same CSS
+property) turns up zero matches anywhere in `TutorialCard.tsx`. The
+restart flip's content layer (`TutorialCard.tsx:1815-1827`, the front
+face inside `TutorialStackCard`) has no rotation of its own at all now —
+it inherits the parent's 3D rotation via `transformStyle: preserve-3d`
+and only sets `opacity`/`backfaceVisibility`; the two back-face layers
+(`:1877`, `:1890`) use a static literal `transform: 'rotateY(180deg)'`,
+already a full transform string, not a shorthand prop. The one remaining
+shorthand transform prop in the file (`rotate: behindRotate` in
+`CardBehind`) is explicitly out of scope per this plan's own Boundaries,
+and isn't actually the same problem shape either — that element has no
+separate `transform` of its own for a shorthand to collide with. **Net
+result: the flip-mechanism rebuild that happened between this plan's
+authoring and now (sharing `flipRotateY`/`isFlipped` with the tutorial-
+detail flip, see `docs/home-stack-handoff.md`'s "Tutorial detail flip"
+section) eliminated this plan's target as a side effect of unrelated
+work, not by executing this plan's own fix.** Per the plan's own "if the
+code has drifted, STOP and report the mismatch instead of improvising"
+boundary, no substitute target was invented — there's nothing matching
+this finding left to change.
 
 **004 executed** — `START_OVER_RESIST_FACTOR` (flat `0.35` multiplier)
 replaced with a `rubberBand(offset, dimension, coefficient)` helper (the
