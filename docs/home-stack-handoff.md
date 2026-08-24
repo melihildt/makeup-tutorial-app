@@ -45,6 +45,18 @@ clipping on narrow phones (older, lower priority still).
 scope) — see "Animation audit" further down for the two findings it
 produced (006, 007, both executed) and what came back clean.
 
+**2026-08-24 — a third audit ran (a later session), this time across the
+whole tutorial flow, not just this file's own Home-stack scope** —
+findings 5 (leftover `console.log` debug instrumentation in this file,
+left over from the "CardBack fly-off" diagnostic below) and 8 (reduced-
+motion users skipping straight into the tutorial instead of getting the
+same detail content a motion user reaches by flipping) both landed in
+`TutorialCard.tsx` and are executed. Full findings table, every other
+plan (spanning `StepScreen.tsx`/`ScreenHeader.tsx`/`TutorialFlow.tsx`/
+`AllStepsView.tsx`, outside this doc's own scope), and execution status
+live in **`plans/README.md`** — not duplicated here since most of that
+work touches files this doc doesn't cover.
+
 The Figma file used throughout is `Tech-Experimentation`, file key
 `6Mr7K0RONTS8SltZRJtqYj`. Nodes pulled and worth reusing rather than
 re-fetching: `642:5092` (front-card `BigCard` + "Unfold" ghost variant),

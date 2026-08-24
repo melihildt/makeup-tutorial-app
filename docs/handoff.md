@@ -15,7 +15,8 @@ also picked up real changes to this feature's own files along the way
 (motion, wiring, product photography). Re-checked every claim below
 against the actual current code before writing this version — see each
 section for what changed. **Git state**: branch `feature/home-tutorial-stack`
-(pushed, working tree clean as of this update) — run `git status`/`git log
+(pushed through `d666b41` as of the 2026-08-24 animation-audit update
+below; working tree otherwise clean) — run `git status`/`git log
 --oneline -5` on a fresh session start regardless, same caveat as
 `docs/home-stack-handoff.md`'s own git-state note.
 
@@ -41,6 +42,68 @@ mode as before this pass, just at lower opacity, a smaller/repositioned
 box, and (new) an independent grain-scale control. `AllStepsView.tsx` is
 explicitly **not** part of this pass — still on the older V2 styling,
 deferred by the user's own call, see that doc's opening scope note.
+
+**2026-08-24 update — the skin-tone radial wash's own position/size/color
+were re-tuned again, live, after the V5 pass above.** Two hard-edge seam
+bugs were found and fixed in `StepScreen.tsx`'s wash div (the ellipse's
+40%→100% fade never actually reached true transparency at either the top
+or bottom edge of its own box, so alpha jumped from partial to zero in a
+single pixel row — read as a visible line right at the header/illustration
+boundary, then again at the illustration/sheet boundary once later layout
+work made that second seam land in open background instead of inside the
+card). Fixed with a symmetric `maskImage` fade on both edges. The wash's
+actual position/radii/box-height/edge-fade were then re-tuned live via a
+temporary `WashTuner` dev panel (same lifecycle as `TutorialCard.tsx`'s
+now-removed `MotionTuner`) and baked into a plain `WASH_TUNING` constant
+once settled — panel removed. Separately, the step-screen text's vertical
+position was made consistent: the title/description block used to be
+centered as one unit with the illustration, so a step with a longer
+description shifted the *title's* position too; the description now
+reserves a fixed height (`STEP_DESCRIPTION_RESERVED_HEIGHT`, sized to the
+tallest real 3-line case) so title position is identical across all 7
+steps regardless of copy length — same "reserve the tallest real case"
+technique applied to the bottom product sheet
+(`PRODUCT_SHEET_RESERVED_HEIGHT`), which previously let the sheet's own
+height (159px for a 1-product step vs. 238px for 2-product) shift where
+the centered text landed step to step.
+
+**2026-08-24 update — a third, whole-flow animation audit ran this
+session** (HomeScreen → `TutorialCard`'s stack/flip/Start Over →
+`TutorialFlow` → `StepScreen` → `AllStepsView`, the first audit to cover
+every screen at once rather than just the home stack) and surfaced 14
+findings; plans written for all of them (`plans/008-*.md` through
+`plans/021-*.md`). **Eight executed this session**: removed leftover
+`console.log` debug instrumentation left in `TutorialCard.tsx` from an
+earlier diagnostic session; added press/hover feedback to `ScreenHeader`'s
+four buttons (previously the only screen where Back/Search/Widget/Done had
+zero tap feedback while the bottom action button did); composed
+`StepScreen`'s product-card entrance/exit onto full `transform` strings
+instead of Framer Motion's `y`/`scaleY` shorthand (not hardware-
+accelerated); gave `prefers-reduced-motion` users the same tutorial detail
+content (level/product-preview/CTA) instead of skipping straight into the
+tutorial on a tap; consolidated a third hand-typed copy of the
+`ease-out-quart` curve onto the shared `EASE_OUT_QUART` constant; animated
+the product-sheet's reserved-height collapse on Finish→Done instead of an
+instant snap; added a rapid-tap guard on the step screen's Next button
+(was restarting the badge/title keyframes mid-play); and gave the
+per-step content swap its own faster, budget-compliant duration token
+(`--duration-step-content: 280ms`, separate from the shared
+`--duration-layout` used by rarer screen/view transitions). **Worth
+knowing**: the reserved-height collapse fix's first attempt (Framer
+Motion's `layout` prop) was tried and empirically disproven live — it
+does nothing when collapsing to a target height of 0 (the FLIP
+technique's inverse-transform math divides by zero) — animating `height`
+directly is what actually works, confirmed by polling the real rendered
+height every animation frame across the transition, not assumed from
+Framer Motion's docs. **Six findings remain TODO** (plans 013-015,
+018-020 — `check-ring-in`'s entrance scale, a spurious check-animation
+replay on rapid view-switching, `StartOverCard`'s keyframe-restart-on-
+rapid-tap, nested-pressable `:active` compounding, the filter chip's
+press-flash sweep animating `background-position` instead of `transform`,
+and `AllStepsView`'s scroll-shadow bypassing the app's easing tokens).
+Full findings tables, severity/leverage ranking, and per-plan execution
+notes live in **`plans/README.md`** — that file, not this section, is the
+source of truth for what's actually done vs. still open in this set.
 
 ## What this app is
 
