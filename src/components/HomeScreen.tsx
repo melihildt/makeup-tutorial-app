@@ -323,14 +323,18 @@ function LookSelectorChip({
           key={flashCount}
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 overflow-hidden rounded-[--radius-filter-chip]"
-          style={{
-            backgroundImage: `linear-gradient(90deg, transparent 35%, ${flash.peak} 50%, transparent 65%)`,
-            backgroundSize: '300% 100%',
-            mixBlendMode: blend,
-            opacity: 0,
-            animation: 'chip-flash-sweep var(--duration-shimmer) linear',
-          }}
-        />
+        >
+          <div
+            className="absolute inset-y-0 left-0 h-full"
+            style={{
+              width: '300%',
+              backgroundImage: `linear-gradient(90deg, transparent 35%, ${flash.peak} 50%, transparent 65%)`,
+              mixBlendMode: blend,
+              opacity: 0,
+              animation: 'chip-flash-sweep var(--duration-shimmer) linear',
+            }}
+          />
+        </div>
       )}
       <span
         className="relative capitalize text-[14px]"

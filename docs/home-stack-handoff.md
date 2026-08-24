@@ -83,8 +83,13 @@ minus the duck/rotate part (this card has no "behind the front card"
 spatial gesture) — same 0.2s-per-leg timing, same `EASE_OUT_QUART`. Rapid
 Day → Night → Glam taps now settle cleanly on the last-tapped color
 instead of restarting the `check-ring-in` pop from scratch on every tap.
-019 (the filter chip's own press-flash sweep, `HomeScreen.tsx`/
-`index.css`) is the only finding left TODO from this whole audit.
+
+**019, the last finding in the whole audit, executed in a session after
+that — outside this doc's own scope** (the filter chip's own press-flash
+sweep lives in `HomeScreen.tsx`/`index.css`, not the card stack itself —
+see this doc's own "Scoped narrowly to the card stack" note further down;
+`docs/handoff.md` has the detail). **All 14 findings from this third audit
+(008-021) are now executed — nothing left open from it.**
 
 The Figma file used throughout is `Tech-Experimentation`, file key
 `6Mr7K0RONTS8SltZRJtqYj`. Nodes pulled and worth reusing rather than

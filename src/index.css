@@ -96,8 +96,17 @@ body {
    (0, set in HomeScreen.tsx, not via fill-mode) is still what hides it
    before the first press and the instant this animation ends. */
 @keyframes chip-flash-sweep {
-  0% { background-position: 100% 0; opacity: 1; }
-  100% { background-position: 0% 0; opacity: 1; }
+  /* Same sweep as before, now driven by transform instead of
+     background-position — see AUDIT.md's Performance category
+     (background-position is paint-triggering, transform is compositor-
+     only). -66.6667% is the exact equivalent of the old
+     background-position: 100% → 0% motion at this element's own 300%
+     width: the old rule moved the background's own offset from -2×(chip
+     width) to 0; at 300% width, -2/3 of this element's own width is the
+     same -2×(chip width) offset, expressed as a percentage of itself
+     (which is what CSS transform percentages are always relative to). */
+  0% { transform: translateX(-66.6667%); opacity: 1; }
+  100% { transform: translateX(0%); opacity: 1; }
 }
 
 /* ActionButton press/hover feedback — plain transition is correct here

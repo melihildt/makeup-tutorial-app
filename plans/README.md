@@ -14,8 +14,10 @@ once rather than just the home-stack component. **008-011** were the four
 findings picked first and executed same-session; **012-021** are the
 audit's findings 5-14 (in that audit's own original numbering — the table
 below uses each plan's own file number instead), written up as plans
-afterward but not yet executed. Full findings tables live in the
-conversations that produced each; this index tracks execution. **For the
+afterward and, as of the latest session, all executed too — **every plan
+in this file, 001-021, is now DONE or resolved-moot**. Full findings
+tables live in the conversations that produced each; this index tracks
+execution. **For the
 fuller current picture of this whole feature area** (Start Over's
 redesign, the ghost-card recolor, the swipe-hint nudge, the tutorial
 detail flip, and pending items that are bug fixes rather than audit
@@ -42,7 +44,7 @@ handoff, this README only tracks plan execution.
 | 016 | [Animate the product-sheet reserved-height collapse on Finish→Done](016-animate-product-sheet-reserved-height.md) | MEDIUM | Missed opportunity | Tutorial step | DONE |
 | 017 | [Ignore rapid repeat taps on Next while content is animating](017-debounce-next-button.md) | MEDIUM | Interruptibility | Tutorial step | DONE |
 | 018 | [Stop nested pressables from compounding their ancestor's :active scale](018-nested-pressable-scale-isolation.md) | MEDIUM | Physicality & origin | Home | DONE |
-| 019 | [Drive the chip press-flash sweep via transform instead of background-position](019-chip-flash-sweep-transform.md) | MEDIUM | Performance | Home | TODO |
+| 019 | [Drive the chip press-flash sweep via transform instead of background-position](019-chip-flash-sweep-transform.md) | MEDIUM | Performance | Home | DONE |
 | 020 | [Move AllStepsView's scroll-shadow transition onto the app's tokens](020-allstepsview-scroll-shadow-tokens.md) | LOW | Cohesion & tokens | All steps view | DONE |
 | 021 | [Give StepScreen's per-step content swap its own faster duration budget](021-step-content-duration-budget.md) | LOW | Easing & duration | Tutorial step | DONE |
 
@@ -207,8 +209,7 @@ boundary says to stop and report on rather than improvise past.
 Mechanical check across all four: `npx tsc --noEmit` clean, no console
 errors during any of the manual interaction above.
 
-**012-021 written up as plans; 012, 013, 014, 015, 016, 017, 018, 020, 021
-executed, only 019 still TODO** — these are the same audit's findings 5-14
+**012-021 written up as plans; all ten executed** — these are the same audit's findings 5-14
 (its own original numbering; each plan file below carries its own 01x
 number instead). Each plan's code citations were re-verified against the
 actual current files (not just the original audit's snapshot) before
@@ -340,6 +341,26 @@ drift from either plan's own citations.
   shadow's opacity actually flips 0↔1 in both directions through that
   same transition.
 
+**019 executed in a later session still, closing out this entire
+audit's queue** — re-verified against current file content before
+editing, no drift from the plan's own citations. The outer clipping div
+(`overflow-hidden`, `rounded-[--radius-filter-chip]`, `key={flashCount}`)
+kept exactly as before; a new inner div added carrying `width: '300%'`
+plus everything that used to be animated/blended on the single div
+(`backgroundImage`, `mixBlendMode`, resting `opacity: 0`, the animation).
+`chip-flash-sweep`'s keyframe now animates `transform: translateX(...)`
+(`-66.6667%` → `0%`) instead of `background-position`. Verified live: the
+compiled keyframe rule shows the exact target `transform` values; the
+live element's `getAnimations()` confirms a real running `CSSAnimation`
+(not a static style) whose computed `transform` interpolates smoothly
+from `matrix(1, 0, 0, 1, -237.34, 0)` at 0% down to identity at 100% —
+`-237.34px` is `-66.6667%` of the element's actual rendered 300%-width
+(~356px), matching the plan's own math exactly; scrubbing `currentTime`
+through the full range confirmed a clean linear interpolation with no
+jumps, and the element correctly reverts to its resting `opacity: 0`/no
+transform once the animation ends (default fill mode, matching the old
+behavior). No console/dev-server errors, `tsc --noEmit` clean.
+
 Every other LOW cohesion/polish item the same audit surfaced but didn't
 rise to its own numbered finding (`EyeIllustration.tsx`'s 25ms stagger vs.
 the 30-80ms band, `HomeScreen.tsx`'s chip-selection transition including
@@ -384,23 +405,17 @@ enough to fold into other work rather than justify its own plan.
    files** (`ScreenHeader.tsx`+`index.css`, and `StepScreen.tsx`
    respectively) and have no dependency on 008, 011, or each other — any
    order, including fully parallel.
-6. **012-021, by shared file** (all independent in *what* they change —
-   no plan's fix depends on another plan having already run — but several
-   share a file, so treat that the same way as point 5 above: fine
-   sequentially or merged carefully, risky as blind parallel worktrees).
-   **012, 013, 014, 015, 016, 017, 018, 020, and 021 are done** (012/016/
-   017/021 touched `StepScreen.tsx`, executed sequentially in that order
-   in one session; 013/014/018 executed in a later session — 013 alone in
-   `index.css`, 014 alone in `TutorialFlow.tsx`, 018 in `TutorialCard.tsx`;
-   015/020 executed in a session after that — 015 in `TutorialCard.tsx`
-   (`StartOverCard`, the same file 018 already touched, but 018 was
-   already done by the time 015 ran, so no overlap risk in practice), 020
-   alone in `AllStepsView.tsx` — no merge conflicts in any case, since
-   each touched a different non-overlapping region or file). **Only 019
-   remains** — `src/index.css` (the `chip-flash-sweep` keyframe) and
-   `HomeScreen.tsx`, both files every other plan in this set is now done
-   with, so there's no shared-file caution left to track for this queue at
-   all.
+6. **012-021: all ten done.** 012/016/017/021 touched `StepScreen.tsx`,
+   executed sequentially in one session; 013/014/018 executed in a later
+   session (013 alone in `index.css`, 014 alone in `TutorialFlow.tsx`, 018
+   in `TutorialCard.tsx`); 015/020 in a session after that (015 in
+   `TutorialCard.tsx`'s `StartOverCard`, 020 alone in `AllStepsView.tsx`);
+   019 in a session after that (`index.css`'s `chip-flash-sweep` keyframe
+   + `HomeScreen.tsx`). No merge conflicts across any of them — every
+   shared-file pair (008/011, 012/016/017/021, 013/019 both touching
+   `index.css`, 015/018 both touching `TutorialCard.tsx`) landed in
+   non-overlapping regions, sequentially, exactly per this section's own
+   guidance. Nothing left open from this queue.
 
 001-005 touch only `src/components/TutorialCard.tsx` and were
 written against commit `628b8b7` — **now well behind current** (see

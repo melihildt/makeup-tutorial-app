@@ -113,9 +113,13 @@ closing the same keyframe-restart-on-rapid-tap bug `CardBehind` already
 had fixed (plan 015, `TutorialCard.tsx`); and `AllStepsView`'s
 scroll-shadow fade moved off Tailwind's default `transition-opacity
 duration-200` onto the app's own `--duration-base`/`--ease-out-quart`
-tokens (plan 020). **Only one finding remains TODO** (plan 019 — the
-filter chip's press-flash sweep animating `background-position` instead
-of `transform`).
+tokens (plan 020). **The last one, plan 019, executed in a session after
+that too** — the filter chip's own press-flash sweep (`HomeScreen.tsx` +
+`index.css`) no longer animates `background-position` (paint-triggering,
+stacked on two other paint/blend layers on the same chip); it's a
+`transform: translateX(...)` on a new inner strip now, compositor-only,
+same visual sweep. **This closes out the entire third audit — all 14
+findings (008-021) are now executed.**
 Full findings tables, severity/leverage ranking, and per-plan execution
 notes live in **`plans/README.md`** — that file, not this section, is the
 source of truth for what's actually done vs. still open in this set.
