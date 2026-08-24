@@ -26,7 +26,13 @@ export function ActionButton({ label, variant, onClick }: ActionButtonProps) {
       className="action-button flex h-[--height-action-button] w-full items-center justify-center gap-2 rounded-[--radius-button] border-[0.5px] px-3"
       style={{
         fontSize: 'var(--font-size-button)',
-        fontWeight: 'var(--font-weight-semibold)',
+        // V5 (docs/figma-step-screen-restyle.md): both Step 1's "Next" and
+        // Step 7's "Finish" pulls use Inter's Medium weight (500), not
+        // Semibold (600) — this button reads its own weight explicitly
+        // rather than sharing --font-weight-semibold (used elsewhere, e.g.
+        // ProductCard's brand name), so only this component's weight
+        // changes.
+        fontWeight: 'var(--font-weight-medium)',
         color: isFinal ? 'var(--color-action-button-final-text)' : 'var(--color-text-primary)',
         background: isFinal ? 'var(--color-action-button-final-bg)' : 'var(--color-action-button)',
         borderColor: isFinal ? 'var(--color-action-button-final-bg)' : 'var(--color-action-button-border)',

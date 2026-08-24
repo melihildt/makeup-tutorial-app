@@ -30,8 +30,19 @@ export const TOTAL_STEPS = 7
 // 6Mr7K0RONTS8SltZRJtqYj), V2 section (node 513:9189) — see
 // docs/figma-v2-redesign.md for the full diff against V1 and the node IDs
 // each step's design came from. Titles/descriptions for steps 2-8 and the
-// All Steps list titles were supplied directly rather than fetched, to
-// stay within Figma's rate limit.
+// All Steps list titles were originally supplied directly rather than
+// fetched, to stay within Figma's rate limit.
+//
+// That copy has since been directly verified against real get_design_context
+// pulls for every step (docs/figma-step-screen-restyle.md, "Why steps 2-6
+// weren't pulled" — later revisited when the user asked to double-check the
+// whole flow's product sheet): titles, descriptions, brand/name/shade text
+// all matched exactly, byte for byte. The one real mismatch found was
+// `checked`, not copy — Figma shows the *first* product pre-checked on
+// every step that has one (1, 2, 3, 5, 7; steps 4 and 6 only have a single
+// product, in the design's own "Product 2" layout slot, and that slot is
+// never pre-checked), but only steps 1 and 7 had that reflected here.
+// Steps 2/3/5's first product is now `checked: true` to match.
 // Product photos live in src/assets/product-images (added directly, not
 // fetched from Figma — those asset URLs expire in ~7 days). ProductCard
 // falls back to its placeholder box for any product left without an
@@ -52,7 +63,7 @@ export const STEP_CONTENT: Record<number, StepContent> = {
     listTitle: 'Base Shadow',
     description: 'Sweep a neutral shade across the lid side to side.',
     products: [
-      { brand: 'Chanel', name: 'Les 4 Ombres', shade: '79 - Spices', checked: false, image: eyeshadowImg },
+      { brand: 'Chanel', name: 'Les 4 Ombres', shade: '79 - Spices', checked: true, image: eyeshadowImg },
       { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg },
     ],
   },
@@ -62,7 +73,7 @@ export const STEP_CONTENT: Record<number, StepContent> = {
     description:
       'Using a smaller brush, sweep a darker shade into the outer corner and crease with a back-and-forth motion.',
     products: [
-      { brand: 'Chanel', name: 'Les 4 Ombres', shade: '79 - Spices', checked: false, image: eyeshadowImg },
+      { brand: 'Chanel', name: 'Les 4 Ombres', shade: '79 - Spices', checked: true, image: eyeshadowImg },
       { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg },
     ],
   },
@@ -79,7 +90,7 @@ export const STEP_CONTENT: Record<number, StepContent> = {
     description:
       'Apply a bit of the dark shade using the smaller side of the brush, moving from the outer corner inward.',
     products: [
-      { brand: 'Chanel', name: 'Les 4 Ombres', shade: '79 - Spices', checked: false, image: eyeshadowImg },
+      { brand: 'Chanel', name: 'Les 4 Ombres', shade: '79 - Spices', checked: true, image: eyeshadowImg },
       { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg },
     ],
   },

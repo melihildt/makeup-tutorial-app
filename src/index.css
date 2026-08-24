@@ -28,24 +28,14 @@ body {
   width: 100%;
 }
 
-/* Used by ScreenHeader's Search/Widget toggle — see the comment above its
-   indicator span for why this has to be a CSS *animation* (plays on
-   mount, driven by --slide-from/--slide-to custom properties) rather than
-   a transition (needs an existing element whose style changes across two
-   paints — the indicator never gets that, it's freshly mounted already in
-   its final position every time the view toggles). */
-@keyframes header-toggle-slide {
-  from { transform: translate(-50%, -50%) translateX(var(--slide-from, 0px)); }
-  to { transform: translate(-50%, -50%) translateX(var(--slide-to, 0px)); }
-}
-@keyframes header-toggle-fade {
-  from { opacity: var(--fade-from, 1); }
-  to { opacity: var(--fade-to, 1); }
-}
-
-/* Used by CheckIndicator — same "animation, not transition" reasoning as
-   the header keyframes above (checked/unchecked render structurally
-   different children, so nothing here ever gets to transition in place). */
+/* Used by CheckIndicator, and (V5, docs/figma-step-screen-restyle.md)
+   ScreenHeader's Search/Widget toggle buttons — "animation, not
+   transition" for the same reason in both places: the element receiving
+   it is always freshly mounted (CheckIndicator's checked/unchecked render
+   structurally different children; ScreenHeader itself remounts wholly on
+   every view switch, since TutorialFlow renders StepScreen/AllStepsView as
+   two entirely separate trees), so there's never an existing element whose
+   style changes across two paints for a transition to animate between. */
 @keyframes check-pop {
   /* Whole-icon tap feedback, both directions. No overshoot-then-settle
      spring (that's the bounce/elastic curve /animate explicitly warns

@@ -91,8 +91,18 @@ const STEP_LAYOUTS: Record<number, StepLayout> = {
     // the V2 redesign was originally only reachable as one flattened SVG
     // export, before Dev Mode access was available) — real per-layer data
     // is now the actual rendering source, same as every other step.
-    canvasWidth: 217.30465698242188,
-    canvasHeight: 168.9226531982422,
+    //
+    // V5 (docs/figma-step-screen-restyle.md): canvasWidth/Height updated
+    // to 195.574/152.031 (was 217.305/168.923) — the user resized this
+    // step's MakeUp instance in Figma to exactly 90% (node 685:4149 →
+    // 685:4170, get_metadata gave the precise values below). Every layer
+    // box/bleed percentage under `layers`/`rotated` is unchanged — this
+    // was a uniform scale, not a reshape, confirmed by diffing the fresh
+    // pull's percentages against these below (identical). See
+    // REFERENCE_RENDER_WIDTH's own comment for why this value is the real
+    // fix and canvasWidth/Height here are documentation only.
+    canvasWidth: 195.5742950439453,
+    canvasHeight: 152.03057861328125,
     paintOrder: [
       '[Add] Concealer',
       'Sclera',
@@ -668,7 +678,23 @@ function getBrowBoxRaw(step: number): RawBox | undefined {
 // every step so Brow renders at one fixed size/position, then size and
 // place the rest of that step's canvas around it.
 const REFERENCE_STEP = 1
-const REFERENCE_RENDER_WIDTH = 220 // px — matches the old fixed size for steps 1-4
+// px — V5 (docs/figma-step-screen-restyle.md): was 220, matching the old
+// Step 1 canvas (217.3px, node 545:1793). The user resized Step 1's
+// MakeUp instance in Figma — confirmed via a fresh pull of the new frame
+// (node 685:4149 → instance 685:4170): 195.574 x 152.031, exactly 90.00%
+// of the old 217.305 x 168.923 in both dimensions (uniform scale, not a
+// reshape — every layer's own percentage box is byte-identical between
+// the old and new pulls, only the instance's own size changed). This
+// constant is the *only* thing in this file that ever set the eye's
+// actual on-screen size — every other value here (canvasWidth/Height,
+// the Brow box) cancels out of the render math by design (see the
+// comment above REFERENCE_STEP), which is exactly why the resize didn't
+// show up in the app on its own: nothing here was reading Figma's raw
+// canvas size in the first place. Updating this one constant is the
+// entire fix — canvasWidth/Height below are updated to match too, purely
+// for documentation accuracy (verified algebraically that their value no
+// longer affects any pixel this file renders).
+const REFERENCE_RENDER_WIDTH = 195.5742950439453
 
 const referenceLayout = STEP_LAYOUTS[REFERENCE_STEP]
 const referenceBrow = getBrowBoxRaw(REFERENCE_STEP)

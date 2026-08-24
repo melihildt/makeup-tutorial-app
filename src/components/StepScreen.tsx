@@ -171,7 +171,18 @@ export function StepScreen({
     // the eye illustration was crowding the product card on a real device.
     <div
       className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden pt-4 md:h-full md:rounded-2xl md:pb-6 md:pt-6"
-      style={{ background: 'var(--gradient-bg-screen)' }}
+      // V5 (docs/figma-step-screen-restyle.md): background moved off the
+      // shared --gradient-bg-screen token (#e6d6d1 → #f5e7de → #fbf7f5,
+      // still 3-stop) onto --gradient-bg-home (#f7e9ca → #f9f3eb 7.179%,
+      // 2-stop) — confirmed identical on Step 1/7/8's pulls, and it's
+      // literally the same gradient the home screen's V4 pass already
+      // defined, not a new value. Points at --gradient-bg-home directly
+      // rather than changing --gradient-bg-screen's own value, because
+      // that token is still shared with AllStepsView (which also hardcodes
+      // its start color, #e6d6d1, into its sticky header) — AllStepsView
+      // is explicitly deferred, so its background stays exactly as-is
+      // until its own Figma pass.
+      style={{ background: 'var(--gradient-bg-home)' }}
     >
       <ScreenHeader
         activeView="step"
@@ -194,15 +205,50 @@ export function StepScreen({
           (the tutorial card stack's fly-off animation). Applied here too,
           defensively, since this container has the exact same shape. */}
       <div className="relative flex-1 overflow-y-auto overflow-x-hidden">
-        {/* Paper-texture mask above the illustration — originally
-            positioned at top-[114px] (see the old V1 874px-canvas
-            derivation this replaced), computed from mt-[40px] + gap-[52px]
-            above the illustration in this same div. The tighter node
-            615:3037 spacing pass below removed exactly 40px above the
-            illustration (p-[24px] + gap-[28px] instead of mt-[40px] +
-            gap-[52px]) — shifted by that same 40px rather than re-derived
-            from scratch, since the mask's own size/target position within
-            the illustration didn't change, only how far down it now sits.
+        {/* Skin-tone radial wash, BEHIND everything in this region — V5
+            (docs/figma-step-screen-restyle.md): missing entirely before
+            this pass. Figma's own "Background-eye-radial" layer (a
+            warm off-white ellipse fading to transparent, replacing flat
+            yellowish background right behind the eye) sits as a sibling
+            *behind* "Content" at the full-screen level, roughly centered
+            on "Graph + Step" but bleeding ~8% of its height above and
+            ~17% below (measured via get_metadata: wash spans y=110-626,
+            "Graph + Step" spans y=142-556, both in Figma's own 874px
+            canvas). Our DOM doesn't split header/content the same way
+            Figma's mockup does (no separate 94px address-bar chroming
+            "Content" off from this scrollable region), so the "above"
+            bleed has nowhere real to go — clamped to top:0 instead of a
+            small negative offset, which would just get clipped by
+            overflow-y-auto invisibly anyway. Height (440px) and center
+            position derived from the *live* "Graph + Step" block's own
+            measured height (376.98px in the browser) scaled by Figma's
+            same bleed ratios, not hardcoded from Figma's absolute 516px
+            (which assumes a taller canvas than this screen actually has).
+            Ellipse radii (327x258) and color stops (40%→100%,
+            rgba(245,231,222,1)→rgba(251,247,245,0)) are Figma's own,
+            decoded from its `gradientTransform` matrix on the source SVG
+            radial gradient. */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-[440px]"
+          style={{
+            backgroundImage:
+              'radial-gradient(ellipse 327px 258px at 50% 50%, rgba(245,231,222,1) 40%, rgba(251,247,245,0) 100%)',
+          }}
+        />
+
+        {/* Paper-texture mask above the illustration — top-[58px]/
+            h-[250px]/w-[300px], opacity 0.4, scale-90% grain, soft-light
+            blend. V5 (docs/figma-step-screen-restyle.md) went through
+            several rounds landing here: a Figma-matched re-derivation
+            (top-[33px]/h-[264px], numerically closer to Figma but read
+            smaller/more cramped on review) → reverted to the pre-V5
+            top-[74px]/h-[273px] → that read as barely-noticeable grain →
+            tuned live via a temporary dev-only panel (now removed) through
+            two more rounds of opacity/blend-mode/scale (0.35/overlay/1x →
+            0.6/soft-light/0.9x → final 0.4/soft-light/0.9x). These are
+            real, deliberately-chosen values now, not a placeholder — don't
+            "fix" them back toward Figma's own raw numbers without a fresh
+            reason to revisit.
 
             z-index is required, not decorative: this div is
             position:absolute with z-index:auto, and EyeIllustration's
@@ -214,29 +260,36 @@ export function StepScreen({
             so the grain only shows in the gaps around the artwork rather
             than on top of it. */}
         <div
-          className="pointer-events-none absolute left-1/2 top-[74px] z-10 h-[273px] w-[322px] -translate-x-1/2"
+          className="pointer-events-none absolute left-1/2 top-[58px] z-10 h-[250px] w-[300px] -translate-x-1/2 opacity-40"
           style={{ mixBlendMode: 'soft-light' }}
         >
-          <img src={radialNoiseUrl} alt="" className="block size-full max-w-none" />
+          <img
+            src={radialNoiseUrl}
+            alt=""
+            className="block size-full max-w-none"
+            style={{ transform: 'scale(0.9)' }}
+          />
         </div>
 
         {/* Eye illustration + progress badge + title/description — node
-            615:3037's "Graph + Step" block: p-[24px] all around, gap-28
+            615:3037's "Graph + Step" block: p-[24px] all around. Gap
             between each of the 3 children (badge, illustration, title
-            block). Replaces the old 40/52/52px gaps (Figma's V1 Step_7
-            spacing, node 509:7122) — those were tuned against the full
-            874px desktop-style canvas, not the ~640px a real phone
-            actually leaves after browser chrome (measured off node
-            615:3037, a real 375x812 device frame), and were the main
-            reason the illustration crowded the product card there. Flat
-            flex column on purpose — EyeIllustration sizes itself via
-            `width: 100%` of this direct parent, which only resolves
-            correctly because this container has a definite (stretched)
-            width; nesting badge+illustration in their own wrapper broke
-            that (the wrapper's own width was indeterminate under
-            items-center, so the percentage collapsed and the illustration
-            rendered undersized) — don't reintroduce a wrapper here. */}
-        <div className="relative flex flex-col items-center gap-[28px] p-[--space-lg]">
+            block) was 28px under that V3 spacing pass, replacing the old
+            40/52/52px gaps (Figma's V1 Step_7 spacing, node 509:7122) —
+            those were tuned against the full 874px desktop-style canvas,
+            not the ~640px a real phone actually leaves after browser
+            chrome. V5 (docs/figma-step-screen-restyle.md) bumped the gap
+            again, 28px → 40px — confirmed on Step 1/2/3/5/6/7's pulls, a
+            real increase back toward (not all the way to) the pre-V3
+            number, not V3 being undone. Flat flex column on purpose —
+            EyeIllustration sizes itself via `width: 100%` of this direct
+            parent, which only resolves correctly because this container
+            has a definite (stretched) width; nesting badge+illustration in
+            their own wrapper broke that (the wrapper's own width was
+            indeterminate under items-center, so the percentage collapsed
+            and the illustration rendered undersized) — don't reintroduce a
+            wrapper here. */}
+        <div className="relative flex flex-col items-center gap-[40px] p-[--space-lg]">
           {/* Kept in the layout (not unmounted) on the done screen — hiding
               it with `invisible` rather than skipping it entirely preserves
               the same 52px gap before the illustration, so the illustration
@@ -314,17 +367,25 @@ export function StepScreen({
                 : { animation: 'view-fade-in var(--duration-layout) var(--ease-out-quart)' }
             }
           >
+            {/* V5 (docs/figma-step-screen-restyle.md): both title and
+                description dropped their old opacity pairing (opacity-50 /
+                opacity-40) — title is now full opacity, description is
+                opacity-80. Confirmed identically across Step 1/2/3/5/6/7's
+                pulls, not just Step 1. */}
             <p
-              className="text-[length:var(--font-size-step-title)] opacity-50"
+              className="text-[length:var(--font-size-step-title)]"
               style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--font-weight-medium)' }}
             >
               {content.title}
             </p>
             <p
-              className="text-balance text-[length:var(--font-size-step-description)] opacity-40"
+              className="text-balance text-[length:var(--font-size-step-description)] opacity-80"
               style={{
                 color: 'var(--color-text-primary)',
-                fontWeight: 'var(--font-weight-regular)',
+                // V5: was --font-weight-regular (400) — Figma's title +
+                // description share one Inter Medium (500) wrapper, the
+                // description was never actually Regular weight.
+                fontWeight: 'var(--font-weight-medium)',
                 lineHeight: 1.3,
               }}
             >
@@ -336,8 +397,15 @@ export function StepScreen({
 
       {/* Product checklist card + bottom action button — a flex sibling
           of the scrollable region above, not part of it, so it's always
-          exactly pb-4 from the bottom of the (fixed-height) frame on
-          every step.
+          flush with the bottom of the (fixed-height) frame on every step.
+          V5 (docs/figma-step-screen-restyle.md): dropped the pb-4 that
+          used to inset it from the bottom edge — Figma's own "Products"
+          wrapper has no bottom padding at all, the card's bottom edge is
+          the wrapper's own edge. Side padding (px-[--space-xs]) is
+          UNCHANGED though — easy to misread this as "go fully edge-to-
+          edge," but Figma's pulled markup keeps that same 12px horizontal
+          inset on this outer wrapper; only the *card's own* corners and
+          the *bottom* gap changed, not the sides.
 
           Two nested motion elements doing two different jobs, both
           necessary:
@@ -376,7 +444,7 @@ export function StepScreen({
         {content.products.length > 0 && !isFinishing && (
           <motion.div
             key="product-card"
-            className="px-[--space-xs] pb-4"
+            className="px-[--space-xs]"
             // Bottom-anchored, matching the card's actual fixed position on
             // screen — both this exit and the entrance below rise/sink from
             // the bottom edge now, not the top, so the scale reads as
@@ -389,7 +457,17 @@ export function StepScreen({
           >
             <motion.div
               key={step}
-              className="flex flex-col rounded-[--radius-card] p-4"
+              // V5 (docs/figma-step-screen-restyle.md): top-corners-only
+              // 32px radius (was --radius-card, 20px on all 4 corners) —
+              // the card's bottom edge is now flush with the screen's own
+              // bottom edge (see the pb-4 removal above), so square bottom
+              // corners read correctly; kept as an inline arbitrary value
+              // rather than promoted to a token since AllStepsView still
+              // legitimately uses --radius-card as-is (deferred, not
+              // re-verified against this pass). Padding: pt-[20px]
+              // px-[16px] pb-[16px] (was uniform p-4) — top grows 4px,
+              // sides/bottom unchanged.
+              className="flex flex-col rounded-t-[32px] px-4 pb-4 pt-5"
               style={{ background: 'var(--color-surface)', boxShadow: 'var(--shadow-card)', transformOrigin: 'bottom center' }}
               // Rises up from below into place (y: 16 → 0), not down from
               // above — the card is fixed to the bottom of the screen, so
@@ -399,8 +477,9 @@ export function StepScreen({
               animate={{ opacity: 1, y: 0, scaleY: 1 }}
               transition={cardSpring}
             >
-              {/* gap-3 (12px), not gap-4 — node 615:3037. */}
-              <div className="flex flex-col gap-3">
+              {/* gap-4 (16px) — V5 (was gap-3/12px under node 615:3037's
+                  tighter V3 spacing pass), confirmed on every pulled step. */}
+              <div className="flex flex-col gap-4">
                 {content.products.map((product) => {
                   const key = `${step}-${product.brand}-${product.name}`
                   const checked = checkedOverrides[key] ?? product.checked

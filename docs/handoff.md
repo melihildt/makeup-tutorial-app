@@ -1,8 +1,11 @@
 # Handoff — makeup tutorial app
 
 Written to carry context into a fresh session. Read this first, then
-`docs/figma-v2-redesign.md` for the full Figma V2 diff if you touch
-anything illustration- or copy-related.
+`docs/figma-step-screen-restyle.md` for the current (V5) visual diff if
+you're touching colors/spacing/sizing on any step screen, or
+`docs/figma-v2-redesign.md` for the underlying V2 structural diff if
+you're touching illustration data or copy — V5 didn't change either of
+those, see "Design history" below for how the two docs relate.
 
 **Re-verified and substantially rewritten 2026-08-21** — this doc had
 gone stale since the initial commit (`8544b66`) and hadn't been touched
@@ -15,6 +18,29 @@ section for what changed. **Git state**: branch `feature/home-tutorial-stack`
 (pushed, working tree clean as of this update) — run `git status`/`git log
 --oneline -5` on a fresh session start regardless, same caveat as
 `docs/home-stack-handoff.md`'s own git-state note.
+
+**2026-08-24 update — V5 restyle pass shipped.** The user iterated the V2
+flow further in Figma (sizing/spacing/color refinements + an eye-instance
+resize) and it's now fully implemented, reviewed, and tuned — see
+**`docs/figma-step-screen-restyle.md`** for the complete diff, node IDs,
+and a full round-by-round log of what was found and fixed (several real
+gaps surfaced only during implementation/review, not from the initial
+Figma diff alone — that doc's own history is worth reading if anything
+here seems inconsistent with the actual code). Short version: every
+`StepScreen`/`ScreenHeader`/`ProductCard`/`ActionButton`/`CheckIndicator`
+color, size, and spacing value now matches this newest Figma pass; the
+header icons were rebuilt from real downloaded assets (inline SVG path
+data, no more hand-traced shapes); a skin-tone radial gradient behind the
+eye was added (previously missing entirely); the eye illustration's
+render size was corrected to track the user's Figma resize (see
+`EyeIllustration.tsx`'s `REFERENCE_RENDER_WIDTH`); and the paper-texture
+noise mask's position/opacity/blend-mode/grain-scale were tuned
+interactively to final values (top 58px, height 250px, width 300px,
+opacity 0.4, soft-light blend, 0.9x grain scale) — same soft-light blend
+mode as before this pass, just at lower opacity, a smaller/repositioned
+box, and (new) an independent grain-scale control. `AllStepsView.tsx` is
+explicitly **not** part of this pass — still on the older V2 styling,
+deferred by the user's own call, see that doc's opening scope note.
 
 ## What this app is
 
@@ -33,7 +59,7 @@ in-memory, resets on reload).
 Run it: `npm run dev` (or via the Browser pane's `preview_start` with name
 `makeup-tutorial-dev`, defined in `.claude/launch.json`).
 
-## Design history — two passes
+## Design history — three passes
 
 1. **V1**: original Figma flow, fully implemented (all 7 steps' real
    illustration + copy + products).
@@ -44,8 +70,25 @@ Run it: `npm run dev` (or via the Browser pane's `preview_start` with name
    **`docs/figma-v2-redesign.md`** (full diff + a 5-phase plan). That file
    has the node-ID reference table — use it before making any new Figma
    calls, to avoid re-discovering IDs already on file.
+3. **V5** (tokens.css's own version-marker numbering, shared across this
+   feature and the home screen — there's no separate "V3"/"V4" pass
+   specific to this file, those landed in the home screen and a spacing
+   tweak, see `tokens.css`'s own comments): a further Figma iteration —
+   sizing/spacing/color refinements plus an eye-instance resize — over the
+   shipped V2 shell. Tracked in **`docs/figma-step-screen-restyle.md`**
+   (full diff, node IDs, and every round of user review/correction that
+   followed). Done and shipped; `AllStepsView.tsx` explicitly excluded,
+   still on V2 styling.
 
 ## Current state (what's done)
+
+**V5 is done and shipped** (see the top-of-doc 2026-08-24 note and
+`docs/figma-step-screen-restyle.md`) — everything in the V2 sections below
+is now further overlaid with V5's colors/spacing/sizing on top of it,
+except `AllStepsView.tsx` (still V2). Reading the V2 detail below is still
+useful for the underlying structure/wiring, just not for current visual
+values on `StepScreen`/`ScreenHeader`/`ProductCard`/`ActionButton`/
+`CheckIndicator` — check `figma-step-screen-restyle.md` for those.
 
 **V2 phases 1, 2, and 4 are complete and verified in-browser:**
 
@@ -119,6 +162,15 @@ resolved** (re-verified against current code, not assumed):
 ## Pending work
 
 ### 1. Phase 3 — re-pull the eye illustration for V2, steps 2-7 (blocked on Figma rate limit)
+
+**2026-08-24 note**: this is still open — don't assume V5 (above) closed
+it. V5 only fixed the illustration's *render size* (`EyeIllustration.tsx`'s
+`REFERENCE_RENDER_WIDTH`, corrected to track the user's Figma resize of
+the `MakeUp` instance) — it never touched `STEP_LAYOUTS[2..7]`'s actual
+per-layer data, which is exactly what this section is about and is
+unchanged. See `docs/figma-step-screen-restyle.md`'s "Follow-up round"
+item 1 for the render-size fix's own detail if it's ever unclear which
+part of "the eye illustration" was and wasn't touched.
 
 `EyeIllustration.tsx`'s `STEP_LAYOUTS[2..7]` are still 100% V1 —
 confirmed directly in the file's own module comment. Step 1 is done (see
@@ -257,21 +309,22 @@ actually verified, not a screenshot).
 ## Quick file map
 
 ```
-docs/figma-v2-redesign.md    Full V2 Figma diff + node-ID reference + 5-phase plan
-docs/handoff.md               This file
-docs/home-stack-handoff.md    Separate doc: the HomeScreen tutorial-card stack + its own motion — read that one for App.tsx/HomeScreen/TutorialCard.tsx questions, not this doc
+docs/figma-v2-redesign.md          Full V2 Figma diff + node-ID reference + 5-phase plan
+docs/figma-step-screen-restyle.md  Full V5 Figma diff + node IDs + every follow-up round (read this for anything V5-related — most of the interesting detail is in the follow-up rounds, not the original plan)
+docs/handoff.md                     This file
+docs/home-stack-handoff.md          Separate doc: the HomeScreen tutorial-card stack + its own motion — read that one for App.tsx/HomeScreen/TutorialCard.tsx questions, not this doc
 
-src/data/stepContent.ts      Shared step copy + product data (STEP_CONTENT, TOTAL_STEPS) — real product photos, still single-look (Soft Smokey Eye) only, see "Known gaps"
-src/styles/tokens.css        Design tokens; V1 values marked, V2 replacements marked in place
+src/data/stepContent.ts      Shared step copy + product data (STEP_CONTENT, TOTAL_STEPS) — real product photos, still single-look (Soft Smokey Eye) only, see "Known gaps"; `checked` values verified against Figma directly as of V5 (see figma-step-screen-restyle.md)
+src/styles/tokens.css        Design tokens; V1 values marked, V2/V5 replacements marked in place
 
 src/components/
-  CheckIndicator.tsx        36x36 check control (checked/unchecked), V2 assets
-  ProductCard.tsx           Product row: image, brand/name/shade, CheckIndicator
-  ScreenHeader.tsx          Back / Search-Widget toggle / Done — shared by StepScreen + AllStepsView — Done/Back buttons still lack aria-label, see "Known gaps"
-  ActionButton.tsx          Shared default/final bottom button
-  EyeIllustration.tsx       Layered SVG eye composite — step 1 real V2 per-layer data + stagger diffing; steps 2-7 still V1, this is the open half of phase 3
-  StepScreen.tsx            One step's full screen — owns the step-to-step direction-aware transition + Finish fade-out (Framer Motion, phase 5, done)
-  AllStepsView.tsx          All-steps list screen — checkedOverrides now shared with StepScreen via TutorialFlow, not its own local state
+  CheckIndicator.tsx        36x36 check control (checked/unchecked) — SVG shapes traced from V2 assets, colors/stroke-width updated for V5
+  ProductCard.tsx           Product row: image, brand/name/shade, CheckIndicator — sizing/colors updated for V5
+  ScreenHeader.tsx          Back / Search-Widget toggle / Done — shared by StepScreen + AllStepsView — rebuilt for V5 (real downloaded icon assets as inline SVG path data, frosted-chip chrome, toggle restructured from sliding-pill to two independent buttons) — Done/Back buttons still lack aria-label, see "Known gaps"
+  ActionButton.tsx          Shared default/final bottom button — colors/height/typography updated for V5
+  EyeIllustration.tsx       Layered SVG eye composite — step 1 real V2 per-layer data + stagger diffing; steps 2-7 still V1 layer data (this is the still-open half of phase 3, see above) — render *size* corrected for V5's Figma resize (REFERENCE_RENDER_WIDTH)
+  StepScreen.tsx            One step's full screen — owns the step-to-step direction-aware transition + Finish fade-out (Framer Motion, phase 5, done); V5 added the skin-tone radial-gradient wash and re-tuned the noise mask (final: top 58px/h 250px/w 300px/opacity 0.4/soft-light/0.9x grain scale)
+  AllStepsView.tsx          All-steps list screen — checkedOverrides now shared with StepScreen via TutorialFlow, not its own local state — NOT part of the V5 restyle, still V2 styling
 
 src/TutorialFlow.tsx        Owns `step`/`view`/`checkedOverrides` state, wires everything together; takes `onExit` (wired to the Done button, returns to Home)
 src/App.tsx                 Routes HomeScreen ⇄ TutorialFlow — see docs/home-stack-handoff.md for the real detail on this file, out of this doc's own scope
@@ -279,5 +332,5 @@ src/App.tsx                 Routes HomeScreen ⇄ TutorialFlow — see docs/home
 src/assets/eyes/Step_1/     Real V2 per-layer SVGs (downloaded, committed) — step 1 only
 src/assets/eyes/Step_2/ … Step_7/   V1 eye illustration layer SVGs (downloaded, committed) — still what steps 2-7 render from
 src/assets/icons/           V1 Checked/Unchecked (superseded by icons/v2/check-*.svg, kept for reference)
-src/assets/icons/v2/        V2 header icons, check assets, radial noise texture (downloaded, committed)
+src/assets/icons/v2/        radial-noise.svg (used, StepScreen.tsx) + check-*.svg (reference only — CheckIndicator.tsx traces these as inline paths, doesn't import the files). The old V2 header icon files (arrow-left.svg, done-check.svg, search-ellipse-*.svg, search-handle.svg, widget-bar-*.svg) were deleted during V5 — ScreenHeader.tsx's icons are inline SVG path data now, no image imports.
 ```
