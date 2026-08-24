@@ -15,10 +15,11 @@ also picked up real changes to this feature's own files along the way
 (motion, wiring, product photography). Re-checked every claim below
 against the actual current code before writing this version — see each
 section for what changed. **Git state**: branch `feature/home-tutorial-stack`
-(pushed through `c2953f1` — plans 013/014/018 executed in a later session,
-see the animation-audit update below; working tree otherwise clean) — run
-`git status`/`git log --oneline -5` on a fresh session start regardless,
-same caveat as `docs/home-stack-handoff.md`'s own git-state note.
+(pushed through `46adc57` — plans 013/014/015/018/020 executed across two
+later sessions, see the animation-audit update below; working tree
+otherwise clean) — run `git status`/`git log --oneline -5` on a fresh
+session start regardless, same caveat as `docs/home-stack-handoff.md`'s
+own git-state note.
 
 **2026-08-24 update — V5 restyle pass shipped.** The user iterated the V2
 flow further in Figma (sizing/spacing/color refinements + an eye-instance
