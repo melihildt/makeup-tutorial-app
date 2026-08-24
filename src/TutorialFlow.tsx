@@ -94,6 +94,12 @@ export function TutorialFlow({ onExit }: TutorialFlowProps) {
       setStep(lastToggledStep)
       setLastToggledStep(null)
     }
+    // Clear synchronously, not just after the 260ms timeout above — a
+    // view switch is itself a full remount of every ProductCard (see
+    // justToggledKey's own comment), so without this, switching views
+    // within that 260ms window replays the animation on a row in the
+    // *new* view that the user never actually touched there.
+    setJustToggledKey(null)
     setView('step')
   }
 
@@ -142,7 +148,12 @@ export function TutorialFlow({ onExit }: TutorialFlowProps) {
       onFinish={handleFinish}
       onBack={handleBack}
       onDone={onExit}
-      onSelectListView={() => setView('list')}
+      onSelectListView={() => {
+        // See handleSelectStepView's own comment (same reasoning,
+        // opposite direction).
+        setJustToggledKey(null)
+        setView('list')
+      }}
     />
   )
 }

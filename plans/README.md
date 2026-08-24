@@ -36,12 +36,12 @@ handoff, this README only tracks plan execution.
 | 010 | [Compose StepScreen's product-card y/scaleY into full transform strings](010-step-card-composed-transform.md) | HIGH | Performance | Tutorial step | DONE |
 | 011 | [Give reduced-motion users the same tutorial detail content](011-reduced-motion-detail-flip-parity.md) | HIGH | Accessibility | Home | DONE |
 | 012 | [Import the shared EASE_OUT_QUART constant in StepScreen](012-stepscreen-ease-out-quart-import.md) | LOW | Cohesion & tokens | Tutorial step | DONE |
-| 013 | [Bring check-ring-in's entrance scale inside the 0.9–0.97 band](013-check-ring-in-scale-band.md) | LOW | Physicality & origin | Home, Tutorial step, All steps view | TODO |
-| 014 | [Clear justToggledKey synchronously on view switch](014-justtoggledkey-view-switch-clear.md) | MEDIUM | Interruptibility / Purpose | Tutorial step, All steps view | TODO |
+| 013 | [Bring check-ring-in's entrance scale inside the 0.9–0.97 band](013-check-ring-in-scale-band.md) | LOW | Physicality & origin | Home, Tutorial step, All steps view | DONE |
+| 014 | [Clear justToggledKey synchronously on view switch](014-justtoggledkey-view-switch-clear.md) | MEDIUM | Interruptibility / Purpose | Tutorial step, All steps view | DONE |
 | 015 | [Replace StartOverCard's keyframe-restart filter swap with an interruptible crossfade](015-startover-interruptible-crossfade.md) | MEDIUM | Interruptibility | Home | TODO |
 | 016 | [Animate the product-sheet reserved-height collapse on Finish→Done](016-animate-product-sheet-reserved-height.md) | MEDIUM | Missed opportunity | Tutorial step | DONE |
 | 017 | [Ignore rapid repeat taps on Next while content is animating](017-debounce-next-button.md) | MEDIUM | Interruptibility | Tutorial step | DONE |
-| 018 | [Stop nested pressables from compounding their ancestor's :active scale](018-nested-pressable-scale-isolation.md) | MEDIUM | Physicality & origin | Home | TODO |
+| 018 | [Stop nested pressables from compounding their ancestor's :active scale](018-nested-pressable-scale-isolation.md) | MEDIUM | Physicality & origin | Home | DONE |
 | 019 | [Drive the chip press-flash sweep via transform instead of background-position](019-chip-flash-sweep-transform.md) | MEDIUM | Performance | Home | TODO |
 | 020 | [Move AllStepsView's scroll-shadow transition onto the app's tokens](020-allstepsview-scroll-shadow-tokens.md) | LOW | Cohesion & tokens | All steps view | TODO |
 | 021 | [Give StepScreen's per-step content swap its own faster duration budget](021-step-content-duration-budget.md) | LOW | Easing & duration | Tutorial step | DONE |
@@ -207,8 +207,8 @@ boundary says to stop and report on rather than improvise past.
 Mechanical check across all four: `npx tsc --noEmit` clean, no console
 errors during any of the manual interaction above.
 
-**012-021 written up as plans; 012, 016, 017, 021 executed same-session,
-013-015/018-020 still TODO** — these are the same audit's findings 5-14
+**012-021 written up as plans; 012, 013, 014, 016, 017, 018, 021
+executed, 015/019/020 still TODO** — these are the same audit's findings 5-14
 (its own original numbering; each plan file below carries its own 01x
 number instead). Each plan's code citations were re-verified against the
 actual current files (not just the original audit's snapshot) before
@@ -279,6 +279,42 @@ checking the dev server's own HMR log for a later, successful update
 before treating any plan as verified; none reflect the final state of any
 file.
 
+**013, 014, 018 executed in a later session, all exactly as planned** —
+re-verified against current file content before editing (per each plan's
+own "re-locate by content, don't trust line numbers" boundary); all three
+target lines matched byte-for-byte with no drift.
+
+- **013 executed exactly as planned** — `check-ring-in`'s `from` rule
+  changed from `scale(0.85)` to `scale(0.92)`, doc comment updated with the
+  AUDIT band reasoning. Verified: `grep -n "scale(0.85)" src/index.css`
+  returns zero matches; the live compiled `CSSKeyframesRule` in the
+  browser confirms `scale(0.92)` on `0%`. No component file touched, all
+  six call sites pick up the value automatically as the plan intended.
+- **014 executed exactly as planned** — `setJustToggledKey(null)` added to
+  `handleSelectStepView` (after the `lastToggledStep` clear, before
+  `setView('step')`) and to the `onSelectListView` prop (expanded from a
+  bare arrow to a block body, `setJustToggledKey(null)` before
+  `setView('list')`). Verified live: toggled a product on a step screen,
+  switched to the All Steps view, and the matching row showed its checked
+  resting state with no spurious replay; toggling a product and staying in
+  the same view still animates normally (regression check passed).
+- **018 executed exactly as planned** — `has-[button:active]:scale-100`
+  added to both `TutorialLookCard`'s and `TutorialDetailCard`'s root
+  `className`, immediately after `active:scale-[0.97]`. Verified: the live
+  compiled stylesheet shows the exact expected rule —
+  `.has-\[button\:active\]\:scale-100:has(button:active) { ... scaleX(1)
+  scaleY(1) ... }` — confirming Tailwind resolved the arbitrary `has-*`
+  variant correctly. A true held-press `:active` state can't be forced
+  through this environment's synthetic pointer events (same limitation the
+  plan's own Verification section flags — `:has()` state depends on a
+  live descendant press, not a forceable pseudo-class), so — as with 009's
+  precedent for the same class of limitation — verification relied on
+  confirming the rule's presence, selector, and specificity directly
+  rather than a live press.
+
+Mechanical check across all three: `npx tsc --noEmit` clean, no console or
+dev-server errors during editing or the live interaction pass above.
+
 Every other LOW cohesion/polish item the same audit surfaced but didn't
 rise to its own numbered finding (`EyeIllustration.tsx`'s 25ms stagger vs.
 the 30-80ms band, `HomeScreen.tsx`'s chip-selection transition including
@@ -327,27 +363,25 @@ enough to fold into other work rather than justify its own plan.
    no plan's fix depends on another plan having already run — but several
    share a file, so treat that the same way as point 5 above: fine
    sequentially or merged carefully, risky as blind parallel worktrees).
-   **012, 016, 017, and 021 are done** (all four touched `StepScreen.tsx`
-   and were executed sequentially in that same order in one session, per
-   this exact guidance — no merge conflicts, since each touched a
-   different non-overlapping region). Remaining:
-   - **`TutorialCard.tsx`**: 015 (`StartOverCard`, ~lines 841-887) and 018
-     (`TutorialLookCard`'s root at line 389, `TutorialDetailCard`'s root
-     at line 633) — two non-overlapping regions, same caution. Note both
-     plans' own quoted line numbers predate 008/011's edits to this same
-     file having already landed — re-locate by content/function name
-     first per each plan's own boundary, don't trust the numbers
-     literally (008 and 011 already shifted this file once; whether 015/
-     018's own citations still match depends on what else has touched
-     `TutorialCard.tsx` since this README was last updated).
-   - **`src/index.css`**: 013 (the `check-ring-in` keyframe) and 019 (the
-     `chip-flash-sweep` keyframe) — two different keyframes, same file,
-     same caution.
-   - **Fully independent, no shared file with anything else in 012-021**:
-     014 (`TutorialFlow.tsx` only), 019 also touches `HomeScreen.tsx`
-     (only 019 touches that file), 020 (`AllStepsView.tsx` only). These
-     three can run in any order, including fully parallel with each other
-     and with the groups above.
+   **012, 013, 014, 016, 017, 018, and 021 are done** (012/016/017/021
+   touched `StepScreen.tsx`, executed sequentially in that order in one
+   session; 013/014/018 executed in a later session — 013 alone in
+   `index.css`, 014 alone in `TutorialFlow.tsx`, 018 in `TutorialCard.tsx`
+   — no merge conflicts in any case, since each touched a different
+   non-overlapping region or file). Remaining:
+   - **`TutorialCard.tsx`**: 015 (`StartOverCard`, ~lines 841-887) is the
+     only plan left touching this file — 018 (the other plan that used to
+     share it) is now done, so no shared-file caution applies here
+     anymore. Note 015's own quoted line numbers predate 008/011/018's
+     edits to this same file — re-locate by content/function name first
+     per the plan's own boundary, don't trust the numbers literally.
+   - **`src/index.css`**: 019 (the `chip-flash-sweep` keyframe) is the
+     only plan left touching this file — 013 (the other plan that used to
+     share it) is now done, so no shared-file caution applies here either.
+   - **Fully independent, no shared file with anything else remaining in
+     012-021**: 019 also touches `HomeScreen.tsx` (only 019 touches that
+     file), 020 (`AllStepsView.tsx` only). These two can run in any order,
+     including fully parallel with each other and with 015 above.
 
 001-005 touch only `src/components/TutorialCard.tsx` and were
 written against commit `628b8b7` — **now well behind current** (see

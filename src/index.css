@@ -46,8 +46,12 @@ body {
 }
 @keyframes check-ring-in {
   /* The ring (checked or unchecked) settling in after the swap — subtle,
-     so it doesn't compete with the pop or the checkmark draw. */
-  from { opacity: 0; transform: scale(0.85); }
+     so it doesn't compete with the pop or the checkmark draw. Scale
+     starts at 0.92 (AUDIT.md's Physicality & origin band is 0.9–0.97;
+     this was 0.85, outside it — nothing in the real world appears from
+     nothing, so the entrance should read as a small settle, not a near-
+     invisible-to-full pop). */
+  from { opacity: 0; transform: scale(0.92); }
   to { opacity: 1; transform: scale(1); }
 }
 @keyframes check-draw {

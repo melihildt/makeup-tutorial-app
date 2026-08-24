@@ -386,7 +386,7 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity,
       // so :active only ever fires on the one card that's actually
       // tappable, and stacks harmlessly with gripScale on the rare frame
       // both are transiently true (pointerdown-before-drag-threshold).
-      className={`relative flex h-full w-[338px] flex-col items-center gap-1 overflow-hidden pb-6 text-left active:scale-[0.97] ${disabled ? '' : 'cursor-pointer'}`}
+      className={`relative flex h-full w-[338px] flex-col items-center gap-1 overflow-hidden pb-6 text-left active:scale-[0.97] has-[button:active]:scale-100 ${disabled ? '' : 'cursor-pointer'}`}
       style={{
         background: 'var(--color-surface)',
         borderRadius: 'var(--radius-tutorial-card)',
@@ -630,7 +630,7 @@ function TutorialDetailCard({
               }
             }
       }
-      className={`relative flex h-full w-[338px] flex-col items-center gap-1 overflow-hidden border-[0.5px] border-solid pb-6 text-left active:scale-[0.97] ${disabled ? '' : 'cursor-pointer'}`}
+      className={`relative flex h-full w-[338px] flex-col items-center gap-1 overflow-hidden border-[0.5px] border-solid pb-6 text-left active:scale-[0.97] has-[button:active]:scale-100 ${disabled ? '' : 'cursor-pointer'}`}
       style={{
         background: 'var(--color-surface)',
         borderRadius: 'var(--radius-tutorial-card)',
