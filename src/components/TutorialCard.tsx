@@ -254,23 +254,6 @@ function LevelIcon({ level }: { level: TutorialLevel }) {
   )
 }
 
-/** "Start Tutorial" CTA icon, node 674:3979 ("fi-rr-play") — real path data
- *  pulled via download_assets. Fill is a literal `white`, not a token: the
- *  button it lives on is always dark ink regardless of the selected
- *  filter (see StartTutorialButton), so there's no per-theme variant to
- *  account for the way every other icon in this file has via
- *  var(--color-tutorial-card-text). */
-function PlayIcon() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path
-        d="M13.6627 5.31217L7.30267 0.645504C6.80593 0.281761 6.21815 0.0627001 5.60451 0.0126128C4.99087 -0.0374746 4.37535 0.0833684 3.8262 0.361742C3.27704 0.640116 2.81572 1.06514 2.49337 1.58969C2.17103 2.11425 2.00026 2.71782 2 3.3335V12.6668C2.00011 13.2828 2.17089 13.8867 2.49338 14.4115C2.81588 14.9362 3.27748 15.3614 3.82695 15.6398C4.37642 15.9181 4.99227 16.0388 5.60616 15.9884C6.22006 15.938 6.80797 15.7184 7.30467 15.3542L13.6647 10.6875C14.0868 10.3779 14.4302 9.97321 14.6668 9.50621C14.9034 9.03921 15.0268 8.52304 15.0268 7.9995C15.0268 7.47597 14.9034 6.9598 14.6668 6.4928C14.4302 6.0258 14.0868 5.62111 13.6647 5.3115L13.6627 5.31217ZM12.8733 9.61217L6.51333 14.2788C6.21534 14.4966 5.86291 14.6276 5.49505 14.6575C5.12718 14.6873 4.75824 14.6148 4.42904 14.4479C4.09985 14.281 3.82326 14.0263 3.62987 13.712C3.43648 13.3976 3.33385 13.0359 3.33333 12.6668V3.3335C3.32963 2.96374 3.43033 2.60043 3.62385 2.28532C3.81737 1.97021 4.09587 1.7161 4.42733 1.55217C4.70926 1.40876 5.02103 1.33385 5.33733 1.3335C5.76126 1.33512 6.17348 1.47276 6.51333 1.72617L12.8733 6.39284C13.1263 6.57863 13.332 6.82137 13.4738 7.10142C13.6156 7.38146 13.6895 7.69094 13.6895 8.00484C13.6895 8.31873 13.6156 8.62821 13.4738 8.90826C13.332 9.1883 13.1263 9.43104 12.8733 9.61684V9.61217Z"
-        fill="white"
-      />
-    </svg>
-  )
-}
-
 /** Top-right timer pill — rounded-tr matches the card's own outer radius so
  *  the two curves read as one continuous corner (node 635:5048/5018/etc). */
 function TimerBadge({ minutes }: { minutes: number }) {
@@ -559,7 +542,14 @@ function ProductsPreview({ tutorial }: { tutorial: Tutorial }) {
  *  ever one value. stopPropagation so tapping this doesn't also fire the
  *  flipped card's own "tap anywhere flips back to front" handler (same
  *  pattern as the front card's bookmark button, see TutorialLookCard's
- *  own comment). */
+ *  own comment).
+ *
+ *  290x52, rounded-[30px] (a true pill at this height), 16px label, no
+ *  icon: re-pulled from a fresh get_design_context on node 673:3759 — the
+ *  source design dropped the play icon and grew the button (was 240x44,
+ *  rounded-[12px], 12px label + PlayIcon), per the user's own explicit
+ *  ask to size this up and remove its icon rather than an inferred
+ *  restyle. */
 function StartTutorialButton({ onStart, disabled }: { onStart?: () => void; disabled?: boolean }) {
   return (
     <button
@@ -569,17 +559,16 @@ function StartTutorialButton({ onStart, disabled }: { onStart?: () => void; disa
         e.stopPropagation()
         onStart?.()
       }}
-      className="flex h-[44px] w-[240px] shrink-0 items-center justify-center gap-2 overflow-hidden rounded-[12px] border-[0.5px] border-solid active:scale-[0.97]"
+      className="flex h-[52px] w-[290px] shrink-0 items-center justify-center overflow-hidden rounded-[30px] border-[0.5px] border-solid active:scale-[0.97]"
       style={{
         background: 'var(--color-tutorial-card-text)',
         borderColor: 'rgba(44, 41, 38, 0.1)',
         transition: 'transform var(--duration-instant) var(--ease-out-quart)',
       }}
     >
-      <span className="text-[12px] text-white" style={{ fontWeight: 'var(--font-weight-medium)' }}>
+      <span className="text-[16px] text-white" style={{ fontWeight: 'var(--font-weight-medium)' }}>
         Start Tutorial
       </span>
-      <PlayIcon />
     </button>
   )
 }
@@ -1400,25 +1389,6 @@ function TutorialStackCard({
   // composition to reason about.
   const dragX = useMotionValue(0)
   const dragY = useMotionValue(0)
-  // TEMP DEBUG — remove once the CardBack-stays-in-place bug is diagnosed.
-  // Real on-device evidence showed flightOpacity/flightScale animating
-  // correctly, but the card visually not traveling anywhere — this checks
-  // the one thing not yet directly observed: does the actual translation
-  // (dragX/dragY) run at all for a flipped card's fly-off?
-  useEffect(() => {
-    if (variant.kind !== 'tutorial') return
-    const unsubX = dragX.on('change', (v) => {
-      console.log('[flip-debug] dragX change', v.toFixed(1), performance.now().toFixed(0))
-    })
-    const unsubY = dragY.on('change', (v) => {
-      console.log('[flip-debug] dragY change', v.toFixed(1), performance.now().toFixed(0))
-    })
-    return () => {
-      unsubX()
-      unsubY()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- TEMP DEBUG only, subscribed once for this card instance's lifetime.
-  }, [])
   // "Picked up" feedback — see MotionTuning.gripScale. Also part of the
   // one-continuous-transform composition, same reasoning as totalRotate
   // below: never a second, separately-bound style value.
@@ -1537,16 +1507,6 @@ function TutorialStackCard({
     // Not captured into a variable (used to be, for Promise.all below) —
     // see the fade-gates-onAdvance comment further down for why waiting
     // on these specifically was the actual cause of the lingering.
-    // TEMP DEBUG — remove once the CardBack-stays-in-place bug is diagnosed.
-    console.log('[flip-debug] flyOff translate targets', {
-      isFlipped,
-      angle,
-      velocity,
-      targetX: (Math.cos(angle) * FLY_OFF_DISTANCE).toFixed(1),
-      targetY: (Math.sin(angle) * FLY_OFF_DISTANCE).toFixed(1),
-      currentDragX: dragX.get().toFixed(1),
-      currentDragY: dragY.get().toFixed(1),
-    })
     animateValue(dragX, Math.cos(angle) * FLY_OFF_DISTANCE, {
       type: 'spring',
       velocity: velocity.x,
@@ -2061,6 +2021,27 @@ export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackPr
     })
   }
 
+  // Reduced-motion equivalent of the normal-motion flip's `isFlipped` —
+  // see this file's `handleCardTap`/`TutorialDetailCard` for the
+  // non-reduced-motion version of the same idea. A Set (not a single id)
+  // because this is a plain scrollable list, not a one-card-at-a-time
+  // stack — more than one card can legitimately be expanded at once here,
+  // unlike the stack's single front card.
+  const [flippedIds, setFlippedIds] = useState<Set<string>>(() => new Set())
+
+  function handleToggleFlip(id: string) {
+    handleInteraction()
+    setFlippedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
   function handleCommitStart() {
     setIsAdvancing(true)
   }
@@ -2134,15 +2115,31 @@ export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackPr
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2, ease: EASE_OUT_QUART }}
       >
-        {tutorials.map((tutorial) => (
-          <TutorialLookCard
-            key={tutorial.id}
-            tutorial={tutorial}
-            onSelect={onSelect}
-            saved={savedIds.has(tutorial.id)}
-            onToggleSave={() => handleToggleSave(tutorial.id)}
-          />
-        ))}
+        {tutorials.map((tutorial) =>
+          flippedIds.has(tutorial.id) ? (
+            // Same detail content a motion user reaches by flipping the
+            // card (level, product preview, the actual "Start Tutorial"
+            // CTA) — reduced motion drops the flip *animation*, not this
+            // content. Swapped in instantly (no transition/animation
+            // added here), matching "fewer and gentler, not zero": the
+            // gentleness is in *not* adding new motion, not in hiding
+            // content a sighted/motion user would otherwise get.
+            <TutorialDetailCard
+              key={tutorial.id}
+              tutorial={tutorial}
+              onFlipBack={() => handleToggleFlip(tutorial.id)}
+              onStart={onSelect}
+            />
+          ) : (
+            <TutorialLookCard
+              key={tutorial.id}
+              tutorial={tutorial}
+              onSelect={() => handleToggleFlip(tutorial.id)}
+              saved={savedIds.has(tutorial.id)}
+              onToggleSave={() => handleToggleSave(tutorial.id)}
+            />
+          ),
+        )}
       </motion.div>
     )
   }

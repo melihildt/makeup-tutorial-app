@@ -186,7 +186,7 @@ export function ScreenHeader({
         <button
           type="button"
           onClick={onBack}
-          className="flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+          className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
           style={HEADER_CHIP_STYLE}
         >
           <BackIcon />
@@ -202,7 +202,7 @@ export function ScreenHeader({
           type="button"
           onClick={onSelectStepView}
           aria-pressed={!isListView}
-          className="relative flex size-[40px] items-center justify-center rounded-[--radius-filter-chip]"
+          className="header-icon-button relative flex size-[40px] items-center justify-center rounded-[--radius-filter-chip]"
         >
           {/* The chip itself is a separate absolutely-positioned overlay,
               not chrome on the button — that's what lets it play a fresh
@@ -225,7 +225,7 @@ export function ScreenHeader({
           type="button"
           onClick={onSelectListView}
           aria-pressed={isListView}
-          className="relative flex size-[40px] items-center justify-center rounded-[--radius-filter-chip]"
+          className="header-icon-button relative flex size-[40px] items-center justify-center rounded-[--radius-filter-chip]"
         >
           {isListView && (
             <span
@@ -241,7 +241,7 @@ export function ScreenHeader({
       <button
         type="button"
         onClick={onDone}
-        className="flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+        className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
         style={HEADER_CHIP_STYLE}
       >
         <DoneIcon />

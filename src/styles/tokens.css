@@ -78,6 +78,7 @@
   --duration-base: 200ms;    /* hover, small state changes */
   --duration-layout: 350ms;  /* larger layout/content changes */
   --duration-shimmer: 350ms; /* LookSelectorChip's press-flash sweep (HomeScreen.tsx) — was 700ms, then 400ms, then 500ms. That 500ms had an opacity fade eating its first/last 15% (75ms each) as invisible motion, so only ~350ms of it was ever actually seen — removing that fade (index.css) means the full duration is now visible motion, so the number itself had to come back down to land at roughly the same felt speed as before, not faster than the audit intended. */
+  --duration-step-content: 280ms; /* StepScreen's badge/title/description swap on every Next/Back — faster than --duration-layout (350ms, for rarer/larger changes like screen transitions and view mounts) since this fires ~7x per tutorial completion and AUDIT.md keeps interactive UI animations under 300ms. */
 
   /* ---------- Typography ---------- */
   /* Font is "Inter 18pt" specifically — confirm you have that exact

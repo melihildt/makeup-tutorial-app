@@ -115,6 +115,25 @@ body {
   transform: scale(0.97);
 }
 
+/* ScreenHeader's four buttons (Back, Search/Widget toggle, Done) — same
+   press/hover feedback pattern as .action-button above, extracted as its
+   own class since these buttons don't share ActionButton's component but
+   should feel identical to press. Scale amounts are slightly larger than
+   .action-button's (0.93/1.05 vs 0.97/1.02): these are small 40x40px icon
+   buttons, not a full-width bar, so they need more visible travel for the
+   same press to register at all. */
+.header-icon-button {
+  transition: transform var(--duration-instant) var(--ease-out-quart);
+}
+@media (hover: hover) {
+  .header-icon-button:hover {
+    transform: scale(1.05);
+  }
+}
+.header-icon-button:active {
+  transform: scale(0.93);
+}
+
 /* Step-to-step "hero" transition. StepScreen keys its badge, illustration,
    and title/description block by `step` (see StepScreen.tsx), so each
    remounts fresh on every step change — same "animation, not transition"

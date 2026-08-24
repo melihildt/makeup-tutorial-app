@@ -1,29 +1,50 @@
 # Animation plans
 
-Produced by two `improve-animations` audits of the tutorial card stack.
-**001-005** are from the original audit (`src/components/TutorialCard.tsx`
-only, against commit `628b8b7`). **006-007** are from a follow-up audit
-this session, after the code had changed substantially (Start Over
-redesign, tutorial-card detail flip, `CardBehind`'s duck-and-reveal filter
-swap, the stack's first-load entrance, `App.tsx`'s screen transition) —
-scoped to `TutorialCard.tsx` + `App.tsx` + `HomeScreen.tsx`, against
-commit `db1e1be`. Full findings tables live in the conversations that
-produced each; this index tracks execution. **For the fuller current
-picture of this whole feature area** (Start Over's redesign, the
-ghost-card recolor, the swipe-hint nudge, the tutorial detail flip, and
-pending items that are bug fixes rather than audit findings) **see
-`docs/home-stack-handoff.md`** — that doc is the primary handoff, this
-README only tracks plan execution.
+Produced by three `improve-animations` audits. **001-005** are from the
+original audit (`src/components/TutorialCard.tsx` only, against commit
+`628b8b7`). **006-007** are from a follow-up audit (Start Over redesign,
+tutorial-card detail flip, `CardBehind`'s duck-and-reveal filter swap, the
+stack's first-load entrance, `App.tsx`'s screen transition) — scoped to
+`TutorialCard.tsx` + `App.tsx` + `HomeScreen.tsx`, against commit
+`db1e1be`. **008-021** are all from the third audit covering the *whole
+tutorial flow* end to end (HomeScreen → TutorialCard's stack/flip/Start
+Over → TutorialFlow → StepScreen → AllStepsView), against commit
+`677c3d7` — the first audit to fan out across every screen in the flow at
+once rather than just the home-stack component. **008-011** were the four
+findings picked first and executed same-session; **012-021** are the
+audit's findings 5-14 (in that audit's own original numbering — the table
+below uses each plan's own file number instead), written up as plans
+afterward but not yet executed. Full findings tables live in the
+conversations that produced each; this index tracks execution. **For the
+fuller current picture of this whole feature area** (Start Over's
+redesign, the ghost-card recolor, the swipe-hint nudge, the tutorial
+detail flip, and pending items that are bug fixes rather than audit
+findings) **see `docs/home-stack-handoff.md`** — that doc is the primary
+handoff, this README only tracks plan execution.
 
-| # | Plan | Severity | Category | Status |
-| --- | --- | --- | --- | --- |
-| 001 | [Fix ease-in on the fly-off's disappear-faster fade](001-fly-off-fade-easing.md) | HIGH | Easing & duration | DONE |
-| 002 | [Close the interactive-before-flip-finishes window on the restart flip](002-restart-flip-lock-window.md) | MEDIUM | Interruptibility | DONE (superseded — see note below) |
-| 003 | [Fold the restart flip's feel values into MotionTuning](003-fold-flip-values-into-motion-tuning.md) | MEDIUM | Cohesion & tokens | DONE (one deviation — see note below) |
-| 004 | [Replace Start Over's linear drag damping with real rubber-band friction](004-start-over-rubber-band-friction.md) | LOW | Physicality & origin | DONE |
-| 005 | [Compose contentOwnRotateY into a full transform string](005-content-layer-composed-transform.md) | LOW | Performance | MOOT — target no longer exists, see note below |
-| 006 | [Consolidate the hand-typed ease-out-quart array into one constant](006-consolidate-ease-out-quart-array.md) | LOW | Cohesion & tokens | DONE |
-| 007 | [Guard CardBehind's duck-and-reveal against rapid filter switching](007-cardbehind-rapid-filter-race-guard.md) | MEDIUM | Interruptibility | DONE |
+| # | Plan | Severity | Category | Screen impact | Status |
+| --- | --- | --- | --- | --- | --- |
+| 001 | [Fix ease-in on the fly-off's disappear-faster fade](001-fly-off-fade-easing.md) | HIGH | Easing & duration | Home | DONE |
+| 002 | [Close the interactive-before-flip-finishes window on the restart flip](002-restart-flip-lock-window.md) | MEDIUM | Interruptibility | Home | DONE (superseded — see note below) |
+| 003 | [Fold the restart flip's feel values into MotionTuning](003-fold-flip-values-into-motion-tuning.md) | MEDIUM | Cohesion & tokens | Home | DONE (one deviation — see note below) |
+| 004 | [Replace Start Over's linear drag damping with real rubber-band friction](004-start-over-rubber-band-friction.md) | LOW | Physicality & origin | Home | DONE |
+| 005 | [Compose contentOwnRotateY into a full transform string](005-content-layer-composed-transform.md) | LOW | Performance | Home | MOOT — target no longer exists, see note below |
+| 006 | [Consolidate the hand-typed ease-out-quart array into one constant](006-consolidate-ease-out-quart-array.md) | LOW | Cohesion & tokens | Home (+ App shell) | DONE |
+| 007 | [Guard CardBehind's duck-and-reveal against rapid filter switching](007-cardbehind-rapid-filter-race-guard.md) | MEDIUM | Interruptibility | Home | DONE |
+| 008 | [Remove leftover flip-debug console logging](008-remove-flip-debug-instrumentation.md) | HIGH | Performance | Home | DONE |
+| 009 | [Add press/hover feedback to ScreenHeader's four buttons](009-screenheader-press-feedback.md) | HIGH | Physicality & origin | Tutorial step, All steps view | DONE |
+| 010 | [Compose StepScreen's product-card y/scaleY into full transform strings](010-step-card-composed-transform.md) | HIGH | Performance | Tutorial step | DONE |
+| 011 | [Give reduced-motion users the same tutorial detail content](011-reduced-motion-detail-flip-parity.md) | HIGH | Accessibility | Home | DONE |
+| 012 | [Import the shared EASE_OUT_QUART constant in StepScreen](012-stepscreen-ease-out-quart-import.md) | LOW | Cohesion & tokens | Tutorial step | DONE |
+| 013 | [Bring check-ring-in's entrance scale inside the 0.9–0.97 band](013-check-ring-in-scale-band.md) | LOW | Physicality & origin | Home, Tutorial step, All steps view | TODO |
+| 014 | [Clear justToggledKey synchronously on view switch](014-justtoggledkey-view-switch-clear.md) | MEDIUM | Interruptibility / Purpose | Tutorial step, All steps view | TODO |
+| 015 | [Replace StartOverCard's keyframe-restart filter swap with an interruptible crossfade](015-startover-interruptible-crossfade.md) | MEDIUM | Interruptibility | Home | TODO |
+| 016 | [Animate the product-sheet reserved-height collapse on Finish→Done](016-animate-product-sheet-reserved-height.md) | MEDIUM | Missed opportunity | Tutorial step | DONE |
+| 017 | [Ignore rapid repeat taps on Next while content is animating](017-debounce-next-button.md) | MEDIUM | Interruptibility | Tutorial step | DONE |
+| 018 | [Stop nested pressables from compounding their ancestor's :active scale](018-nested-pressable-scale-isolation.md) | MEDIUM | Physicality & origin | Home | TODO |
+| 019 | [Drive the chip press-flash sweep via transform instead of background-position](019-chip-flash-sweep-transform.md) | MEDIUM | Performance | Home | TODO |
+| 020 | [Move AllStepsView's scroll-shadow transition onto the app's tokens](020-allstepsview-scroll-shadow-tokens.md) | LOW | Cohesion & tokens | All steps view | TODO |
+| 021 | [Give StepScreen's per-step content swap its own faster duration budget](021-step-content-duration-budget.md) | LOW | Easing & duration | Tutorial step | DONE |
 
 **002's specific fix (`isFlipping` local state) no longer exists in the
 code** — it was removed during the Start Over two-face-flip redesign
@@ -137,6 +158,134 @@ more deliberate real-device stress test (or CPU throttling in DevTools,
 per the plan's own feel-check) is still worth doing if this ever seems to
 resurface.
 
+**008-011 all executed**, each exactly as specified — no drift found
+between the plans' quoted "current" code and what was actually in the
+files at execution time (008 and 010's citations matched byte for byte;
+009 and 011 matched with only line-number shifts caused by 008's own
+deletions earlier in the same file, expected and already covered by each
+plan's "re-locate by content" boundary). Executed directly in the working
+tree rather than via isolated git worktrees — the repo had uncommitted
+changes in both target files (`StepScreen.tsx`, `TutorialCard.tsx`) at
+execution time, and a fresh worktree checkout would have started from
+clean `HEAD` without them, which is exactly the drift each plan's own
+boundary says to stop and report on rather than improvise past.
+
+- **008**: both debug blocks deleted (the always-on `dragX`/`dragY`
+  `console.log` subscription and `flyOff`'s own log statement). Verified:
+  `grep -rn "console\.\(log\|debug\)" src/` returns zero matches anywhere
+  in the repo.
+- **009**: `.header-icon-button` added to `index.css` right after
+  `.action-button`, applied to all four `ScreenHeader` buttons. Verified:
+  all four buttons carry `transition: transform 0.15s cubic-bezier(0.25,
+  1, 0.5, 1)` in the live computed style, and `.header-icon-button:active
+  { transform: scale(0.93); }` is confirmed present in the loaded
+  stylesheet (`document.styleSheets`) — real `:active` presses can't be
+  triggered by synthetic `PointerEvent`s in this environment's browser
+  tooling, so the rule's *presence and correctness* was verified directly
+  rather than a live press.
+- **010**: both `motion.div`s' `y`/`scaleY` shorthand props replaced with
+  composed `transform` strings. Verified: the product card's resting
+  computed `transform` is the identity matrix (`matrix(1, 0, 0, 1, 0,
+  0)`, i.e. `translateY(0px) scaleY(1)` correctly resolves to no visible
+  offset), and stepping through several real Next transitions in the
+  browser shows the same entrance feel as before the change.
+- **011**: `flippedIds`/`handleToggleFlip` added, the reduced-motion
+  branch's `.map()` now swaps between `TutorialLookCard` and
+  `TutorialDetailCard`. Verified live: since this environment's browser
+  tooling can set `window.matchMedia`'s override but Framer Motion caches
+  the real `MediaQueryList` internally (the override didn't propagate to
+  a freshly-mounted `TutorialStack`), verification instead used a
+  temporary, clearly-marked `|| true` forced on `reduceMotion` at its own
+  declaration, reloaded, exercised the full interaction (tap card → flips
+  to detail face showing level/product-preview/"Start Tutorial" → tap
+  detail face → flips back → tap "Start Tutorial" → opens the tutorial),
+  confirmed working exactly as the plan specified, then reverted the
+  temporary override before finishing (confirmed gone via `grep -n "TEMP
+  TEST" src/components/TutorialCard.tsx`, zero matches, and a clean `tsc
+  --noEmit`).
+
+Mechanical check across all four: `npx tsc --noEmit` clean, no console
+errors during any of the manual interaction above.
+
+**012-021 written up as plans; 012, 016, 017, 021 executed same-session,
+013-015/018-020 still TODO** — these are the same audit's findings 5-14
+(its own original numbering; each plan file below carries its own 01x
+number instead). Each plan's code citations were re-verified against the
+actual current files (not just the original audit's snapshot) before
+writing — `TutorialCard.tsx` and `StepScreen.tsx` had both shifted since
+008/010/011 landed, so every quoted line number and surrounding code
+block in 012-021 reflects the post-008-011 state, confirmed via fresh
+`grep`/`Read` calls rather than trusted from the original findings table.
+Executed directly in the working tree, same reasoning as 008-011 (the
+repo still has uncommitted changes in `StepScreen.tsx`/`TutorialCard.tsx`
+that a fresh git-worktree checkout would miss).
+
+- **012 executed exactly as planned** — `EASE_OUT_QUART` imported from
+  `./TutorialCard`, `cardExitTransition`'s hand-typed array replaced.
+  Verified: `grep -n "\[0.25, 1, 0.5, 1\]" src/components/StepScreen.tsx`
+  returns zero matches, `tsc --noEmit` clean, no circular-import issue
+  (checked explicitly, since `StepScreen.tsx` now imports from
+  `TutorialCard.tsx` — confirmed the reverse import doesn't exist).
+- **016 executed, but with a real correction to the plan's own Target** —
+  the plan as originally written specified Framer Motion's `layout` prop.
+  That was tried first and **live-verified to not work**: polling the
+  wrapper's own `getBoundingClientRect().height` every animation frame
+  across the real Finish→Done transition showed an instant 238→0 snap
+  with zero intermediate frames, not a smooth collapse. Root cause:
+  `layout` uses the FLIP technique, which computes an inverse transform
+  as `oldSize/newSize` to fake smooth motion — collapsing to a target
+  height of exactly 0 makes that ratio divide by zero, so there's no
+  valid transform to animate from. A second attempt animating the numeric
+  `minHeight` value directly via `animate` was also tried and also
+  confirmed (same live-polling method) to snap instantly — Framer Motion
+  doesn't recognize `minHeight` as an animatable style key. The **actual
+  working fix**, now reflected in `016`'s own file: animate plain
+  `height` via `animate={{ height: content.products.length > 0 ? 238 : 0
+  }}` — confirmed via the same RAF-polling method to genuinely
+  interpolate (238 → 230 → 188 → 153 → 122 → ... → 0 over ~300ms, a real
+  ease-out curve). This is a good example of why this skill's plans carry
+  a feel-check verification step instead of trusting a mechanically
+  plausible-sounding fix: the original Target read as reasonable
+  (`layout` is Framer Motion's own recommended tool for animating
+  arbitrary bounding-box changes) but was empirically wrong for this
+  specific collapse-to-zero case, and a second reasonable-sounding
+  fallback (`minHeight`) was *also* wrong — only direct measurement
+  caught either.
+- **017 executed exactly as planned** — `isAnimatingContentRef` +
+  companion `useEffect` added, `handleNextClick` wraps `onNextStep`.
+  Verified live with a real behavioral distinction worth recording: 6
+  `.click()` calls fired in a single unyielding synchronous loop (no
+  `await`/`setTimeout` between them) all land in the same React batch and
+  bypass the guard entirely (advanced 6 full steps) — but this is not a
+  real user-interaction pattern; no physical tap or even a scripted
+  auto-clicker produces literally zero event-loop separation between
+  clicks. Re-tested with even a `setTimeout(0)` yield between clicks
+  (still far faster than any human tap) and the guard correctly engaged,
+  blocking every repeat tap within the 350ms window and advancing only
+  one step from six attempts.
+- **021 executed exactly as planned** — `--duration-step-content: 280ms`
+  added to `tokens.css`, applied to `StepScreen.tsx`'s badge
+  (`step-fade-in`) and the `step-content-in` branch only; the
+  `view-fade-in` fallback branch (line ~545) deliberately left on
+  `--duration-layout`, per the plan's own Boundaries.
+
+Mechanical check across all four: `npx tsc --noEmit` clean throughout. A
+few `[vite] Internal server error` / `500` entries appeared in this
+session's browser console and dev-server logs during the *editing*
+process — all confirmed stale (timestamped exactly at moments between two
+sequential edits to the same JSX element, e.g. `motion.div`'s opening tag
+changed before its closing tag in the same edit sequence) by cross-
+checking the dev server's own HMR log for a later, successful update
+before treating any plan as verified; none reflect the final state of any
+file.
+
+Every other LOW cohesion/polish item the same audit surfaced but didn't
+rise to its own numbered finding (`EyeIllustration.tsx`'s 25ms stagger vs.
+the 30-80ms band, `HomeScreen.tsx`'s chip-selection transition including
+paint properties, `tokens.css`'s stale "no bounce" doc comment) was not
+turned into a plan — noted in the original audit conversation as thin
+enough to fold into other work rather than justify its own plan.
+
 ## Recommended execution order
 
 1. **001, 002** — already done (see Status column).
@@ -163,6 +312,42 @@ resurface.
    007 (the race guard) touches only `CardBehind`'s own effect; neither
    depends on whether 003/004/005 have run. No action needed here, purely
    historical note for anyone reading this order top-to-bottom.
+5. **008 and 011 both touch `TutorialCard.tsx`, but in non-overlapping
+   regions** — 008 edits lines ~1392-1410 and ~1529-1538 (inside a single
+   tutorial card's own component body); 011 edits lines ~2051-2136 (inside
+   `TutorialStack`'s reduced-motion branch, a different function
+   entirely). Safe to run in either order or execute both before merging,
+   but if using isolated-worktree executors for each, merge/rebase
+   carefully since they share a file — don't run them as two completely
+   parallel, blind auto-merges. **009 and 010 touch entirely separate
+   files** (`ScreenHeader.tsx`+`index.css`, and `StepScreen.tsx`
+   respectively) and have no dependency on 008, 011, or each other — any
+   order, including fully parallel.
+6. **012-021, by shared file** (all independent in *what* they change —
+   no plan's fix depends on another plan having already run — but several
+   share a file, so treat that the same way as point 5 above: fine
+   sequentially or merged carefully, risky as blind parallel worktrees).
+   **012, 016, 017, and 021 are done** (all four touched `StepScreen.tsx`
+   and were executed sequentially in that same order in one session, per
+   this exact guidance — no merge conflicts, since each touched a
+   different non-overlapping region). Remaining:
+   - **`TutorialCard.tsx`**: 015 (`StartOverCard`, ~lines 841-887) and 018
+     (`TutorialLookCard`'s root at line 389, `TutorialDetailCard`'s root
+     at line 633) — two non-overlapping regions, same caution. Note both
+     plans' own quoted line numbers predate 008/011's edits to this same
+     file having already landed — re-locate by content/function name
+     first per each plan's own boundary, don't trust the numbers
+     literally (008 and 011 already shifted this file once; whether 015/
+     018's own citations still match depends on what else has touched
+     `TutorialCard.tsx` since this README was last updated).
+   - **`src/index.css`**: 013 (the `check-ring-in` keyframe) and 019 (the
+     `chip-flash-sweep` keyframe) — two different keyframes, same file,
+     same caution.
+   - **Fully independent, no shared file with anything else in 012-021**:
+     014 (`TutorialFlow.tsx` only), 019 also touches `HomeScreen.tsx`
+     (only 019 touches that file), 020 (`AllStepsView.tsx` only). These
+     three can run in any order, including fully parallel with each other
+     and with the groups above.
 
 001-005 touch only `src/components/TutorialCard.tsx` and were
 written against commit `628b8b7` — **now well behind current** (see
