@@ -57,6 +57,22 @@ plan (spanning `StepScreen.tsx`/`ScreenHeader.tsx`/`TutorialFlow.tsx`/
 live in **`plans/README.md`** — not duplicated here since most of that
 work touches files this doc doesn't cover.
 
+**Three more of that same third audit's findings executed in a later
+session, two of which touch this doc's own scope**: plan 013
+(`check-ring-in`'s entrance scale, `0.85` → `0.92`, brought inside the
+0.9–0.97 physicality band — the shared keyframe used by `StartOverCard`'s
+own filter-color swap above, plus five other call sites outside this
+doc's scope) and plan 018 (`TutorialLookCard`'s and `TutorialDetailCard`'s
+root `className`s gained `has-[button:active]:scale-100`, so pressing the
+nested bookmark or `StartTutorialButton` no longer also shrinks the whole
+card behind it — CSS `:active` bubbles to every ancestor of whatever's
+actually being pressed regardless of `stopPropagation()`, which only stops
+JS event bubbling). Plan 014 (`justToggledKey` view-switch race,
+`TutorialFlow.tsx`) is outside this doc's own scope — see `docs/handoff.md`
+for that one. `StartOverCard`'s own keyframe-restart-on-rapid-tap (plan
+015, the same class of bug as "Ghost card recolor by filter" above, just
+not yet fixed on this card) is still TODO.
+
 The Figma file used throughout is `Tech-Experimentation`, file key
 `6Mr7K0RONTS8SltZRJtqYj`. Nodes pulled and worth reusing rather than
 re-fetching: `642:5092` (front-card `BigCard` + "Unfold" ghost variant),

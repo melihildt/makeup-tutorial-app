@@ -15,10 +15,10 @@ also picked up real changes to this feature's own files along the way
 (motion, wiring, product photography). Re-checked every claim below
 against the actual current code before writing this version — see each
 section for what changed. **Git state**: branch `feature/home-tutorial-stack`
-(pushed through `d666b41` as of the 2026-08-24 animation-audit update
-below; working tree otherwise clean) — run `git status`/`git log
---oneline -5` on a fresh session start regardless, same caveat as
-`docs/home-stack-handoff.md`'s own git-state note.
+(pushed through `c2953f1` — plans 013/014/018 executed in a later session,
+see the animation-audit update below; working tree otherwise clean) — run
+`git status`/`git log --oneline -5` on a fresh session start regardless,
+same caveat as `docs/home-stack-handoff.md`'s own git-state note.
 
 **2026-08-24 update — V5 restyle pass shipped.** The user iterated the V2
 flow further in Figma (sizing/spacing/color refinements + an eye-instance
@@ -95,12 +95,20 @@ does nothing when collapsing to a target height of 0 (the FLIP
 technique's inverse-transform math divides by zero) — animating `height`
 directly is what actually works, confirmed by polling the real rendered
 height every animation frame across the transition, not assumed from
-Framer Motion's docs. **Six findings remain TODO** (plans 013-015,
-018-020 — `check-ring-in`'s entrance scale, a spurious check-animation
-replay on rapid view-switching, `StartOverCard`'s keyframe-restart-on-
-rapid-tap, nested-pressable `:active` compounding, the filter chip's
-press-flash sweep animating `background-position` instead of `transform`,
-and `AllStepsView`'s scroll-shadow bypassing the app's easing tokens).
+Framer Motion's docs. **Three more executed in a later session**: `check-ring-in`'s
+entrance scale brought inside the 0.9–0.97 physicality band (plan 013);
+`justToggledKey` (this file, `TutorialFlow.tsx`) now clears synchronously
+on both view-switch paths instead of only after its 260ms timeout, closing
+the window where toggling a product then immediately switching between
+step/list view replayed the check animation on the matching row in the
+freshly-mounted view even though the user never touched it there (plan
+014); and nested pressables (the bookmark, `StartTutorialButton`) no
+longer compound their ancestor card's `:active` scale via
+`has-[button:active]:scale-100` (plan 018, `TutorialCard.tsx`). **Three
+findings remain TODO** (plans 015, 019, 020 — `StartOverCard`'s
+keyframe-restart-on-rapid-tap, the filter chip's press-flash sweep
+animating `background-position` instead of `transform`, and
+`AllStepsView`'s scroll-shadow bypassing the app's easing tokens).
 Full findings tables, severity/leverage ranking, and per-plan execution
 notes live in **`plans/README.md`** — that file, not this section, is the
 source of truth for what's actually done vs. still open in this set.
