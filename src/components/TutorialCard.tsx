@@ -849,6 +849,36 @@ function StartOverCard({
   detailsOpacity?: MotionValue<number>
   lookType: LookType
 }) {
+  // Interruptible crossfade, replacing the old key={lookType} +
+  // check-ring-in keyframe swap below — same pattern as CardBehind's own
+  // imgOpacity dance (this file, above), minus the duck/rotate part
+  // (StartOverCard has no spatial "behind the front card" gesture, it's a
+  // plain crossfade). A JS-driven animateValue retargets smoothly from
+  // wherever it currently is if lookType changes again mid-fade, unlike a
+  // CSS keyframe forced to restart from 0 by the remount below.
+  const imgOpacity = useMotionValue(1)
+  const [displayedLookType, setDisplayedLookType] = useState(lookType)
+  const isFirstRender = useRef(true)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    // Guards against a newer effect run's callback superseding this one
+    // — same reasoning as CardBehind's own `cancelled` flag (this file,
+    // above): without it, rapid filter switching could let a stale run's
+    // callback fire after a newer one already landed the correct color.
+    let cancelled = false
+    animateValue(imgOpacity, 0, { duration: 0.2, ease: EASE_OUT_QUART }).then(() => {
+      if (cancelled) return
+      setDisplayedLookType(lookType)
+      animateValue(imgOpacity, 1, { duration: 0.2, ease: EASE_OUT_QUART })
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on lookType alone, same as CardBehind's own equivalent effect.
+  }, [lookType])
   return (
     <div
       role="button"
@@ -872,18 +902,16 @@ function StartOverCard({
         transition: 'transform var(--duration-instant) var(--ease-out-quart)',
       }}
     >
-      {/* key={lookType} + check-ring-in — see CardBehind's own comment for
-          why a bare src swap needs an animation, not a transition, and
-          GHOST_TEXTURES for which asset goes with which filter. This front
-          face recolors with the selected filter same as CardBehind (per
-          the user's own call — StartOverCard isn't exempt just because
-          it's not literally "a look"). */}
-      <img
-        key={lookType}
+      {/* Interruptible crossfade — see this component's own imgOpacity/
+          displayedLookType state above for why this isn't a bare
+          key={lookType} remount any more (that restarted a CSS keyframe
+          from zero on every rapid filter tap; see AUDIT.md's
+          Interruptibility category). */}
+      <motion.img
         alt=""
-        src={GHOST_TEXTURES[lookType]}
+        src={GHOST_TEXTURES[displayedLookType]}
         className="absolute inset-0 size-full object-cover"
-        style={{ animation: 'check-ring-in var(--duration-base) var(--ease-out-quart)' }}
+        style={{ opacity: imgOpacity }}
       />
       {/* Icon + label fade in on the same detailsOpacity band the front
           card's own title/byline use elsewhere — a card entering the peek

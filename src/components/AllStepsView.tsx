@@ -132,10 +132,11 @@ export function AllStepsView({
             onSelectStepView={onSelectStepView}
           />
           <div
-            className="pointer-events-none absolute inset-x-0 top-full h-8 transition-opacity duration-200"
+            className="pointer-events-none absolute inset-x-0 top-full h-8"
             style={{
               background: 'linear-gradient(180deg, #e6d6d1 0%, rgba(230,214,209,0) 100%)',
               opacity: isScrolled ? 1 : 0,
+              transition: 'opacity var(--duration-base) var(--ease-out-quart)',
             }}
           />
         </div>

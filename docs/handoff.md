@@ -104,11 +104,17 @@ step/list view replayed the check animation on the matching row in the
 freshly-mounted view even though the user never touched it there (plan
 014); and nested pressables (the bookmark, `StartTutorialButton`) no
 longer compound their ancestor card's `:active` scale via
-`has-[button:active]:scale-100` (plan 018, `TutorialCard.tsx`). **Three
-findings remain TODO** (plans 015, 019, 020 — `StartOverCard`'s
-keyframe-restart-on-rapid-tap, the filter chip's press-flash sweep
-animating `background-position` instead of `transform`, and
-`AllStepsView`'s scroll-shadow bypassing the app's easing tokens).
+`has-[button:active]:scale-100` (plan 018, `TutorialCard.tsx`). **Two more
+executed in a session after that**: `StartOverCard`'s filter-color swap
+replaced with an interruptible JS-driven crossfade (copied from
+`CardBehind`'s already-proven `imgOpacity`/`displayedLookType` pattern),
+closing the same keyframe-restart-on-rapid-tap bug `CardBehind` already
+had fixed (plan 015, `TutorialCard.tsx`); and `AllStepsView`'s
+scroll-shadow fade moved off Tailwind's default `transition-opacity
+duration-200` onto the app's own `--duration-base`/`--ease-out-quart`
+tokens (plan 020). **Only one finding remains TODO** (plan 019 — the
+filter chip's press-flash sweep animating `background-position` instead
+of `transform`).
 Full findings tables, severity/leverage ranking, and per-plan execution
 notes live in **`plans/README.md`** — that file, not this section, is the
 source of truth for what's actually done vs. still open in this set.

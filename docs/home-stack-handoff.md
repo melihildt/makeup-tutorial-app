@@ -60,18 +60,31 @@ work touches files this doc doesn't cover.
 **Three more of that same third audit's findings executed in a later
 session, two of which touch this doc's own scope**: plan 013
 (`check-ring-in`'s entrance scale, `0.85` → `0.92`, brought inside the
-0.9–0.97 physicality band — the shared keyframe used by `StartOverCard`'s
-own filter-color swap above, plus five other call sites outside this
-doc's scope) and plan 018 (`TutorialLookCard`'s and `TutorialDetailCard`'s
+0.9–0.97 physicality band — at the time, still the shared keyframe used by
+`StartOverCard`'s own filter-color swap among five other call sites
+outside this doc's scope; plan 015, below, later moved `StartOverCard` off
+this keyframe entirely, so it's down to five call sites now) and plan 018
+(`TutorialLookCard`'s and `TutorialDetailCard`'s
 root `className`s gained `has-[button:active]:scale-100`, so pressing the
 nested bookmark or `StartTutorialButton` no longer also shrinks the whole
 card behind it — CSS `:active` bubbles to every ancestor of whatever's
 actually being pressed regardless of `stopPropagation()`, which only stops
 JS event bubbling). Plan 014 (`justToggledKey` view-switch race,
 `TutorialFlow.tsx`) is outside this doc's own scope — see `docs/handoff.md`
-for that one. `StartOverCard`'s own keyframe-restart-on-rapid-tap (plan
-015, the same class of bug as "Ghost card recolor by filter" above, just
-not yet fixed on this card) is still TODO.
+for that one.
+
+**A fourth, plan 015, executed in a session after that — `StartOverCard`
+is no longer the one exception left on the old fade+pop swap** (see
+"Ghost card recolor by filter" below, which used to say it was; that's now
+stale on this one point, corrected there too). `StartOverCard` gained its
+own `imgOpacity`/`displayedLookType`/`isFirstRender` state and effect,
+copied from `CardBehind`'s own interruptible-crossfade pattern verbatim
+minus the duck/rotate part (this card has no "behind the front card"
+spatial gesture) — same 0.2s-per-leg timing, same `EASE_OUT_QUART`. Rapid
+Day → Night → Glam taps now settle cleanly on the last-tapped color
+instead of restarting the `check-ring-in` pop from scratch on every tap.
+019 (the filter chip's own press-flash sweep, `HomeScreen.tsx`/
+`index.css`) is the only finding left TODO from this whole audit.
 
 The Figma file used throughout is `Tech-Experimentation`, file key
 `6Mr7K0RONTS8SltZRJtqYj`. Nodes pulled and worth reusing rather than
@@ -201,10 +214,13 @@ files as first delivered were misnamed relative to which chip they visually
 matched; matched by actual pixel color instead, confirmed against the
 user's own reference mock).
 
-**The swap itself, `CardBehind` only** — StartOverCard keeps its own
-separate, plain fade+pop swap (its own `<img key={lookType}>` +
-`check-ring-in`, unchanged) even while peeking, per the user's own
-explicit call not to extend the treatment below there. `CardBehind`'s own
+**The duck-and-reveal gesture itself, `CardBehind` only** — StartOverCard
+never gets the duck/rotate spatial treatment below, per the user's own
+explicit call not to extend it there; it keeps its own separate, plain
+crossfade instead (no longer the original `<img key={lookType}>` +
+`check-ring-in` pop — replaced by plan 015, "Animation audit" below, with
+an interruptible JS-driven `imgOpacity` fade, same shape as `CardBehind`'s
+own `imgOpacity` below minus the duck/rotate part). `CardBehind`'s own
 swap was rebuilt this session from a flat `key={lookType}` + `check-ring-in`
 pop into a "duck behind the front card, swap, swing back out" gesture —
 the user's own read that a plain crossfade didn't lean into this card's
