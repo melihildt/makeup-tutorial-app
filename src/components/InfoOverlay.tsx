@@ -183,30 +183,72 @@ async function copyToClipboard(text: string): Promise<boolean> {
 // Copies the email to the clipboard instead of a mailto: link — per the
 // user's own follow-up ask, since mailto hands off to whatever mail client
 // (or none) happens to be configured rather than just letting someone grab
-// the address directly. Feedback is the label swapping to "Copied!" (or
-// "Couldn't copy" on a genuine failure — silently doing nothing when both
-// copy paths fail reads as a dead button, worse than an honest failure
-// message) for a beat (--duration-base fade, this app's own "small state
-// change" pace — tokens.css) — no toast/snackbar component exists
-// elsewhere in this app to reuse, and one felt like more machinery than a
-// two-second confirmation on an about screen needs. The underline is
-// dropped for both non-"Email" states so they read as status messages, not
-// a second, different link.
+// the address directly. Feedback is the label swapping to "Copied!" on
+// success (auto-reverts after a beat, --duration-base fade, this app's own
+// "small state change" pace — tokens.css) or, on a genuine failure, to the
+// literal address itself — silently doing nothing when both copy paths
+// fail reads as a dead button, and a generic "Couldn't copy" message is
+// still a dead end (code review, 2026-08-25 pass, findings #3/#8): if
+// scripted copying is blocked (a locked-down in-app WebView is the
+// realistic case — see copyToClipboard's own comment), showing the address
+// as plain selectable text is the only remaining way to actually get it,
+// so the failure state does NOT auto-revert like the success one does —
+// reverting it on a timer would yank away the one fallback that exists
+// right when someone's trying to long-press-select it. It only clears once
+// the user retries (taps again) or leaves the screen (fresh mount). No
+// toast/snackbar component exists elsewhere in this app to reuse, and one
+// felt like more machinery than this needs. The underline is dropped for
+// both non-"Email" states so they read as status messages/content, not a
+// second, different link.
 function CopyEmailButton() {
   const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle')
   const timeoutRef = useRef<number | undefined>(undefined)
+  // Two independent guards checked together after the `await` below, not
+  // one: `isMountedRef` covers the component having unmounted entirely
+  // (overlay closed mid-copy — code review finding #2); `requestIdRef`
+  // covers a *second* tap starting before the first one's async copy
+  // resolves (finding #1) — each call captures its own id and only the
+  // call whose id still matches the ref when it resolves is allowed to
+  // apply its result, so a slow first tap can never clobber a fresher
+  // second tap's outcome (or its aria-live announcement) after the fact.
+  const isMountedRef = useRef(true)
+  const requestIdRef = useRef(0)
   const reduceMotion = useReducedMotion()
 
-  useEffect(() => () => window.clearTimeout(timeoutRef.current), [])
+  useEffect(() => {
+    // The setup body has to re-arm `isMountedRef.current = true`, not just
+    // rely on the `useRef(true)` initializer above — React StrictMode
+    // double-invokes effects in dev (setup → cleanup → setup again) without
+    // actually discarding the component's refs between those steps. With
+    // no reset here, that first simulated cleanup would leave the ref
+    // permanently `false` after the very first render, silently no-op'ing
+    // every real copy attempt for the component's actual lifetime.
+    // (Caught by exactly that behavior while verifying this fix.)
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      window.clearTimeout(timeoutRef.current)
+    }
+  }, [])
 
   async function handleCopy() {
+    const requestId = ++requestIdRef.current
     const succeeded = await copyToClipboard(EMAIL)
-    setStatus(succeeded ? 'copied' : 'failed')
+    // Stale: either this component is gone, or a later tap already started
+    // (and will apply its own result when it resolves) — either way, this
+    // call's result is no longer the one that should reach the screen.
+    if (!isMountedRef.current || requestId !== requestIdRef.current) return
     window.clearTimeout(timeoutRef.current)
-    timeoutRef.current = window.setTimeout(() => setStatus('idle'), 1600)
+    if (succeeded) {
+      setStatus('copied')
+      timeoutRef.current = window.setTimeout(() => setStatus('idle'), 1600)
+    } else {
+      // No revert timeout here — see this function's own doc comment above.
+      setStatus('failed')
+    }
   }
 
-  const label = status === 'copied' ? 'Copied!' : status === 'failed' ? "Couldn't copy" : 'Email'
+  const label = status === 'copied' ? 'Copied!' : status === 'failed' ? EMAIL : 'Email'
   // Only the *first* time a given mount lands on 'failed' plays the shake —
   // see plans/024's own Boundaries for the accepted repeat-tap limitation.
   const shakeOnFailure = status === 'failed' && !reduceMotion
@@ -253,7 +295,7 @@ function CopyEmailButton() {
         {status === 'copied'
           ? 'Email address copied to clipboard'
           : status === 'failed'
-            ? 'Could not copy email address'
+            ? `Could not copy automatically. Email address: ${EMAIL}`
             : ''}
       </span>
     </button>
