@@ -297,16 +297,17 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
           exit={{ opacity: 0 }}
           transition={{ duration: reduceMotion ? 0.2 : 0.35, ease: EASE_OUT_QUART }}
         >
-          {/* Header row — same px-3/pt-5 inset as HomeScreen's own header
-              (see that file's comment on why this app diverges from
-              Figma's literal p-16 outer padding to fit real phones); "About"
-              sits at the same 50%-opacity muted weight get_design_context
-              pulled (rgba(44,41,38,0.5)), the close button reuses the exact
-              chip chrome + hover/press feedback every other header icon
-              button in this app already shares (.header-icon-button,
+          {/* Header row — same px-[--space-sm] pt-[--space-2xs] inset as
+              every other screen's header now (see tokens.css's own note,
+              Figma node 738:8822 — this overlay mirrors HomeScreen's own
+              header, which uses the same values); "About" sits at the same
+              50%-opacity muted weight get_design_context pulled
+              (rgba(44,41,38,0.5)), the close button reuses the exact chip
+              chrome + hover/press feedback every other header icon button
+              in this app already shares (.header-icon-button,
               --color-header-icon-bg/border — ScreenHeader.tsx's own icon
               buttons, HomeScreen's info/user icons). */}
-          <div className="flex shrink-0 items-center justify-between px-3 pt-5">
+          <div className="flex shrink-0 items-center justify-between px-[--space-sm] pt-[--space-2xs]">
             <p
               className="text-[20px] tracking-[-0.4px]"
               style={{ color: 'rgba(44, 41, 38, 0.5)', fontWeight: 'var(--font-weight-medium)' }}

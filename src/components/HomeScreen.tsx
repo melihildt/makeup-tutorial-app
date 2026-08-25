@@ -397,12 +397,13 @@ export function HomeScreen({ onSelectLook }: HomeScreenProps) {
     >
       {/* Header + filters + tutorial stack as one scrolling block — flex-1 +
           overflow-y-auto so a future longer card list scrolls here, same
-          pattern StepScreen/AllStepsView use. Horizontal/vertical padding
-          here (px-3, pt-5/pb-2) is the app's own mobile-tuned spacing, kept
-          as-is rather than switched to the Figma frame's literal p-16 —
-          that frame is a desktop-width browser mockup, and this app already
-          deliberately diverges from raw Figma outer spacing to fit real
-          phones (see the md:py-6 comment above). gap-10 (40px) between the
+          pattern StepScreen/AllStepsView use. Horizontal/top padding here
+          is now px-[--space-sm] pt-[--space-2xs] (16px sides, 8px top) —
+          the app-wide screen-edge margin guideline (tokens.css, Figma node
+          738:8822), which supersedes the old px-3/pt-5 this was tuned to
+          as a standalone mobile-only divergence from Figma's outer
+          spacing. pb-2 (bottom) is unrelated to that guideline and stays
+          as-is. gap-10 (40px) between the
           title/icons row and the filter row is the Figma frame's own
           internal content gap, not outer safe-area padding, so it's taken
           as-is.
@@ -420,9 +421,23 @@ export function HomeScreen({ onSelectLook }: HomeScreenProps) {
           comes back after swiping the first card" bug this fixes, in both
           Chrome and Safari, not the iOS-only rubber-band bounce the
           earlier html/body lock (index.css) was for. */}
-      <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 pb-2 pt-5">
+      <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-[--space-sm] pb-2 pt-[--space-2xs]">
         <div className="flex flex-col gap-10">
-          <div className="flex items-center justify-between">
+          {/* items-start, not items-center — found while double-checking the
+              screen-edge margin guideline (tokens.css, Figma node
+              738:8822): the title's own line box (32px serif) is taller
+              than the 40px icon buttons next to it, so items-center was
+              splitting that extra height evenly above/below each button —
+              landing their actual top edge 4px below this row's own top
+              (12px from the screen edge) instead of flush with it (8px),
+              even though the row's padding-top was already the same
+              --space-2xs every other screen's header uses. items-start
+              pins every child's top edge to the row's own top instead, so
+              the buttons land at the same 8px inset as InfoOverlay's close
+              button and StepScreen/AllStepsView's header icons (all three
+              already used items-start/items-center on same-height children
+              only, which never hit this). */}
+          <div className="flex items-start justify-between">
             <p
               className="capitalize"
               style={{
