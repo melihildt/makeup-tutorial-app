@@ -15,11 +15,11 @@ also picked up real changes to this feature's own files along the way
 (motion, wiring, product photography). Re-checked every claim below
 against the actual current code before writing this version — see each
 section for what changed. **Git state**: branch `feature/home-tutorial-stack`
-(pushed through `41171b3` — plans 013-015/018-020 executed across three
-later sessions, closing out the entire animation-audit queue, see the
-update below; working tree otherwise clean) — run `git status`/`git log
---oneline -5` on a fresh session start regardless, same caveat as
-`docs/home-stack-handoff.md`'s own git-state note.
+— see the 2026-08-25 update near the bottom of this section for the
+current pointer and PR status; this line is intentionally left as
+written at the time (2026-08-21), not kept in sync in place — run
+`git status`/`git log --oneline -5` on a fresh session start regardless,
+same caveat as `docs/home-stack-handoff.md`'s own git-state note.
 
 **2026-08-24 update — V5 restyle pass shipped.** The user iterated the V2
 flow further in Figma (sizing/spacing/color refinements + an eye-instance
@@ -123,6 +123,62 @@ findings (008-021) are now executed.**
 Full findings tables, severity/leverage ranking, and per-plan execution
 notes live in **`plans/README.md`** — that file, not this section, is the
 source of truth for what's actually done vs. still open in this set.
+
+**2026-08-25 update — `AllStepsView.tsx` restyle shipped; `ScreenHeader`'s
+toggle rebuilt a second time.** Two things this update corrects everywhere
+else in this doc still says otherwise:
+
+- **`AllStepsView.tsx` is no longer "still V2 styling."** It got its own
+  fresh Figma pull and is now fully restyled — background gradient
+  (`--gradient-bg-list`, a cream token distinct from `--gradient-bg-home`),
+  a real back button (was hidden on this view), per-step descriptions
+  (previously never rendered at all despite the data existing), corrected
+  group-title/badge typography, and a pill-shaped Finish button. It also
+  picked up its own scroll-driven behavior not in the original V5 scope at
+  all: a frosted-glass sticky header (shown only once scrolled) that hides
+  on scroll-down and reveals on scroll-up. Full diff, node IDs, and — this
+  one went through several rounds of user-tested corrections after its
+  first ship (gradient extent, letter-spacing, a desktop mouse-wheel scroll
+  bug that turned out to be in `App.tsx` not this file, a stray
+  rounded-corner bug, three separate frost-color iterations) — all in
+  **`docs/figma-allsteps-restyle.md`**.
+- **`ScreenHeader`'s Search/Widget toggle is not "two independent
+  buttons" anymore either** (the shape the V5 update above, and the "Quick
+  file map" below, still describe). Reworked into a single persistent
+  sliding highlight — real segmented-control behavior, not two chips each
+  independently fading in/out on selection — after that fading-chip
+  approach turned out to have a run of real, if subtle, rendering bugs
+  (a hairline `border` sometimes missing an edge at sub-pixel widths, then
+  a `box-shadow` chip desyncing from the button's own press-transform).
+  The harder problem underneath all of it: Search/Widget doesn't toggle
+  state within one mounted screen, it switches which of `StepScreen`/
+  `AllStepsView` `TutorialFlow` renders — two separate component trees,
+  each with their own `<ScreenHeader>` — so a plain CSS `transition` can
+  never animate across the swap. The actual cross-screen slide is driven
+  by the browser's **View Transitions API**
+  (`TutorialFlow.tsx`'s `switchViewWithTransition`, wrapping `setView`
+  calls in `document.startViewTransition` + `flushSync`), matched to a
+  `view-transition-name` on the highlight (`ScreenHeader.tsx`/`index.css`).
+  Falls back to today's plain instant swap on browsers without View
+  Transitions or under `prefers-reduced-motion`. Full round-by-round
+  history (sixth through ninth follow-up rounds) in
+  **`docs/figma-step-screen-restyle.md`** — don't trust that doc's own
+  original `### Header` section for the toggle's current shape, it's
+  marked superseded inline but easy to miss on a skim.
+- A docs-cleanup pass on both of the above also caught a real, if minor,
+  piece of dead code: `--gradient-bg-screen` (tokens.css) has **zero**
+  remaining consumers in `src/` — both `StepScreen` and `AllStepsView`
+  independently moved to the cream gradient family (`--gradient-bg-home`
+  / `--gradient-bg-list`) without either doc noticing the other had done
+  the same. Marked `deprecated` in tokens.css rather than deleted, per
+  this file's own convention for values like it.
+
+**Git state**: branch `feature/home-tutorial-stack`, pushed through
+`aea2d5f` (this update's own commit lands after it) — a PR into `main`
+was opened the same session, see the repo's PR list rather than trusting
+a stale link pasted here later. Run `git status`/`git log --oneline -5`
+regardless on a fresh session start, same standing caveat as every earlier
+git-state note in this doc.
 
 ## What this app is
 
@@ -402,11 +458,11 @@ src/styles/tokens.css        Design tokens; V1 values marked, V2/V5 replacements
 src/components/
   CheckIndicator.tsx        36x36 check control (checked/unchecked) — SVG shapes traced from V2 assets, colors/stroke-width updated for V5
   ProductCard.tsx           Product row: image, brand/name/shade, CheckIndicator — sizing/colors updated for V5
-  ScreenHeader.tsx          Back / Search-Widget toggle / Done — shared by StepScreen + AllStepsView — rebuilt for V5 (real downloaded icon assets as inline SVG path data, frosted-chip chrome, toggle restructured from sliding-pill to two independent buttons) — Done/Back buttons still lack aria-label, see "Known gaps"
-  ActionButton.tsx          Shared default/final bottom button — colors/height/typography updated for V5
+  ScreenHeader.tsx          Back / Search-Widget toggle / Done — shared by StepScreen + AllStepsView — rebuilt for V5 (real downloaded icon assets as inline SVG path data, frosted-chip chrome), then rebuilt *again* (2026-08-25 update above): the toggle is now one persistent sliding highlight (inset `box-shadow`, not `border`), animated across the Search/Widget screen swap via the View Transitions API — not "two independent buttons" as this line used to say. Done/Back buttons still lack aria-label, see "Known gaps"
+  ActionButton.tsx          Shared default/final bottom button — colors/height/typography updated for V5; takes an optional per-call-site `style` override since the 2026-08-25 update (AllStepsView's own Finish button is a 24px-radius pill, StepScreen's stays the shared 12px default)
   EyeIllustration.tsx       Layered SVG eye composite — step 1 real V2 per-layer data + stagger diffing; steps 2-7 still V1 layer data (this is the still-open half of phase 3, see above) — render *size* corrected for V5's Figma resize (REFERENCE_RENDER_WIDTH)
   StepScreen.tsx            One step's full screen — owns the step-to-step direction-aware transition + Finish fade-out (Framer Motion, phase 5, done); V5 added the skin-tone radial-gradient wash and re-tuned the noise mask (final: top 58px/h 250px/w 300px/opacity 0.4/soft-light/0.9x grain scale)
-  AllStepsView.tsx          All-steps list screen — checkedOverrides now shared with StepScreen via TutorialFlow, not its own local state — NOT part of the V5 restyle, still V2 styling
+  AllStepsView.tsx          All-steps list screen — checkedOverrides now shared with StepScreen via TutorialFlow, not its own local state — restyled as of the 2026-08-25 update above (was NOT part of V5, still on V2 styling before that); see docs/figma-allsteps-restyle.md for the full diff, including its own scroll-driven frosted/hide-on-scroll header not present in any Figma pull
 
 src/TutorialFlow.tsx        Owns `step`/`view`/`checkedOverrides` state, wires everything together; takes `onExit` (wired to the Done button, returns to Home)
 src/App.tsx                 Routes HomeScreen ⇄ TutorialFlow — see docs/home-stack-handoff.md for the real detail on this file, out of this doc's own scope
