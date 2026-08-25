@@ -2,24 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Used by ScreenHeader's Search/Widget toggle — see the comment above its
-   indicator span for why this has to be a CSS *animation* (plays on
-   mount, driven by --slide-from/--slide-to custom properties) rather than
-   a transition (needs an existing element whose style changes across two
-   paints — the indicator never gets that, it's freshly mounted already in
-   its final position every time the view toggles). */
-@keyframes header-toggle-slide {
-  from { transform: translate(-50%, -50%) translateX(var(--slide-from, 0px)); }
-  to { transform: translate(-50%, -50%) translateX(var(--slide-to, 0px)); }
+/* Lock the page from scrolling/bouncing at all — nothing in this app ever
+   needs document/body-level scroll, horizontal or vertical: every screen
+   is a single centered max-w-[402px] column that's exactly h-dvh tall,
+   with its own internal overflow-y-auto region for content that runs long
+   (see App.tsx + each screen's own root). overflow-x: hidden +
+   overscroll-behavior-x: none (the first attempt at this, see git history)
+   was not enough on real iOS Safari — WebKit's overscroll-behavior support
+   at the document level is unreliable, and the elastic rubber-band bounce
+   came back once the card stack's drag gesture (free in both axes,
+   TutorialCard.tsx) started right near a screen edge again. Locking body
+   to position: fixed + 100% is the standard, more robust version of this
+   same fix — it doesn't just discourage document scroll, it removes the
+   document as a scrollable surface entirely, which is safe here precisely
+   because nothing relies on it (confirmed: no window/document/body scroll
+   calls anywhere in src/, only AllStepsView's own internal scrollTop). */
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  height: 100%;
 }
-@keyframes header-toggle-fade {
-  from { opacity: var(--fade-from, 1); }
-  to { opacity: var(--fade-to, 1); }
+body {
+  position: fixed;
+  width: 100%;
 }
 
-/* Used by CheckIndicator — same "animation, not transition" reasoning as
-   the header keyframes above (checked/unchecked render structurally
-   different children, so nothing here ever gets to transition in place). */
+/* Used by CheckIndicator, and (V5, docs/figma-step-screen-restyle.md)
+   ScreenHeader's Search/Widget toggle buttons — "animation, not
+   transition" for the same reason in both places: the element receiving
+   it is always freshly mounted (CheckIndicator's checked/unchecked render
+   structurally different children; ScreenHeader itself remounts wholly on
+   every view switch, since TutorialFlow renders StepScreen/AllStepsView as
+   two entirely separate trees), so there's never an existing element whose
+   style changes across two paints for a transition to animate between. */
 @keyframes check-pop {
   /* Whole-icon tap feedback, both directions. No overshoot-then-settle
      spring (that's the bounce/elastic curve /animate explicitly warns
@@ -30,8 +46,26 @@
 }
 @keyframes check-ring-in {
   /* The ring (checked or unchecked) settling in after the swap — subtle,
-     so it doesn't compete with the pop or the checkmark draw. */
-  from { opacity: 0; transform: scale(0.85); }
+     so it doesn't compete with the pop or the checkmark draw. Scale
+     starts at 0.92 (AUDIT.md's Physicality & origin band is 0.9–0.97;
+     this was 0.85, outside it — nothing in the real world appears from
+     nothing, so the entrance should read as a small settle, not a near-
+     invisible-to-full pop). Safe here specifically because CheckIndicator's
+     ring is a 2px SVG stroke (--check-stroke-checked/unchecked-width) —
+     even at 0.92 scale that's still ~1.84px, comfortably above a full
+     device pixel.
+
+     ScreenHeader's Search/Widget toggle briefly had its own sibling
+     keyframe here (header-chip-in, opacity-only — this one's scale(0.92)
+     wasn't safe on that chip's 0.5px hairline border, the same "sub-1px
+     border + scale" problem this comment already covers). Removed, not
+     just because it was already opacity-only workaround for a mount/
+     unmount pattern: that whole pattern (each button independently
+     mounting its own chip on selection) was replaced with a single
+     persistent sliding indicator (docs/figma-step-screen-restyle.md's
+     eighth+ follow-up rounds) that doesn't mount/unmount at all, so
+     there's no entrance to animate and no keyframe needed there anymore. */
+  from { opacity: 0; transform: scale(0.92); }
   to { opacity: 1; transform: scale(1); }
 }
 @keyframes check-draw {
@@ -40,6 +74,53 @@
      draws in to its real length, never a guessed/approximate one. */
   from { stroke-dashoffset: var(--check-draw-length, 19); }
   to { stroke-dashoffset: 0; }
+}
+
+/* Press-flash sweep on HomeScreen's LookSelectorChip (Glam only for now,
+   per the exact gradient the user supplied — Day/Night can get their own
+   once given). A "shimmer" in the strict sense is a loading-state sheen;
+   this reuses the identical technique (an oversized 3-stop gradient,
+   background-position animated across a fixed window) as a one-shot
+   press-confirmation flash instead, same as a native refresh spinner's
+   sweep. linear, not --ease-out-quart: this is a traveling motion (the
+   glossary's own guidance — "Linear: reserve for spinners or marquees"),
+   not a state transition settling into place, so the app's one easing
+   curve doesn't apply here.
+
+   background-position 100% → 0%, not the other way — that's what actually
+   sweeps the bright middle stop from the chip's left edge to its right
+   edge (the direction is *not* symmetric with the reverse even though the
+   gradient's own colors are, since which edge the visible window
+   starts/ends over flips) — verified against the standard shimmer-loader
+   recipe, not guessed. Given the current background-size/stop values
+   (HomeScreen.tsx), this position range is already a complete edge-to-edge
+   sweep on its own: the bright stop sits exactly at the chip's left edge
+   at 0% and exits exactly at its right edge at 100%, with no help needed
+   from opacity to fake an entrance/exit.
+
+   Opacity is flat at 1 for that reason — an earlier version faded it in
+   over the first 15% and out over the last 15%, meant to soften the
+   edges, but that only clipped off the part of the sweep that was
+   already a clean arrival/departure: the flash became visible mid-sweep
+   (already 15% of the way across) and vanished before finishing the last
+   15%, reading as a blob fading in and out mid-chip instead of a flash
+   crossing it — plus quietly wasting 30% of the animation's own duration
+   on invisible motion. Removed rather than tuned narrower, since the
+   position sweep needs no help here. The element's own resting opacity
+   (0, set in HomeScreen.tsx, not via fill-mode) is still what hides it
+   before the first press and the instant this animation ends. */
+@keyframes chip-flash-sweep {
+  /* Same sweep as before, now driven by transform instead of
+     background-position — see AUDIT.md's Performance category
+     (background-position is paint-triggering, transform is compositor-
+     only). -66.6667% is the exact equivalent of the old
+     background-position: 100% → 0% motion at this element's own 300%
+     width: the old rule moved the background's own offset from -2×(chip
+     width) to 0; at 300% width, -2/3 of this element's own width is the
+     same -2×(chip width) offset, expressed as a percentage of itself
+     (which is what CSS transform percentages are always relative to). */
+  0% { transform: translateX(-66.6667%); opacity: 1; }
+  100% { transform: translateX(0%); opacity: 1; }
 }
 
 /* ActionButton press/hover feedback — plain transition is correct here
@@ -59,6 +140,52 @@
 }
 .action-button:active {
   transform: scale(0.97);
+}
+
+/* ScreenHeader's four buttons (Back, Search/Widget toggle, Done) — same
+   press/hover feedback pattern as .action-button above, extracted as its
+   own class since these buttons don't share ActionButton's component but
+   should feel identical to press. Scale amounts are slightly larger than
+   .action-button's (0.93/1.05 vs 0.97/1.02): these are small 40x40px icon
+   buttons, not a full-width bar, so they need more visible travel for the
+   same press to register at all.
+
+   Targets the `svg` child, not the button element itself — was on the
+   button until a real bug turned up: the Search/Widget toggle's active
+   chip used to be a `<span>` *inside* whichever button was currently
+   active, using an inset `box-shadow` for its hairline border. Scaling
+   the button scaled that child span right along with it, and box-shadow's
+   rounded-corner clip didn't necessarily stay composited in sync with a
+   live `transform`, which read as the chip "moving slightly and cutting a
+   bit" during the press transition. Scaling only the icon glyph sidestepped
+   it — the button never transformed at all, so there was nothing for a
+   box-shadow to desync from.
+
+   That chip has since moved out of the buttons entirely — Search/Widget
+   is now a single sliding highlight, a sibling of both buttons rather
+   than a child of either (ScreenHeader.tsx) — so this specific failure
+   mode can't happen regardless of which element the press-scale targets
+   anymore. Left on the `svg` anyway rather than reverted to the button:
+   no regression either way, and a glyph-only press still reads the same
+   across all four header buttons (Back/Done included) rather than three
+   matching and one different. */
+/* transform at --duration-instant (press feedback, wants to feel
+   immediate) and opacity at --duration-base (matches the sliding
+   highlight's own transition duration) are deliberately different
+   speeds, not an oversight — see below for why opacity needed adding
+   here at all. */
+.header-icon-button svg {
+  transition:
+    transform var(--duration-instant) var(--ease-out-quart),
+    opacity var(--duration-base) var(--ease-out-quart);
+}
+@media (hover: hover) {
+  .header-icon-button:hover svg {
+    transform: scale(1.05);
+  }
+}
+.header-icon-button:active svg {
+  transform: scale(0.93);
 }
 
 /* Step-to-step "hero" transition. StepScreen keys its badge, illustration,
@@ -97,6 +224,49 @@
 @keyframes view-fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ScreenHeader's Search/Widget toggle highlight — a real slide across the
+   *screen* swap (TutorialFlow renders StepScreen and AllStepsView as
+   separate trees; ScreenHeader.tsx's own doc comment on this div has the
+   full "why," this is just the CSS half). `view-transition-name` opts
+   this specific element into the browser's View Transitions API: when
+   TutorialFlow.tsx wraps its `setView` calls in
+   `document.startViewTransition`, the browser captures this element
+   before and after the mount/unmount swap and generates its own
+   pseudo-element animation morphing between the two captured positions —
+   entirely separate machinery from a plain CSS `transition` on the real
+   element, which can't animate across a mount at all.
+
+   Name must be unique among simultaneously-*rendered* elements (not
+   simultaneously-existing across the whole transition, which is fine —
+   the old StepScreen/AllStepsView is gone before the new one mounts,
+   same synchronous swap either way) — only one component ever renders
+   this class at a time already, so no extra uniqueness handling needed. */
+.header-toggle-highlight {
+  view-transition-name: header-toggle-highlight;
+}
+/* Overrides the browser's own default duration/easing for *this specific*
+   named element's transition, matching the app's own token pair instead
+   of leaving it at the browser default (~250ms ease). Doesn't affect the
+   root cross-fade below — each named element (and the unnamed "root")
+   gets its own independent group here. */
+::view-transition-group(header-toggle-highlight) {
+  animation-duration: var(--duration-base);
+  animation-timing-function: var(--ease-out-quart);
+}
+/* The View Transitions API's default behavior isn't just "animate named
+   elements" — with no other config, it *also* cross-fades the entire
+   old/new page (the implicit "root" element) during any transition,
+   including ones only started for this one small highlight. Every other
+   Search/Widget switch today is (and should stay) an instant, un-animated
+   screen swap — only the highlight itself should visibly move. Setting
+   `animation: none` on the root pseudo-elements suppresses that default
+   whole-page fade without touching the named highlight's own group above. */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
 }
 
 /* Respect prefers-reduced-motion globally — see docs/handoff.md phase 5.

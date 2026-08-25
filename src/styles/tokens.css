@@ -10,6 +10,14 @@
  * theme. Values marked "deprecated" are no longer used by the current
  * design but kept for now rather than deleted.
  *
+ * V5 UPDATE (see docs/figma-step-screen-restyle.md; nodes 685:4149,
+ * 693:6908, 693:7162 — V3/V4 already used elsewhere in this file, see the
+ * "Home screen"/"Tutorial stack card" sections below). Moves the tutorial
+ * step screens onto the same #2c2926 ink token the home screen's V4 pass
+ * already introduced (--color-tutorial-card-text), plus real spacing/
+ * shadow/sizing refinements. Values marked "V5" replace the prior value in
+ * place, same convention as V2 above.
+ *
  * No Figma variables exist in the source file, so these values are
  * captured directly from the raw hex/px output. If you add variables in
  * Figma later, re-pull and these should map 1:1.
@@ -21,18 +29,21 @@
   --color-surface: #ffffff;         /* V2: card background, flat white (was #f4ede8) */
   --color-cta-pill: #ebdfd6;        /* deprecated: V2's Done button is icon-only, no pill bg */
   --color-cta-pill-border: rgba(255, 255, 255, 0.5); /* deprecated, see --color-cta-pill */
-  --color-action-button: rgba(14, 11, 6, 0.04); /* V2: default "next" button bg (was tan #ddc9bb) */
-  --color-action-button-border: rgba(14, 11, 6, 0.05); /* V2: default "next" button border */
-  --color-action-button-final-bg: #0e0b06;    /* V2: "Finish" button bg (was a gradient) */
-  --color-action-button-final-text: #f9f1ec;  /* V2: "Finish" button text (was #fff) */
-  --color-text-primary: #0e0b06;    /* V2: warm near-black ink (was pure #000000) */
+  --color-action-button: rgba(44, 41, 38, 0.05); /* V5: default "next" button bg (was rgba(14,11,6,0.04)) */
+  --color-action-button-border: rgba(44, 41, 38, 0.2); /* V5 (was rgba(14,11,6,0.05)) */
+  --color-action-button-final-bg: var(--color-tutorial-card-text);    /* V5: "Finish" button bg (was flat #0e0b06) — reuses the same ink token the home screen's V4 pass already defined below, not a new hex */
+  --color-action-button-final-text: #ffffff;  /* V5 (was #f9f1ec) — Step 7's pulled button is literally text-white now */
+  --color-text-primary: var(--color-tutorial-card-text);    /* V5: warm near-black ink (was flat #0e0b06) — the tutorial flow now shares the home screen's V4 ink token instead of its own separate one */
   --color-text-caption: rgba(0, 0, 0, 0.4);   /* deprecated: "90s inspired" caption removed in V2 */
   --color-text-subtle: rgba(0, 0, 0, 0.7);    /* product sub-line, e.g. "79 - Spices" */
-  --color-text-product: rgba(0, 0, 0, 0.8);   /* product name block (opacity-80 in source) */
-  --color-border-hairline: rgba(14, 11, 6, 0.05); /* V2: product image border (was rgba(0,0,0,0.1)) */
+  --color-text-product: rgba(44, 41, 38, 0.8);   /* V5 (was rgba(0,0,0,0.8)) — product name block, same ink migration as everywhere else in this pass; only used by ProductCard.tsx, safe to change directly */
+  --color-border-hairline: rgba(44, 41, 38, 0.2); /* V5 (was rgba(14,11,6,0.05)) — real contrast increase, not just a recolor */
   --color-border-card: rgba(255, 255, 255, 0.3); /* deprecated: V2 card has no visible stroke */
   --color-image-placeholder: #e5e5e7; /* fallback bg behind product images before load */
-  --color-badge-bg: rgba(14, 11, 6, 0.07); /* V2: "N/7" progress badge pill */
+  --color-badge-bg: rgba(44, 41, 38, 0.05); /* V5 (was rgba(14,11,6,0.07)) — StepScreen's own top-of-screen "N/7 steps" badge only; confirmed against its own pull in the V5 pass. Not the same value as AllStepsView's per-group badge, see --color-badge-bg-list below — the two instances turned out to be genuinely different alphas in the design, not one shared value. */
+  --color-badge-bg-list: rgba(44, 41, 38, 0.1); /* docs/figma-allsteps-restyle.md — AllStepsView's own per-group "N/7 steps" pill, confirmed against a fresh pull of node 702:2694 (double the alpha of --color-badge-bg above). */
+  --color-list-header-bg: rgba(249, 243, 235, 0.72); /* docs/figma-allsteps-restyle.md, item 5 — AllStepsView's sticky header, paired with --blur-list-header below for a frosted-glass look, shown only once scrolled. NOT sourced from Figma — this is the user's own request, tuned twice after testing on-device: first pass reused the page's own cream (rgba(247,233,202,...), --gradient-bg-list's *first* stop) and read as a visible yellow tint; second pass went to plain white (rgba(255,255,255,...)) instead; this third pass is rgb(249,243,235) — which is exactly --gradient-bg-list's *second*, settled-flat stop (#f9f3eb, the color the page background actually is everywhere below its top ~53px fade) — so the frost now tints toward the same color the content behind it is already sitting on, rather than either the more saturated top-of-page cream or a colorless white. Same 72% alpha throughout all three passes; still a starting guess to tune further by feel, not a measured value. */
+  --blur-list-header: 16px; /* docs/figma-allsteps-restyle.md, item 5 — pairs with --color-list-header-bg above. Also not Figma-sourced (see that token's own note); 16px lands in the normal range for this kind of frosted nav-bar treatment (Tailwind's own backdrop-blur-lg default), picked as a reasonable starting point rather than measured. */
 
   /* deprecated: V1's card background was a stacked gradient. V2 uses a
      flat --color-surface (white) + --shadow-card instead. */
@@ -42,13 +53,26 @@
     linear-gradient(90deg, #fff8f3 0%, #fff8f3 100%),
     linear-gradient(90deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.03) 100%);
 
-  /* V2: full-screen background gradient, top to bottom. */
+  /* deprecated: V2's full-screen pink/mauve background gradient — no
+     longer used by anything. Kept for reference rather than deleted, same
+     convention as --color-bg above. Both of this token's real consumers
+     have since moved off it independently: docs/figma-step-screen-
+     restyle.md's own "Screen background gradient" section already
+     repoints StepScreen.tsx at --gradient-bg-home directly (the fresh
+     Step 1/7/8 pulls turned out to be the cream family, not this one) —
+     that section's own closing line, claiming this token was "still
+     exactly what AllStepsView expects," was itself wrong and never
+     corrected at the time. docs/figma-allsteps-restyle.md later found the
+     same thing independently for AllStepsView (see --gradient-bg-list
+     below) without cross-referencing that StepScreen had already made the
+     identical move. Confirmed zero remaining `var(--gradient-bg-screen)`
+     usages anywhere in src/ as of this note. */
   --gradient-bg-screen: linear-gradient(180deg, #e6d6d1 0%, #f5e7de 35.561%, #fbf7f5 77.86%);
 
   /* ---------- Radius ---------- */
   --radius-pill: 38px;    /* Done button circle (still round in V2, just no bg/text) */
   --radius-card: 20px;    /* product card container */
-  --radius-image: 12px;   /* product thumbnail */
+  --radius-image: 8px;   /* V5 (was 12px) — product thumbnail, confirmed on Step 1 and Step 7's pulls; only used by ProductCard.tsx */
   --radius-button: 12px;  /* V2: bottom action button (was pill-shaped, full-width) */
   --radius-badge: 4px;    /* V2: "N/7" progress badge */
 
@@ -59,7 +83,7 @@
   --space-lg: 24px;
 
   /* ---------- Shadow ---------- */
-  --shadow-card: 0px 0px 16px 4px rgba(14, 11, 6, 0.03); /* V2 (was 0px 0px 16px 0px rgba(0,0,0,0.05)) */
+  --shadow-card: 0px 0px 8px 2px rgba(14, 11, 6, 0.03); /* V5 (was 0px 0px 16px 4px, before that 0px 0px 16px 0px rgba(0,0,0,0.05)) — blur/spread shrink, color unchanged (confirmed on both Step 1 and Step 7's pulls, not a fluke). Now identical to --shadow-tutorial-card below — same value, kept as a separate token since AllStepsView's own card shape hasn't been re-verified against this pass yet (see docs/figma-step-screen-restyle.md). */
 
   /* ---------- Motion ----------
      Shared easing/duration tokens for phase-5 motion work (see
@@ -69,31 +93,35 @@
   --duration-instant: 150ms; /* button press, toggle */
   --duration-base: 200ms;    /* hover, small state changes */
   --duration-layout: 350ms;  /* larger layout/content changes */
+  --duration-shimmer: 350ms; /* LookSelectorChip's press-flash sweep (HomeScreen.tsx) — was 700ms, then 400ms, then 500ms. That 500ms had an opacity fade eating its first/last 15% (75ms each) as invisible motion, so only ~350ms of it was ever actually seen — removing that fade (index.css) means the full duration is now visible motion, so the number itself had to come back down to land at roughly the same felt speed as before, not faster than the audit intended. */
+  --duration-step-content: 280ms; /* StepScreen's badge/title/description swap on every Next/Back — faster than --duration-layout (350ms, for rarer/larger changes like screen transitions and view mounts) since this fires ~7x per tutorial completion and AUDIT.md keeps interactive UI animations under 300ms. */
 
   /* ---------- Typography ---------- */
   /* Font is "Inter 18pt" specifically — confirm you have that exact
      optical-size variant, not generic Inter, if pixel match matters. */
   --font-family: 'Inter', sans-serif;
   --font-size-step-label: 18px;   /* deprecated: V2 replaces "Step N" + title with step-title/step-description below */
-  --font-size-step-title: 16px;        /* V2: e.g. "Add Concealer" — pair with opacity-50 */
-  --font-size-step-description: 14px;  /* V2: instruction sentence — pair with opacity-40 */
+  --font-size-step-title: 16px;        /* V2: e.g. "Add Concealer" — V5 (docs/figma-step-screen-restyle.md) dropped the opacity-50 pairing, now full opacity, see StepScreen.tsx */
+  --font-size-list-group-title: 15px;  /* docs/figma-allsteps-restyle.md — AllStepsView's own per-group title (e.g. "Concealer"), a separate size from --font-size-step-title above: that 16px value is StepScreen's big top-of-screen title, confirmed correct there; this smaller inline title is a different node in the design. */
+  --font-size-step-description: 12px;  /* V5 (was 14px) — instruction sentence, confirmed on Step 1/2/3/5/6/7 pulls; also moved to opacity-80 and Medium weight, see StepScreen.tsx. Not used by AllStepsView (grep-confirmed) so safe to change directly, unlike --font-size-step-title above which that deferred screen still shares. */
   --font-size-product-name: 14px;
   --font-size-product-sub: 12px;  /* shade line, e.g. "79 - Spices" — pair with opacity-50, --letter-spacing-shade */
   --font-size-header-caption: 14px; /* deprecated: "90s inspired / smoky eye" caption removed in V2 */
-  --font-size-button: 15px;
+  --font-size-button: 16px;      /* V5 (was 15px) — confirmed on both Step 1's "Next" and Step 7's "Finish" pulls */
   --font-size-cta-pill: 13px;     /* deprecated: Done button no longer shows text */
   --font-size-badge: 12px;        /* V2: "N/7" / "steps" progress badge text — pair with opacity-50 */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --letter-spacing-tight: -0.14px;  /* brand/product name */
-  --letter-spacing-shade: -0.12px;  /* V2: shade line */
+  --letter-spacing-shade: -0.12px;  /* V2: shade line. docs/figma-allsteps-restyle.md — a fresh pull showed this is Figma's shared "BeautyNotes/p-12" caption tracking, not a shade-line-only value: AllStepsView's own per-group description and its "N/7 steps" badge/label use this exact same -0.12px, reused here rather than duplicated under a new name. */
+  --letter-spacing-list-group-title: -0.15px; /* docs/figma-allsteps-restyle.md — AllStepsView's per-group title, pairs with --font-size-list-group-title above. Was -0.3px; corrected to -0.15px after the user tightened it up on a second look (phone testing) and a re-pull confirmed the new value. */
 
   /* ---------- Fixed component sizes ---------- */
   --size-product-image-w: 56px;  /* V3 (was 64px, before that 80px) — node 615:3037, tighter mobile spacing pass */
   --size-product-image-h: 63px;  /* V3 (was 72px, before that 90px) */
   --size-check-indicator: 36px;
-  --height-action-button: 40px;  /* V3 (was 48px, unused until now) — node 615:3037 */
+  --height-action-button: 44px;  /* V5 (was 40px, before that 48px — the 40px value landed unused in V3, this pass is what actually starts using a non-default height) */
 
   /* ---------- Home screen ----------
      V1, pulled via get_design_context on node 572:3666 (Tech-Experimentation,
@@ -101,18 +129,72 @@
      reuses --gradient-bg-screen, --radius-card, --shadow-card, --color-surface,
      --space-* etc. from the tutorial tokens above where the design matches;
      these are the values genuinely new to this screen. */
-  --font-family-serif: 'Goudy Bookletter 1911', Georgia, 'Times New Roman', serif; /* title only — loaded via Google Fonts, see index.html; Georgia/serif are the fallback while it loads or if the request fails */
-  --font-size-home-title: 24px;
-  --letter-spacing-home-title: -0.24px;
-  --font-size-home-description: 12px;
-  --color-look-card-bg: rgba(75, 116, 209, 0.08); /* look card container tint */
-  --color-look-card-text: #133991; /* look card title/meta text */
-  --color-filter-chip-bg: #f5f5f5; /* chip background, selected and not — confirmed still current per node 615:2884 */
-  --color-filter-chip-border-selected: rgba(0, 0, 0, 0.7);
-  --radius-look-card: 16px;
-  --radius-filter-chip: 12px; /* V2 (was 16px) — node 572:3875/615:2884, smaller filter sheet */
-  --shadow-filter-chip: 0px 0px 8px rgba(14, 11, 6, 0.03); /* also used on the look card, see node 615:2884 */
-  --shadow-filter-chip-selected: 0 0 0 1.5px rgba(14, 11, 6, 0.25), 0px 0px 8px rgba(14, 11, 6, 0.03); /* deprecated: a shadow-ring selection state was tried against an isolated pull (572:3875) that turned out to omit the sheet's real border/bg — node 615:2884 (fuller context) confirmed selection is still --color-filter-chip-border-selected */
+  --font-family-serif: 'Goudy Bookletter 1911', Georgia, 'Times New Roman', serif; /* deprecated: V4 switched the home title to --font-family-serif-card (Cactus Classical Serif) below, matching node 635:4792's actual font — Goudy Bookletter is no longer used anywhere, kept for reference rather than deleted */
+  --font-size-home-title: 32px; /* V4 (was 24px) — node 635:4792, "LookSelector" redesign */
+  --letter-spacing-home-title: -0.64px; /* V4 (was -0.24px, briefly -1.28px) — corrected against the exact CSS the user copied from Figma Dev Mode for the "BeautyNotes/H1" style (node 648:2); the -1.28px value derived from get_design_context's own inline `tracking-` class was wrong */
+  --font-size-home-description: 12px; /* deprecated: V4 dropped the header description line entirely — the "which type of look" filter question now sits directly under the title/icon row, see node 635:4792 */
+  --color-look-card-bg: rgba(75, 116, 209, 0.08); /* deprecated: V3's BigCard is flat white (--color-surface), see below */
+  --color-look-card-text: #133991; /* deprecated: V3's BigCard text is warm near-black (--color-tutorial-card-text), see below */
+  --color-filter-chip-bg: #f5f5f5; /* deprecated: V4 chips use a photo-texture + mix-blend-mode tint instead of a flat bg, see --color-filter-chip-border below */
+  --color-filter-chip-border: rgba(44, 41, 38, 0.1); /* V4: unselected chip border (was transparent) */
+  --color-filter-chip-border-selected: rgba(44, 41, 38, 0.5); /* V4 (was rgba(0,0,0,0.7)) */
+  --radius-look-card: 16px; /* deprecated: V3's BigCard uses --radius-tutorial-card (32px), see below */
+  --radius-filter-chip: 12px; /* V2 (was 16px) — node 572:3875/615:2884, smaller filter sheet; V4 reuses this same radius for the header icon boxes too */
+  --shadow-filter-chip: 0px 0px 8px rgba(14, 11, 6, 0.03); /* unselected chip shadow — also used on the look card, see node 615:2884 */
+  --shadow-filter-chip-selected: 0 0 0 1.5px rgba(14, 11, 6, 0.25), 0px 0px 8px rgba(14, 11, 6, 0.03); /* deprecated: a shadow-ring selection state was tried against an isolated pull (572:3875) that turned out to omit the sheet's real border/bg — node 615:2884 (fuller context) confirmed selection is still --color-filter-chip-border-selected. V4 superseded this again: selection now reads via border weight + a per-type colored glow (LOOK_TYPES.glow in HomeScreen.tsx), not a shadow ring. */
+  --color-header-icon-bg: rgba(255, 255, 255, 0.6); /* V4: info/profile icon boxes, node 635:4792 */
+  --color-header-icon-border: rgba(44, 41, 38, 0.2); /* V4: 0.5px hairline on those same boxes */
+
+  /* V4 background — node 635:4792 ("Updated UI" / LookSelector redesign).
+     Home-screen-only. Deliberately NOT folded into --gradient-bg-screen
+     above, since that token is shared by StepScreen and this gradient is a
+     materially different gold/cream family, not a refinement of the same
+     one. Two color stops only — flat --color-home-bg-end for the rest of
+     the screen once the top ~7% fades in, unlike --gradient-bg-screen's
+     3-stop fade across the full height. The 7.179% stop is sized against
+     HomeScreen's own root, which never scrolls taller than one viewport —
+     see --gradient-bg-list below for why AllStepsView, despite sharing
+     these same two hex values, needed its own token rather than reusing
+     this one as-is. */
+  --gradient-bg-home: linear-gradient(180deg, #f7e9ca 0%, #f9f3eb 7.179%);
+
+  /* docs/figma-allsteps-restyle.md — AllStepsView's own background (node
+     702:2694), same two hex values as --gradient-bg-home above but a fixed
+     53px second stop instead of a percentage. This isn't a rounding
+     shortcut, it's the actual fix for a real mismatch: the user's Figma
+     source pulls this gradient at a *much* smaller percentage (2.582%) than
+     --gradient-bg-home's 7.179%, because in Figma the background layer is
+     sized to the full flattened export of the scrollable list (2065px
+     tall, covering every group at once) rather than to one screen's worth
+     — a percentage is relative to *that* element's own height. 2.582% of
+     2065px ≈ 53px is the actual fixed distance-from-top the fade is meant
+     to cover; reusing --gradient-bg-home's 7.179% here would have measured
+     that percentage against AllStepsView's own (much shorter, single-
+     viewport-tall) root instead, landing the fade at the wrong pixel
+     offset — faster/shorter than intended, not "immaterial" as first
+     assumed. A fixed px stop sidesteps needing to match container heights
+     between the two screens at all: the fade always covers the same ~53px
+     from the top regardless of how tall the element it's painted on is,
+     which is exactly "the same transition point as StepTutorial, just on a
+     background that had to be made taller" per the user's own framing. */
+  --gradient-bg-list: linear-gradient(180deg, #f7e9ca 0%, #f9f3eb 53px);
+
+  /* ---------- Tutorial stack card (V3) ----------
+     "BigCard" component, node 642:5092 (Tech-Experimentation) — replaces
+     the single blue-tinted look card above with a white card + stacked-
+     paper "Card-Behind" peek. Pulled with 4 content variants ("1"-"4") plus
+     an "Unfold" ghost-card variant; see TutorialCard.tsx. Reuses
+     --color-surface, --shadow-page-frame-style shadows, --space-* etc.
+     from the tokens above where the design matches; these are the values
+     genuinely new to this card. */
+  --font-family-serif-card: 'Cactus Classical Serif', Georgia, 'Times New Roman', serif; /* V4: also the home title's font now (node 635:4792/648:2 both use Cactus Classical Serif, not a separate home serif) — loaded via Google Fonts, see index.html */
+  --color-tutorial-card-text: #2c2926; /* V4: also reused as the home header/title/filter-chip ink color (node 635:4792 uses this same #2c2926, not --color-text-primary) — one warm-ink token shared by both surfaces now */
+  --color-timer-badge-bg: rgba(44, 41, 38, 0.05);
+  --color-card-behind-tint: #e3b345; /* deprecated: CardBehind (TutorialCard.tsx) now uses the real card-ghost-texture.jpg photo asset directly instead of this flat swatch + blend-mode tint */
+  --color-product-placeholder: #e5e5e7; /* ProductsPreview (TutorialCard.tsx) — the flipped card's product-photo thumbnails, before real product photography exists. Not an invented color: this is Figma's own placeholder-gray fill for the same not-yet-real image slots in the source design. */
+  --radius-tutorial-card: 32px;
+  --radius-tutorial-card-behind: 24px;
+  --shadow-tutorial-card: 0px 0px 8px 2px rgba(14, 11, 6, 0.03);
 
   /* ---------- Page frame (desktop) ----------
      Mobile viewports fill edge-to-edge (h-dvh on each screen's own root,
@@ -131,9 +213,9 @@
      --check-stroke-checked / --check-stroke-checked-width rather than a
      separate fill token. */
   --check-fill: rgba(255, 255, 255, 0.7);           /* unchanged from V1 */
-  --check-stroke-checked: #0e0b06;                  /* V2 (was rgba(0,0,0,0.8)) */
-  --check-stroke-checked-width: 3px;                /* V2 (was 2px) */
-  --check-stroke-unchecked: rgba(14, 11, 6, 0.3);   /* V2 (was rgba(0,0,0,0.2)) */
+  --check-stroke-checked: var(--color-tutorial-card-text); /* V5 (was flat #0e0b06) — same ink-token migration as everywhere else in this pass */
+  --check-stroke-checked-width: 2px;                /* V5 (was 3px) — Figma's pull shows border-2 (2px) on every step; tried and compared visually against the Figma screenshot (docs/figma-step-screen-restyle.md, implementation step 4), reads correctly at this weight, not too thin */
+  --check-stroke-unchecked: rgba(44, 41, 38, 0.3);  /* V5 (was rgba(14,11,6,0.3)) — same alpha, new ink base; exact V5 value wasn't in the pulled dump, inferred from the global migration */
   --check-stroke-unchecked-width: 2px;              /* V2 (was 1px) */
   --check-stroke-unchecked-dash: 4 5;               /* V2 (was "3 3") */
 }

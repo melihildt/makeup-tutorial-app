@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { StepScreen } from './components/StepScreen'
 import { AllStepsView } from './components/AllStepsView'
 
@@ -6,6 +7,39 @@ const LAST_MAKEUP_STEP = 7
 const DONE_STEP = 8 // terminal "You're done!" screen — see docs/figma-v2-redesign.md
 
 type View = 'step' | 'list'
+
+/** Runs `updateState` (whatever state changes switch StepScreen<->
+ *  AllStepsView, including but not limited to `setView`) inside the
+ *  browser's View Transitions API when available, so the header's
+ *  Search/Widget toggle highlight (`view-transition-name`, index.css) can
+ *  visibly slide across the resulting unmount/remount instead of just
+ *  snapping into place — see ScreenHeader.tsx's own comment on that
+ *  element for the full reasoning on why a plain CSS `transition` can't
+ *  do this on its own (StepScreen and AllStepsView are separate mounted
+ *  trees, each with their own `<ScreenHeader>`).
+ *
+ *  `flushSync` forces React to actually commit `updateState`'s changes to
+ *  the DOM synchronously inside `startViewTransition`'s callback —
+ *  without it, React defers the real update to a later microtask, and the
+ *  browser would capture its "after" snapshot before anything had
+ *  actually changed yet (the well-documented pattern for combining React
+ *  with this API).
+ *
+ *  Falls back to a plain, un-transitioned `updateState()` when
+ *  `startViewTransition` isn't available (older Safari/Firefox — a
+ *  graceful no-op, the exact same instant swap this already did before
+ *  today) or when the user prefers reduced motion (checked directly via
+ *  `matchMedia`, not Framer Motion's `useReducedMotion` — this file has
+ *  no other Motion usage worth adding that import for just this one
+ *  check). */
+function switchViewWithTransition(updateState: () => void) {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (!document.startViewTransition || prefersReducedMotion) {
+    updateState()
+    return
+  }
+  document.startViewTransition(() => flushSync(updateState))
+}
 
 type TutorialFlowProps = {
   /** Called when the header's check/Done icon is tapped, on either view —
@@ -90,11 +124,24 @@ export function TutorialFlow({ onExit }: TutorialFlowProps) {
   }
 
   function handleSelectStepView() {
-    if (lastToggledStep !== null) {
-      setStep(lastToggledStep)
-      setLastToggledStep(null)
-    }
-    setView('step')
+    // All three state changes wrapped together (not just setView) — see
+    // switchViewWithTransition's own comment on why: flushSync flushes
+    // whatever's pending as one synchronous commit regardless of which
+    // call is technically "inside" its callback, but wrapping all of them
+    // here keeps that explicit rather than relying on batching semantics.
+    switchViewWithTransition(() => {
+      if (lastToggledStep !== null) {
+        setStep(lastToggledStep)
+        setLastToggledStep(null)
+      }
+      // Clear synchronously, not just after the 260ms timeout above — a
+      // view switch is itself a full remount of every ProductCard (see
+      // justToggledKey's own comment), so without this, switching views
+      // within that 260ms window replays the animation on a row in the
+      // *new* view that the user never actually touched there.
+      setJustToggledKey(null)
+      setView('step')
+    })
   }
 
   function handleNextStep() {
@@ -142,7 +189,14 @@ export function TutorialFlow({ onExit }: TutorialFlowProps) {
       onFinish={handleFinish}
       onBack={handleBack}
       onDone={onExit}
-      onSelectListView={() => setView('list')}
+      onSelectListView={() => {
+        // See handleSelectStepView's own comment (same reasoning,
+        // opposite direction).
+        switchViewWithTransition(() => {
+          setJustToggledKey(null)
+          setView('list')
+        })
+      }}
     />
   )
 }
