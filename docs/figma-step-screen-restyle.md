@@ -2,18 +2,26 @@
 
 **STATUS: DONE AND SHIPPED (2026-08-24).** Everything below the original
 plan (tokens, `ScreenHeader`, `ProductCard`, `ActionButton`,
-`CheckIndicator`, `StepScreen`) is implemented and verified — see the five
+`CheckIndicator`, `StepScreen`) is implemented and verified — see the nine
 numbered "follow-up round" sections further down for what actually needed
 correcting after the initial diff/implementation (there were real gaps;
 don't treat the top-level "Confirmed changes" section as the final word on
-its own). **If you just need current values, not history**: final noise
-mask is top-58px/h-250px/w-300px/opacity-0.4/soft-light/0.9x grain scale
-(`StepScreen.tsx`); header icons are inline SVG path data at native size,
-no external files (`ScreenHeader.tsx`); eye illustration render size
-tracks `EyeIllustration.tsx`'s `REFERENCE_RENDER_WIDTH = 195.5742950439453`.
-`AllStepsView.tsx` was never touched by this pass — was still on V2
-styling until a later, dedicated pass closed that gap; see
-`docs/figma-allsteps-restyle.md`.
+its own — the `### Header` section specifically is superseded twice over,
+see its own inline warning). **If you just need current values, not
+history**: final noise mask is top-58px/h-250px/w-300px/opacity-0.4/
+soft-light/0.9x grain scale (`StepScreen.tsx`); header icons are inline SVG
+path data at native size, no external files (`ScreenHeader.tsx`); eye
+illustration render size tracks `EyeIllustration.tsx`'s
+`REFERENCE_RENDER_WIDTH = 195.5742950439453`; the Search/Widget toggle is
+one persistent sliding highlight using an inset `box-shadow` (not
+`border`), animated across the Search⇄Widget screen swap via the browser's
+View Transitions API (`TutorialFlow.tsx`'s `switchViewWithTransition`) —
+see the ninth follow-up round for the full current picture, not the
+"### Header" section above it. `AllStepsView.tsx` was never touched by
+this pass — was still on V2 styling until a later, dedicated pass closed
+that gap; see `docs/figma-allsteps-restyle.md`, which also documents
+several of the later header-toggle rounds' user-facing impact on that
+screen specifically.
 
 Source: https://www.figma.com/design/6Mr7K0RONTS8SltZRJtqYj/Tech-Experimentation
 File key `6Mr7K0RONTS8SltZRJtqYj`.
@@ -131,8 +139,17 @@ hardcodes that token's start color (`#e6d6d1`) into its sticky header as a
 separate literal — repointing the shared token itself would silently break
 that (deferred, unreviewed) screen. Fix applied at the consumer, not the
 token: `StepScreen.tsx`'s own inline `style` now reads `var(--gradient-bg-home)`
-directly instead of `var(--gradient-bg-screen)`. `--gradient-bg-screen`
-itself is untouched, still exactly what `AllStepsView` expects.
+directly instead of `var(--gradient-bg-screen)`.
+
+> **⚠ The last sentence here was wrong, and stayed wrong for a while.**
+> "`--gradient-bg-screen` itself is untouched, still exactly what
+> `AllStepsView` expects" turned out not to be true: when `AllStepsView`
+> finally got its own fresh Figma pull (`docs/figma-allsteps-restyle.md`),
+> it needed the *cream* family too, not this pink one — the same move
+> just made here for `StepScreen`, independently discovered later without
+> either doc cross-referencing the other at the time. `--gradient-bg-screen`
+> has had zero real consumers since this pass shipped; see its own
+> `deprecated` comment in tokens.css.
 
 ### Title + description contrast — DONE
 
@@ -227,6 +244,23 @@ Verified via computed style (`row-gap: 40px`) and visually across steps 1,
   Done both still fire their real handlers (return to Home, confirmed both
   ways). `tsc -b` shows no new errors (pre-existing `TutorialCard.tsx`
   errors only, unrelated to this file).
+
+  **⚠ Superseded — this whole toggle description is now historical, not
+  current.** Everything above (two independently-mounting active-state
+  `<span>` chips, `check-ring-in` reused directly, "chip only ever enters,
+  removes instantly") describes the toggle as it shipped in *this* pass —
+  it went through a full second rebuild later, across the sixth through
+  ninth follow-up rounds below, into a completely different architecture:
+  one persistent sliding highlight `<div>` (not two conditionally-mounted
+  spans), an inset `box-shadow` instead of a real `border` (a rendering
+  bug, not a style choice), press-feedback scaling only the icon glyph
+  instead of the whole button, and — because Search/Widget turned out to
+  switch entire mounted screens, not toggle state within one — the actual
+  cross-screen slide is driven by the browser's View Transitions API
+  (`TutorialFlow.tsx`), not a CSS `transition` on the toggle itself. If
+  you need to know how the toggle actually works today, skip straight to
+  the ninth follow-up round; nothing in this section reflects the current
+  code.
 
 ### Product card container — DONE
 

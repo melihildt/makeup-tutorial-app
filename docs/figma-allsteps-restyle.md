@@ -1,14 +1,35 @@
 # AllStepsView restyle — diff & implementation plan
 
-**STATUS: DONE AND SHIPPED (2026-08-24), plus two follow-up rounds.** All
-five confirmed changes below are implemented (tokens.css, ScreenHeader.tsx,
+**STATUS: DONE AND SHIPPED (2026-08-24), plus a follow-up round with
+several rounds of its own corrections nested inside item 5.** All five
+confirmed changes below are implemented (tokens.css, ScreenHeader.tsx,
 ActionButton.tsx, AllStepsView.tsx). Both stale-content items were also
 resolved directly in Figma by the user before implementation — see their
-own updated notes below. See "Follow-up round" further down for a second
-pass of fixes (desktop scroll, gradient extent, letter-spacing, bottom
-fade) reported after using the shipped version, and its own item 5 for the
-third: sticky-header show/hide-on-scroll-direction with a frosted-glass
-background, now also shipped.
+own updated notes below. See "Follow-up round" further down for the
+second pass of fixes (desktop scroll, gradient extent, letter-spacing,
+bottom fade), and its own item 5 for the sticky-header
+show/hide-on-scroll-direction work — that item alone went through four
+more corrections after its own initial ship (color, scroll-gating, color
+again, a hide-threshold bug), each labeled inline in order.
+
+**If you just need current values, not history:** background is
+`var(--gradient-bg-list)` (cream, fixed-53px fade — NOT
+`--gradient-bg-home`, see item 1's own superseded note); sticky header is
+transparent at rest and only turns into a frosted `--color-list-header-bg`
+(`rgba(249, 243, 235, 0.72)`) + `--blur-list-header` (`16px`) blur once
+`scrollTop > 0` — no separate fade-tail element anymore, it was removed;
+the header additionally hides on scroll-down/reveals on scroll-up past
+`HEADER_HIDE_MIN_SCROLL` (120px, raised from an original 64px that let the
+card's own rounded top corner show through); group title is
+`--font-size-list-group-title` (15px) / `--letter-spacing-list-group-title`
+(-0.15px); per-group description and the "N/7 steps" badge/label both use
+`--letter-spacing-shade` (-0.12px); Finish button is a 24px-radius pill via
+a per-call-site `ActionButton` `style` override. The Search/Widget toggle
+itself (shared `ScreenHeader.tsx`, also rendered here) went through its
+own four-round rebuild documented entirely in
+`docs/figma-step-screen-restyle.md`'s sixth through ninth follow-up
+rounds — not repeated here, but it's part of what renders on this screen
+too.
 
 This is the "fresh Figma pull"
 that `docs/figma-step-screen-restyle.md` said `AllStepsView.tsx` needed
@@ -58,17 +79,29 @@ bg-gradient-to-b from-[#f7e9ca] to-[#f9f3eb] to-[2.582%]
 Same two hex values as the existing `--gradient-bg-home` token
 (`linear-gradient(180deg, #f7e9ca 0%, #f9f3eb 7.179%)`, defined in
 tokens.css for the home screen) — just a slightly different stop percent,
-which is immaterial at these pixel heights (both fade out within roughly
-the first 50-60px and are flat thereafter). AllStepsView should reuse
-`--gradient-bg-home` rather than `--gradient-bg-screen`.
+which looked immaterial at these pixel heights at the time (both fade out
+within roughly the first 50-60px and are flat thereafter).
 
-**Fix:**
+> **⚠ Superseded by the follow-up round's item 2, below.** "Immaterial"
+> turned out to be wrong — the user reported the gradient not extending
+> correctly, and the real fix needed a dedicated `--gradient-bg-list`
+> token with a fixed **53px** stop (not a percentage borrowed from
+> `--gradient-bg-home`, which is sized against a different, shorter
+> element). The `Fix:` bullets directly below describe the *original*
+> ship, already overtaken by that token — see the follow-up round for
+> what's actually in the code today; also see this doc's own top-of-file
+> "current values" line.
+
+**Fix (original ship, see the warning above for the current token):**
 - `AllStepsView.tsx` root: `style={{ background: 'var(--gradient-bg-home)' }}`.
 - Sticky header's hardcoded `background: '#e6d6d1'` → `'#f7e9ca'` (the new
   gradient's own first stop, so the sticky header reads as a seamless
   continuation of the background at scroll position 0, not a mismatched
   patch).
-- Sticky header's fade-tail gradient: `linear-gradient(180deg, #e6d6d1 0%, rgba(230,214,209,0) 100%)` → `linear-gradient(180deg, #f7e9ca 0%, rgba(247,233,202,0) 100%)`.
+- Sticky header's fade-tail gradient: `linear-gradient(180deg, #e6d6d1 0%, rgba(230,214,209,0) 100%)` → `linear-gradient(180deg, #f7e9ca 0%, rgba(247,233,202,0) 100%)`
+  (this fade-tail element was later removed entirely — see the follow-up
+  round's item 5 — so this line no longer applies at all, not even in
+  spirit).
 
 ### 2. Header — back button incorrectly hidden on the list view — DONE
 
@@ -233,7 +266,8 @@ fresh pull, all via already-shared, already-V5-verified components:
 3. **`ActionButton.tsx`**: added an optional `style` prop, merged on top
    of the variant's computed style, so a single call site can override
    without touching the shared default.
-4. **`AllStepsView.tsx`**:
+4. **`AllStepsView.tsx`** (original ship — see the follow-up round below
+   for the background/header token and fade-tail changes made since):
    - Root background → `var(--gradient-bg-home)`.
    - Sticky header's solid background + fade-tail gradient →
      `#f7e9ca`-based colors.
@@ -337,7 +371,13 @@ Explicitly flagged by the user as possibly worth its own pass rather than
 folding into the round above. Design decisions below, then an
 implementation sketch.
 
-**Scope: `AllStepsView.tsx` only, not `ScreenHeader.tsx` globally.**
+The sub-sections below (Scope through "Open item") are the *plan*, written
+before any of it was built — kept for the reasoning, but see "Shipped"
+onward for what actually happened, including four rounds of user-tested
+corrections on top of the plan.
+
+#### Plan: scope — `AllStepsView.tsx` only, not `ScreenHeader.tsx` globally
+
 `ScreenHeader` is shared with `StepScreen`, but `StepScreen` has no
 scrollable region at all (fixed single-viewport layout, reserved-height
 product sheet) — there's nothing for a scroll-driven header to react to
@@ -346,7 +386,8 @@ override on the existing sticky wrapper (the same pattern already used
 for the Finish button's radius override) keeps `StepScreen` untouched,
 same reasoning as every other AllStepsView-only change in this doc.
 
-**Trigger logic — asymmetric thresholds, not a raw "any scroll" toggle.**
+#### Plan: trigger logic — asymmetric thresholds, not a raw "any scroll" toggle
+
 A header that hides on any single pixel of downward movement (or reveals
 only after a large upward one) reads as jittery under real trackpad/mouse-
 wheel input, which fires many small, noisy scroll events per gesture, not
@@ -367,13 +408,20 @@ with different thresholds for hiding vs. revealing:
   so a small scroll right at the very top of the list can never hide it.
   This reuses the same "near the top" zone `isScrolled` already tracks.
 
+  > **⚠ This 64px value is exactly what correction 4 below found to be
+  > wrong** — it doesn't clear the white card's own rounded top corner,
+  > which starts immediately after the header. Shipped as 120px instead;
+  > see that correction for why.
+
 These three numbers (12px / 4px / 64px) are starting points to tune by
 feel once it's actually scrolling on a real device — same "ship a first
 guess, adjust after looking at it" approach this codebase's other
 hand-tuned values went through (WASH_TUNING in StepScreen.tsx, the
 removed MotionTuner/WashTuner dev panels), not values to treat as final.
 
-**Visual treatment.** The existing sticky wrapper (header row + its fade
+#### Plan: visual treatment
+
+The existing sticky wrapper (header row + its fade
 tail, already one unit) gets `transform: translateY(-100%)` + `opacity: 0`
 when hidden, `translateY(0)` + `opacity: 1` when visible, transitioned on
 `var(--duration-base)`/`var(--ease-out-quart)` — the same duration/easing
@@ -388,7 +436,13 @@ the `inert` HTML attribute (removes the header's buttons from tab order
 and blocks interaction while off-screen — cleaner than manually managing
 `tabIndex` on each of the four header buttons individually).
 
-**Reduced motion: no extra handling needed.** This uses a plain CSS
+> **⚠ "Fade tail" here refers to an element removed in correction 1
+> below** — kept as-written since it was true of the plan as built at the
+> time, but don't go looking for it in the current code.
+
+#### Plan: reduced motion — no extra handling needed
+
+This uses a plain CSS
 `transition`, not Framer Motion — index.css's global
 `prefers-reduced-motion` rule already collapses every `transition-duration`
 to ~0 app-wide (confirmed: `transition-duration: 0.01ms !important` under
@@ -397,10 +451,13 @@ itself stays (it's functional, not decorative — same reasoning StepScreen
 already applies to card fades vs. slides), it just snaps instead of
 sliding, automatically, with no bespoke `useReducedMotion()` check.
 
-**Implementation sketch** (in `AllStepsView.tsx`, alongside the existing
-`isScrolled`/`hasReachedBottom` state):
+#### Plan: implementation sketch
+
+In `AllStepsView.tsx`, alongside the existing
+`isScrolled`/`hasReachedBottom` state:
 
 ```ts
+// ⚠ 64 is the original planned value — shipped as 120, see correction 4
 const HEADER_HIDE_MIN_SCROLL = 64  // px — always visible at/under this
 const HEADER_HIDE_DELTA = 12       // px downward since last event, to hide
 const HEADER_REVEAL_DELTA = 4      // px upward since last event, to reveal
@@ -428,13 +485,17 @@ both `onScroll` and the mount-time `useLayoutEffect`), with the sticky
 wrapper's `style` reading `isHeaderHidden` for the transform/opacity/
 pointer-events/`inert` values described above.
 
-**Open item for verification, not for before starting:** the 12px/4px/
+#### Plan: open item for verification, not for before starting
+
+The 12px/4px/
 64px thresholds above are a reasoned starting guess, not measured against
 a real device — plan to sanity-check the feel on an actual trackpad scroll
 once built (the same "wrote a number, then looked at it" loop as items
 1-4 in this doc) rather than treating them as settled.
 
-**Shipped, with one deliberate deviation from the plan above:** all of the
+#### Shipped, with one deliberate deviation from the plan above
+
+All of the
 trigger logic, transform/opacity/`inert` treatment, and implementation
 sketch landed exactly as planned (`AllStepsView.tsx`'s `updateScrollState`
 now also owns `isHeaderHidden` alongside `hasReachedBottom`). The one
@@ -445,7 +506,9 @@ tokens, `--color-list-header-bg` and `--blur-list-header` (`16px`),
 applied via `background` + `backdropFilter`/`WebkitBackdropFilter` on the
 sticky wrapper.
 
-**First pass, then a same-day color correction.** The first pass reused
+#### Correction 1 — frost color read as yellow; fade-tail removed entirely
+
+The first pass reused
 the page's own cream (`rgba(247, 233, 202, 0.72)`) for
 `--color-list-header-bg`, plus a fade-tail strip below the header (same
 cream, fading to transparent) carried over from the pre-frosted design.
@@ -471,7 +534,8 @@ and gone from a clean reload): `background-color: rgba(255, 255, 255,
 the DOM, no console errors, hide/show + `inert` behavior (including the
 desktop wheel-scroll path fixed in item 1) all still check out together.
 
-**Second same-day correction: the frost should only apply once scrolled.**
+#### Correction 2 — frost should only apply once scrolled
+
 The previous pass made the frost always-on, including at rest (scrollTop
 0) — but at rest the header is the first thing in the document, nothing's
 scrolled up underneath it yet, so a permanent translucent-white wash there
@@ -490,7 +554,9 @@ styles show `rgba(0, 0, 0, 0)` / `blur(0px)` at `scrollTop: 0` and
 `rgba(255, 255, 255, 0.72)` / `blur(16px)` once scrolled, returning
 cleanly to transparent on scrolling back to the top; no console errors.
 
-**Third same-day correction: frost color, again.** After testing white
+#### Correction 3 — frost color, again
+
+After testing white
 live, the user switched their mind: `--color-list-header-bg` is now
 `rgba(249, 243, 235, 0.72)` — not an arbitrary pick, it's exactly
 `--gradient-bg-list`'s *second*, settled-flat stop (`#f9f3eb`, what the
@@ -498,8 +564,9 @@ page background actually is everywhere past its top ~53px fade), so the
 frost now tints toward the same color the content behind it already sits
 on. Same 72% alpha as both prior passes.
 
-**Fourth: stray rounded corner visible while scrolling — DONE, real bug
-introduced by the hide/show feature.** Reported as "I see top rounded
+#### Correction 4 — stray rounded corner visible while scrolling (real bug introduced by the hide/show feature)
+
+Reported as "I see top rounded
 corners to the header or to the top background sometimes while scrolling
 down or up." Root cause: `HEADER_HIDE_MIN_SCROLL` (64px, "roughly one
 header height") was sized to the header's own height but not checked

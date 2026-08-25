@@ -160,8 +160,13 @@ export function AllStepsView({
       className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl"
       // docs/figma-allsteps-restyle.md: this view is on the same cream
       // palette (#f7e9ca → #f9f3eb) as the home screen's gradient, not the
-      // pinkish --gradient-bg-screen every step screen uses — confirmed via
-      // a fresh pull of this view's own frame (node 702:2694). Its own
+      // pinkish --gradient-bg-screen this comment originally (and
+      // wrongly) assumed every step screen still used — StepScreen.tsx
+      // had already moved to --gradient-bg-home independently, during the
+      // earlier V5 pass (docs/figma-step-screen-restyle.md's own "Screen
+      // background gradient" section), --gradient-bg-screen itself is
+      // unused dead CSS now (see its own tokens.css comment). Confirmed
+      // via a fresh pull of this view's own frame (node 702:2694). Own
       // --gradient-bg-list token, not --gradient-bg-home directly: same
       // colors, but a fixed-px fade distance instead of a percentage — see
       // --gradient-bg-list's own comment in tokens.css for why reusing

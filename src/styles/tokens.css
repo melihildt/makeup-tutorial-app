@@ -53,11 +53,20 @@
     linear-gradient(90deg, #fff8f3 0%, #fff8f3 100%),
     linear-gradient(90deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.03) 100%);
 
-  /* V2: full-screen background gradient, top to bottom — StepScreen only.
-     docs/figma-allsteps-restyle.md: AllStepsView used this too until a
-     fresh pull of its own frame (node 702:2694) showed it's actually on
-     the same cream palette as --gradient-bg-home (see --gradient-bg-list
-     below), not a shared step-screen token as previously assumed. */
+  /* deprecated: V2's full-screen pink/mauve background gradient — no
+     longer used by anything. Kept for reference rather than deleted, same
+     convention as --color-bg above. Both of this token's real consumers
+     have since moved off it independently: docs/figma-step-screen-
+     restyle.md's own "Screen background gradient" section already
+     repoints StepScreen.tsx at --gradient-bg-home directly (the fresh
+     Step 1/7/8 pulls turned out to be the cream family, not this one) —
+     that section's own closing line, claiming this token was "still
+     exactly what AllStepsView expects," was itself wrong and never
+     corrected at the time. docs/figma-allsteps-restyle.md later found the
+     same thing independently for AllStepsView (see --gradient-bg-list
+     below) without cross-referencing that StepScreen had already made the
+     identical move. Confirmed zero remaining `var(--gradient-bg-screen)`
+     usages anywhere in src/ as of this note. */
   --gradient-bg-screen: linear-gradient(180deg, #e6d6d1 0%, #f5e7de 35.561%, #fbf7f5 77.86%);
 
   /* ---------- Radius ---------- */
