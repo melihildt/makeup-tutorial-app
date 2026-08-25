@@ -10,12 +10,18 @@ it used to get wrong; read that doc for anything in that file's own
 scope).
 
 **Git state — read this before assuming anything else in this doc is
-current.** Branch `feature/home-tutorial-stack` (off `main`, untouched).
-Pushed to `origin`, working tree clean, as of this doc's last update —
-run `git status`/`git log --oneline -5` on a fresh session start
-regardless to confirm nothing's changed since; if there's anything beyond
-a clean tree, it's from later than this doc — read the diff before
-trusting this doc's "current state" claims over the actual code.
+current.** **2026-08-25 update: `feature/home-tutorial-stack`'s PR (#1) is
+merged into `main`** (`9f1aa24`) — everything below this point that
+predates this update describes work that's now on `main`, not a
+still-open branch. New work done after the merge (the About/Info overlay,
+see its own section below, plus animation-audit plans 022-024) is on a
+fresh branch, `feature/about-info-overlay`, off `main` at `9f1aa24` — see
+the repo's PR list for its current status rather than trusting a link
+pasted here later. Run `git status`/`git log --oneline -5` on a fresh
+session start regardless to confirm nothing's changed since; if there's
+anything beyond what's described here, it's from later than this doc —
+read the diff before trusting this doc's "current state" claims over the
+actual code.
 
 **Plan 004 is now done** (`plans/004-start-over-rubber-band-friction.md`,
 real rubber-band friction on the Start Over card's drag — replaced the
@@ -56,6 +62,17 @@ plan (spanning `StepScreen.tsx`/`ScreenHeader.tsx`/`TutorialFlow.tsx`/
 `AllStepsView.tsx`, outside this doc's own scope), and execution status
 live in **`plans/README.md`** — not duplicated here since most of that
 work touches files this doc doesn't cover.
+
+**2026-08-25 — a fourth audit ran, scoped to the new About/Info overlay**
+(`src/components/InfoOverlay.tsx`, see its own section below — a screen
+that didn't exist during the first three audits). All 3 findings (022
+press feedback on the overlay's Portfolio/Email links, 023 a stagger
+between the backdrop and card entrance, 024 a failure-state shake on the
+Email copy button) were turned into plans and executed same-session — see
+`plans/README.md` for the full findings table and execution notes,
+including a real correction found during 023's own execution (a shared
+`transition` delay meant for the entrance was also delaying the close;
+fixed by splitting it per-target).
 
 **Three more of that same third audit's findings executed in a later
 session, two of which touch this doc's own scope**: plan 013
@@ -443,6 +460,76 @@ it's the reverse emphasis, pure `translateX` with opacity pinned at 1
 throughout, matching a native push/pop's translate-only feel rather than
 fighting the slide with a simultaneous crossfade.
 
+## About/Info overlay (`src/components/InfoOverlay.tsx`)
+
+New this session (post-merge, see "Git state" above). HomeScreen's info
+icon (top-right, next to the still-decorative user icon) now opens a real
+About/credits screen — Figma node `730:5706` ("Home/Info"), file
+`Tech-Experimentation`. Header icon converted from a bare `<div>` to a
+real `<button>` (`onClick={() => setInfoOpen(true)}`, `aria-label="About"`,
+carries `.header-icon-button` — see the "missed opportunities" note above
+for why that matters); `InfoOverlay` renders as an overlay on top of the
+live `HomeScreen`, not a separate `App.tsx` screen — it behaves like a
+modal (close button, not a back-stack entry), and Home's own content
+staying mounted underneath is load-bearing for the next point.
+
+**Backdrop is a real `backdrop-filter: blur()` over the live HomeScreen,
+not Figma's own duplicated-and-blurred layer** — Figma fakes "blur
+whatever's behind this" by copying the frame and blurring the copy, since
+a static design tool has no other way to do it; a real overlay doesn't
+need that trick and can't drift out of sync with Home's actual content
+(card art, filter selection) the way a hand-copied duplicate could. Two
+tuned constants at the top of the file, `BACKDROP_TINT_OPACITY` (0.68) and
+`BACKDROP_BLUR_PX` (18), control how much of Home shows through — both
+went through several rounds of user feedback (Figma's own literal
+0.9/23px values, which bake in an extra opaque layer Figma didn't need to
+fake blur, made Home basically invisible; a first cut down to 0.45/12px
+swung too far the other way and read as distracting rather than "behind
+glass") before landing here. Both are named, commented tweak knobs — turn
+either down to reveal more of Home, up to hide more of it.
+
+**Email is copy-to-clipboard, not `mailto:`** — real-device testing
+surfaced that `navigator.clipboard` only exists in a secure context
+(https, or `localhost` itself); a phone hitting the dev server over plain
+`http://<lan-ip>:5173` (the normal way to test on a real device mid-dev)
+doesn't qualify, so the modern Clipboard API is simply `undefined` there.
+`copyToClipboard` tries it first, then falls back to the older
+`document.execCommand('copy')` (via an off-screen, focused, selected
+`<textarea>`) which still works over plain HTTP — confirmed fixed on the
+user's own phone after this fallback was added. The label swaps to
+"Copied!" (or "Couldn't copy" on a genuine failure, now with its own
+shake cue — see plan 024) rather than either path silently doing nothing,
+which is what an earlier pass's `catch { return }` used to do on failure.
+
+**Icons**: `CloseIcon` (fi-br-cross-small), `LinkIcon` (fi-br-link),
+`AtIcon` (fi-br-at) are hand-authored inline SVGs tracing real path data
+pulled from Figma's exported assets — same convention as every other icon
+in this app (`HomeScreen.tsx`'s `InfoIcon`/`UserIcon`,
+`ScreenHeader.tsx`'s icon set), not `<img>` tags pointing at Figma's
+asset URLs (those expire in ~7 days). `LinkIcon`/`AtIcon` keep their
+source's baked-in gold (`#E3B345`) fill rather than the app's usual
+`currentColor`/ink-token pattern — a real, intentional accent color in the
+design, matching the About card's own gold texture.
+
+**Background texture**: the About card's gold woven texture is
+`src/assets/home/InfoCard.png` (2x, 564×480) — was already sitting in the
+repo untracked before this session's own work touched it, reused as-is.
+One real fix along the way: the card and the image inside it were both
+independently rounding their corners (`rounded-[24px]` on both), and the
+two independently-antialiased corners landed a hair apart, reading as a
+cropped/doubled edge — fixed by rounding only the clipping container
+(`overflow-hidden` + `rounded-[24px]`) and leaving the image plain, the
+same single-clip-source pattern `TutorialCard.tsx`'s `CardBehind` already
+uses.
+
+**Portfolio** links to `https://melisahildt.com` (confirmed with the
+user, not guessed) in a new tab.
+
+Animation-audit findings/plans for this screen are the "fourth audit"
+noted above — see `plans/022-infooverlay-link-press-feedback.md`,
+`plans/023-infooverlay-card-entrance-stagger.md`,
+`plans/024-copy-email-failure-shake.md`.
+
 ## Bugs fixed (worth knowing before you "fix" them again)
 
 Framer Motion sharp edges that produced real, confusing bugs. Still fully
@@ -714,8 +801,16 @@ CSS and JS level. Two minor, additive "missed opportunities" were noted
 but not turned into plans (not asked for): `ProductsPreview`'s 3
 thumbnails could use a 30-80ms stagger when a card flips to its back
 face, and the header info/profile icon buttons have no press feedback at
-all. See `plans/README.md` for the full summary table, execution notes,
-and dependencies between plans.
+all. **The info half of that second item is now resolved, as a side
+effect of wiring the info icon up to a real feature rather than a
+follow-up audit fix** — it's a real `<button>` now (was a bare `<div>`)
+carrying `.header-icon-button`, the same press/hover feedback class
+`ScreenHeader.tsx`'s four buttons already use (see plan 009). **The
+profile/user icon is still a bare, unwired `<div>` with no press feedback
+and no click handler** — still open, still exactly the gap this note
+originally flagged, just narrower now than "both icons." See
+`plans/README.md` for the full summary table, execution notes, and
+dependencies between plans.
 
 ## Testing notes — important limitation
 
@@ -754,14 +849,16 @@ src/App.tsx                  Home↔Tutorial screen swap — now a real AnimateP
 src/TutorialFlow.tsx         The step-by-step tutorial screen (only reachable via Soft Smokey Eye) — note: directly in src/, not src/components/
 
 src/components/
-  HomeScreen.tsx              Header + filter chips (LookSelector, owns `selectedType`/LookType) + <TutorialStack>
+  HomeScreen.tsx              Header + filter chips (LookSelector, owns `selectedType`/LookType) + <TutorialStack>; info icon is a real button now, see InfoOverlay.tsx
   TutorialCard.tsx            Everything described above — the whole stack feature lives here
+  InfoOverlay.tsx             About/credits overlay opened from HomeScreen's info icon — see "About/Info overlay" above
 
 src/data/stepContent.ts       Step-by-step flow's own product photography — reused by TutorialCard.tsx's ProductsPreview for Soft Smokey Eye's real thumbnails (see "Tutorial detail flip" above)
 
 src/assets/
   looks/                      Per-tutorial photo pairs + card-ghost-texture.jpg (day) + -night.png/-glam.png
   filter-chips/                Shared woven texture, tinted per chip via mix-blend-mode
+  home/InfoCard.png             About card's gold woven texture (2x) — see "About/Info overlay" above
   product-images/              Real product photos (also src/data/stepContent.ts's own source)
 
 src/styles/tokens.css         --radius-tutorial-card, --shadow-tutorial-card, --duration-*/--ease-out-quart, --color-timer-badge-bg, --color-product-placeholder (new), etc. — search "tutorial-card". --color-card-behind-tint is deprecated.

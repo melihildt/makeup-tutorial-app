@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { TUTORIALS, TutorialStack } from './TutorialCard'
+import { InfoOverlay } from './InfoOverlay'
 import dayTexture from '../assets/filter-chips/day-texture.jpg'
 import nightTexture from '../assets/filter-chips/night-texture.jpg'
 import glamTexture from '../assets/filter-chips/glam-texture.jpg'
@@ -370,12 +371,14 @@ function LookSelectorChip({
  * TutorialStack's own prop and CardBehind/StartOverCard in TutorialCard.tsx)
  * — a deliberate first step toward the filters doing something, taken
  * before the actual per-look card sets exist, per the user's own framing
- * ("until we add more cards"). The info/user icon buttons in the header are
- * new and purely decorative — no tap handlers wired yet, same "not
- * functional yet" spirit as the filters otherwise still are.
+ * ("until we add more cards"). The user icon button is still purely
+ * decorative, same "not functional yet" spirit as the filters otherwise
+ * still are — but the info icon now opens InfoOverlay.tsx's About/credits
+ * modal (Figma node 730:5706), see that file's own doc comment.
  */
 export function HomeScreen({ onSelectLook }: HomeScreenProps) {
   const [selectedType, setSelectedType] = useState<LookType>('day')
+  const [infoOpen, setInfoOpen] = useState(false)
 
   return (
     // md:py-6, not py-6: this inset only exists to keep the rounded-2xl
@@ -432,12 +435,15 @@ export function HomeScreen({ onSelectLook }: HomeScreenProps) {
               Beauty Notes
             </p>
             <div className="flex items-center gap-2">
-              <div
-                className="flex size-[40px] items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+              <button
+                type="button"
+                onClick={() => setInfoOpen(true)}
+                aria-label="About"
+                className="header-icon-button flex size-[40px] items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
                 style={{ background: 'var(--color-header-icon-bg)', borderColor: 'var(--color-header-icon-border)' }}
               >
                 <InfoIcon />
-              </div>
+              </button>
               <div
                 className="flex size-[40px] items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
                 style={{ background: 'var(--color-header-icon-bg)', borderColor: 'var(--color-header-icon-border)' }}
@@ -482,6 +488,8 @@ export function HomeScreen({ onSelectLook }: HomeScreenProps) {
           <TutorialStack tutorials={TUTORIALS} onSelect={onSelectLook} lookType={selectedType} />
         </div>
       </div>
+
+      <InfoOverlay open={infoOpen} onClose={() => setInfoOpen(false)} />
     </div>
   )
 }

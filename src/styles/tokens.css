@@ -90,6 +90,7 @@
      docs/handoff.md). Natural-deceleration curve, not a CSS default —
      bounce/elastic curves are deliberately not used anywhere in this app. */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* AUDIT.md's strong ease-in-out for on-screen movement — first use: CopyEmailButton's failure shake (InfoOverlay.tsx), a symmetric back-and-forth motion where ease-out-quart's asymmetric fast-start doesn't fit. */
   --duration-instant: 150ms; /* button press, toggle */
   --duration-base: 200ms;    /* hover, small state changes */
   --duration-layout: 350ms;  /* larger layout/content changes */
