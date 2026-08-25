@@ -219,6 +219,36 @@ body {
   to { opacity: 1; transform: scale(1); }
 }
 
+/* CardBack's product-photo preview (ProductsPreview, TutorialCard.tsx) —
+   the three thumbnails pop in from the center outward once the flip
+   reveals them, instead of just riding the card's own opacity crossfade
+   with no entrance of their own. A separate keyframe from
+   illustration-layer-in just above rather than reusing it: that one is
+   deliberately quiet (0.96, many small layers building up softly); this
+   is 3 chunky photos in a single rare "reveal the detail view" moment, so
+   it's allowed a bigger delight budget.
+
+   translateY(24px) + scale(0.7), not AUDIT.md's usual 0.9–0.97 UI band —
+   the first pass stayed inside that band (0.9, opacity+scale only) and
+   read as "the middle one barely moves, the others just appear": at a
+   10% size change, opacity dominates what you actually perceive, so the
+   scale itself was nearly invisible. Widened deliberately, per the user's
+   own follow-up call, specifically because this is the rare/delight tier
+   (AUDIT.md's frequency table), not an everyday control — still never
+   scale(0), nothing appears from nothing. The added translateY is what
+   makes these visibly rise into place from below, rather than just
+   growing in place — "come up from the bottom middle" per that same
+   follow-up. Scale/translate + opacity only (no rotate here) —
+   ProductsPreview's own per-thumbnail tilt (∓7deg) is a separate, static
+   transform on a nested element, so this animation never touches it:
+   animating `transform` on the same element that already carries an
+   inline rotate would replace that rotate for the animation's duration
+   instead of composing with it. */
+@keyframes product-preview-pop-in {
+  from { opacity: 0; transform: translateY(24px) scale(0.7); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 /* AllStepsView's own mount fade — see its root element's comment for why
    this lives only there and not on StepScreen too. */
 @keyframes view-fade-in {
