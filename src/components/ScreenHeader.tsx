@@ -188,7 +188,13 @@ export function ScreenHeader({
   const isListView = activeView === 'list'
 
   return (
-    <div className="flex w-full items-start justify-between px-[12px]">
+    // px-[--space-sm] (16px), not the old flat 12px — matches the app-wide
+    // screen-edge margin guideline (see tokens.css's own note on
+    // --space-sm/--space-2xs, Figma node 738:8822): this header's icons
+    // should sit flush with the same 16px line every other section on
+    // these screens now aligns to (StepScreen's content column/product
+    // sheet, AllStepsView's card), not its own separate inset.
+    <div className="flex w-full items-start justify-between px-[--space-sm]">
       {/* Real back button on both views, not just the per-step screens.
           Previously hidden (an invisible spacer) on the All Steps list
           view under the assumption there was nothing to go "back" from

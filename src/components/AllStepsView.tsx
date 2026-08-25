@@ -230,15 +230,18 @@ export function AllStepsView({
             collapsing nav bar rather than a flat panel popping in and out —
             content sliding underneath it shows through, blurred, while
             it's up. */}
-        {/* pt-4 md:pt-6, not pt-6 — matches StepScreen's own root split (see
-            its comment on the same values): the extra 8px on desktop only
-            exists to keep this header's position identical to StepScreen's
-            (whose own inset there serves the rounded-corner/backdrop look),
-            not because this sticky header needs it. Without matching them,
-            the toggle would sit at a different vertical position in each
-            view on mobile — a visible jump switching between them. */}
+        {/* pt-[--space-2xs] md:pt-6, not pt-6 — matches StepScreen's own
+            root split (see its comment on the same values): 8px on mobile
+            is the app-wide screen-edge top-margin guideline (tokens.css,
+            Figma node 738:8822) both screens now share; the extra bump to
+            md:pt-6 on desktop only exists to keep this header's position
+            identical to StepScreen's (whose own inset there serves the
+            rounded-corner/backdrop look), not because this sticky header
+            needs it. Without matching them, the toggle would sit at a
+            different vertical position in each view on mobile — a visible
+            jump switching between them. */}
         <div
-          className="sticky top-0 z-10 pb-2 pt-4 md:pt-6"
+          className="sticky top-0 z-10 pb-2 pt-[--space-2xs] md:pt-6"
           style={{
             background: isScrolled ? 'var(--color-list-header-bg)' : 'transparent',
             // 'blur(0px)', not 'none', for the off state — both render
@@ -264,7 +267,11 @@ export function AllStepsView({
           />
         </div>
 
-        <div className="px-[--space-xs] pb-4">
+        {/* px-[--space-sm] (16px), not the old px-[--space-xs] (12px) —
+            app-wide screen-edge margin guideline (tokens.css, Figma node
+            738:8822), so this card's left/right edges line up with the
+            header above it instead of sitting 4px further in. */}
+        <div className="px-[--space-sm] pb-4">
           {/* Quiet fade + small rise on mount, applied to the white card
               only — not the screen's own root, which would also fade in
               the background gradient and the header/toggle along with it.
@@ -438,8 +445,12 @@ export function AllStepsView({
           (reported as "I see the rounded corners at the end of the page").
           Same opacity-transition treatment as the header's own fade tail
           above, not an abrupt show/hide. */}
+      {/* inset-x-[--space-sm] — must track the card wrapper's own
+          horizontal inset above (also --space-sm now, was --space-xs) so
+          this fade's rounded bottom corners actually land on the card's
+          real edges rather than sitting narrower than it. */}
       <div
-        className="pointer-events-none absolute inset-x-[--space-xs] bottom-0 h-10 rounded-b-[--radius-card]"
+        className="pointer-events-none absolute inset-x-[--space-sm] bottom-0 h-10 rounded-b-[--radius-card]"
         style={{
           background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff 100%)',
           opacity: hasReachedBottom ? 0 : 1,

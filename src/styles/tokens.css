@@ -77,6 +77,26 @@
   --radius-badge: 4px;    /* V2: "N/7" progress badge */
 
   /* ---------- Spacing ---------- */
+  /* --space-2xs (8px) and --space-sm (16px) are also the app's screen-edge
+     margin guideline: every top-level screen/overlay should sit 8px from
+     the very top of the frame and 16px in from the left/right edges —
+     header row, content sections, and any bottom sheet/card alike, so
+     everything's left/right edges line up against the same line down the
+     screen. Sourced directly from the user's own Figma reference (file
+     6Mr7K0RONTS8SltZRJtqYj, node 738:8822 "Grid-fixes" — the All_Steps
+     view's "Top Header" sits at y=8, its "Back-button" and the "Products"
+     block's own "Container" both sit at x=16), and applied consistently
+     across HomeScreen, StepScreen, AllStepsView, ScreenHeader, and
+     InfoOverlay as of that pass — several of these previously used other
+     values (StepScreen/AllStepsView's header inset was pt-4/16px,
+     ScreenHeader's own horizontal inset was 12px, StepScreen's product
+     sheet and content column were 12px/24px) inherited from earlier,
+     less-authoritative pulls; this reference supersedes those. New
+     screens should use these same two tokens for their own outer top/
+     left/right inset rather than picking a fresh value — bottom inset
+     isn't part of this guideline and is left to each screen's own
+     content. */
+  --space-2xs: 8px;
   --space-xs: 12px;
   --space-sm: 16px;
   --space-md: 20px;

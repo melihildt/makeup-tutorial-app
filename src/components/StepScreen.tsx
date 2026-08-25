@@ -282,18 +282,24 @@ export function StepScreen({
     // desktop height (so it reads as a floating card, not a full-window
     // page) — h-full just means "fill whatever height that wrapper gives
     // me" instead of overriding it with another viewport-relative unit.
-    // pt-4, not py-6: matches node 615:3037's Content wrapper (pt-[16px],
-    // no bottom padding) — the mobile-real numbers this whole file was
-    // re-tuned against. md:pt-6 md:pb-6 restores the old py-6 but desktop-
-    // only, same reasoning as HomeScreen's root: that inset only earns its
-    // keep on desktop, where it keeps the rounded corners visible against
-    // the page backdrop; on mobile the frame fills the real viewport edge-
-    // to-edge and rounding is dropped there too (md:rounded-2xl), so it
-    // reads as a flush square screen — unconditional py-6 was just costing
-    // ~48px of real content height for nothing — concretely part of why
-    // the eye illustration was crowding the product card on a real device.
+    // pt-[--space-2xs] (8px), not py-6: the app-wide screen-edge margin
+    // guideline (tokens.css's own note, Figma node 738:8822) — supersedes
+    // the older pt-4/16px this was tuned to against node 615:3037's
+    // Content wrapper, a less-authoritative earlier pull. AllStepsView's
+    // own sticky header intentionally mirrors this exact value (see that
+    // file's comment on its own pt-[--space-2xs]) so the header sits at
+    // the same vertical position in both views — keep them in sync if this
+    // ever changes again. md:pt-6 md:pb-6 restores the old py-6 but
+    // desktop-only, same reasoning as HomeScreen's root: that inset only
+    // earns its keep on desktop, where it keeps the rounded corners
+    // visible against the page backdrop; on mobile the frame fills the
+    // real viewport edge-to-edge and rounding is dropped there too
+    // (md:rounded-2xl), so it reads as a flush square screen —
+    // unconditional py-6 was just costing ~48px of real content height for
+    // nothing — concretely part of why the eye illustration was crowding
+    // the product card on a real device.
     <div
-      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden pt-4 md:h-full md:rounded-2xl md:pb-6 md:pt-6"
+      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden pt-[--space-2xs] md:h-full md:rounded-2xl md:pb-6 md:pt-6"
       // V5 (docs/figma-step-screen-restyle.md): background moved off the
       // shared --gradient-bg-screen token (#e6d6d1 → #f5e7de → #fbf7f5,
       // still 3-stop) onto --gradient-bg-home (#f7e9ca → #f9f3eb 7.179%,
@@ -443,7 +449,16 @@ export function StepScreen({
         </div>
 
         {/* Eye illustration + progress badge + title/description — node
-            615:3037's "Graph + Step" block: p-[24px] all around. Gap
+            615:3037's "Graph + Step" block was p-[24px] all around;
+            horizontal is now px-[--space-sm] (16px) instead, matching the
+            app-wide screen-edge margin guideline (tokens.css, Figma node
+            738:8822) so this block's left/right edges line up with the
+            header and product sheet below rather than sitting 8px further
+            in. Vertical stays py-[--space-lg] (24px, split out rather than
+            changed) — that's this column's own top/bottom breathing room
+            against the header above and product sheet below, unrelated to
+            the horizontal margin guideline, and min-h-full/the reserved-
+            height constants below already account for it as-is. Gap
             between each of the 3 children (badge, illustration, title
             block) was 28px under that V3 spacing pass, replacing the old
             40/52/52px gaps (Figma's V1 Step_7 spacing, node 509:7122) —
@@ -482,7 +497,7 @@ export function StepScreen({
             description still needs to grow *past* 100% and let the
             ancestor's overflow-y-auto scroll, not get clipped at exactly
             the available height. */}
-        <div className="relative flex min-h-full flex-col items-center gap-[40px] p-[--space-lg]">
+        <div className="relative flex min-h-full flex-col items-center gap-[40px] px-[--space-sm] py-[--space-lg]">
           {/* Kept in the layout (not unmounted) on the done screen — hiding
               it with `invisible` rather than skipping it entirely preserves
               the same 52px gap before the illustration, so the illustration
@@ -619,11 +634,15 @@ export function StepScreen({
           V5 (docs/figma-step-screen-restyle.md): dropped the pb-4 that
           used to inset it from the bottom edge — Figma's own "Products"
           wrapper has no bottom padding at all, the card's bottom edge is
-          the wrapper's own edge. Side padding (px-[--space-xs]) is
-          UNCHANGED though — easy to misread this as "go fully edge-to-
-          edge," but Figma's pulled markup keeps that same 12px horizontal
-          inset on this outer wrapper; only the *card's own* corners and
-          the *bottom* gap changed, not the sides.
+          the wrapper's own edge. Side padding is now px-[--space-sm]
+          (16px) — was px-[--space-xs] (12px) under that V5 pull; the
+          app-wide screen-edge margin guideline (tokens.css, Figma node
+          738:8822 — that node's own "Products" > "Container" sits at
+          x=16, 370px wide inside a 402px frame) supersedes it, so this
+          sheet's edges now line up with the header and content column
+          above instead of sitting 4px further in. Only the *sides*
+          changed here; the *bottom* is still the wrapper's own edge, no
+          bottom padding.
 
           minHeight wrapper (new) — fixes the step-screen text (above)
           landing at a different height depending on which step's sheet
@@ -730,7 +749,7 @@ export function StepScreen({
           {content.products.length > 0 && !isFinishing && (
             <motion.div
               key="product-card"
-              className="px-[--space-xs]"
+              className="px-[--space-sm]"
               // Bottom-anchored, matching the card's actual fixed position on
               // screen — both this exit and the entrance below rise/sink from
               // the bottom edge now, not the top, so the scale reads as
