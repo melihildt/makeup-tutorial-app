@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import {
   animate as animateValue,
   motion,
@@ -502,10 +502,44 @@ const PRODUCTS_PREVIEW_COUNT = 3
  *  products) shows "+5" — 8 total minus the 3 shown here, not the raw
  *  total. Clamped at 0 for a tutorial with fewer than
  *  PRODUCTS_PREVIEW_COUNT products total (an edge case placeholder data
- *  doesn't hit, but real data eventually might). */
-function ProductsPreview({ tutorial }: { tutorial: Tutorial }) {
+ *  doesn't hit, but real data eventually might).
+ *
+ *  `justRevealed` (new) — true for exactly the render where this row
+ *  should play its pop-in entrance (product-preview-pop-in, index.css):
+ *  the tap-driven flip in TutorialStackCard, keyed by that card's own
+ *  `isFlipped`. Not true for the reduced-motion stack (TutorialStack's
+ *  own `reduceMotion` branch swaps this content in instantly with no
+ *  transition at all, per that branch's own comment — "fewer and
+ *  gentler, not zero" means removing motion there, not adding a
+ *  different one), so callers that can't tell may just omit it; the
+ *  `reduceMotion` check below is a second, independent guard either way
+ *  (this device's own OS-level setting, not which call site rendered
+ *  it). Deliberately keyed on the *row*, not on each thumbnail alone —
+ *  see the `key` below. */
+function ProductsPreview({ tutorial, justRevealed = false }: { tutorial: Tutorial; justRevealed?: boolean }) {
+  const reduceMotion = useReducedMotion()
   const shadow = '0px 2px 8px 0px rgba(67, 48, 35, 0.1)'
   const remaining = Math.max(0, tutorial.productsUsedCount - PRODUCTS_PREVIEW_COUNT)
+  // Base delay (~260ms) estimates when CardBack actually becomes visible,
+  // not when this row mounts: cardBackFlipOpacity (TutorialStackCard)
+  // only starts rising once the flip's flipRotateY crosses 105 of its
+  // 180deg travel (58% of the way through), and the tap-flip spring's own
+  // nominal duration is 450ms (handleCardTap) — 0.58 × 450 ≈ 260. Without
+  // it, the pop-in (mount-triggered) would run and finish while CardBack
+  // is still at opacity 0, invisible, so by the time the flip actually
+  // reveals it the photos would already be sitting at rest with nothing
+  // left to see. +60ms stagger on top of that (skill's 30-80ms band) for
+  // "pop from the middle": center first, the two outer photos a beat
+  // behind, reading as bursting outward rather than all three at once.
+  // Approximated from the spring's nominal numbers, not measured frame-
+  // by-frame — worth a feel-check on a real device against the actual
+  // flip if the pop ever reads late/early relative to the reveal.
+  const POP_BASE_DELAY_MS = 260
+  const POP_STAGGER_MS = 60
+  const popStyle = (delayMs: number): CSSProperties | undefined =>
+    justRevealed && !reduceMotion
+      ? { animation: 'product-preview-pop-in var(--duration-base) var(--ease-out-quart) both', animationDelay: `${delayMs}ms` }
+      : undefined
   const thumbnail = (rotateDeg: number, image?: string) => (
     <div
       className="h-[108px] w-[96px] shrink-0 overflow-hidden rounded-[18px] border-[3px] border-solid border-white"
@@ -517,12 +551,34 @@ function ProductsPreview({ tutorial }: { tutorial: Tutorial }) {
   const [imageA, imageB, imageC] = tutorial.productImages ?? []
   return (
     <div className="flex w-full flex-col items-center gap-2 px-6 pt-6">
-      <div className="flex items-center justify-center">
-        <div className="mr-[-16px] flex h-[119px] w-[108px] shrink-0 items-center justify-center">
+      {/* key={String(justRevealed)}: forces this row to remount every time
+          justRevealed flips (both directions — the false-state remount is
+          harmless, CardBack is invisible then anyway), same "animation
+          needs a fresh mount" reasoning as CheckIndicator/ScreenHeader —
+          product-preview-pop-in is a CSS `animation`, which only plays on
+          mount, and this row otherwise stays mounted continuously across
+          flips (CardBack itself never unmounts, see TutorialStackCard's
+          own comment on that), so without a key it would only ever play
+          once, on this card's very first render. Animation styles live on
+          each thumbnail's own wrapper below (not on the thumbnail div
+          itself), so the wrapper's fresh `transform: scale()` never fights
+          that div's own static `rotate()`. */}
+      <div key={String(justRevealed)} className="flex items-center justify-center">
+        <div
+          className="mr-[-16px] flex h-[119px] w-[108px] shrink-0 items-center justify-center"
+          style={popStyle(POP_BASE_DELAY_MS + POP_STAGGER_MS)}
+        >
           {thumbnail(-7, imageA)}
         </div>
-        <div className="mr-[-16px]">{thumbnail(0, imageB)}</div>
-        <div className="flex h-[119px] w-[108px] shrink-0 items-center justify-center">{thumbnail(7, imageC)}</div>
+        <div className="mr-[-16px]" style={popStyle(POP_BASE_DELAY_MS)}>
+          {thumbnail(0, imageB)}
+        </div>
+        <div
+          className="flex h-[119px] w-[108px] shrink-0 items-center justify-center"
+          style={popStyle(POP_BASE_DELAY_MS + POP_STAGGER_MS)}
+        >
+          {thumbnail(7, imageC)}
+        </div>
       </div>
       <p
         className="text-center text-[12px] opacity-70"
@@ -608,11 +664,15 @@ function TutorialDetailCard({
   onFlipBack,
   onStart,
   disabled,
+  justRevealed,
 }: {
   tutorial: Tutorial
   onFlipBack?: () => void
   onStart?: () => void
   disabled?: boolean
+  /** Passed straight through to ProductsPreview — see that component's
+   *  own comment. */
+  justRevealed?: boolean
 }) {
   return (
     <div
@@ -652,7 +712,7 @@ function TutorialDetailCard({
           </p>
         </DetailPill>
       </div>
-      <ProductsPreview tutorial={tutorial} />
+      <ProductsPreview tutorial={tutorial} justRevealed={justRevealed} />
       <div className="flex w-full flex-1 items-end justify-center pt-4">
         <StartTutorialButton onStart={disabled ? undefined : onStart} disabled={disabled} />
       </div>
@@ -1901,6 +1961,7 @@ function TutorialStackCard({
             onFlipBack={isInteractive ? handleCardTap : undefined}
             onStart={isInteractive ? onSelect : undefined}
             disabled={!isInteractive}
+            justRevealed={isFlipped}
           />
         </motion.div>
       )}
