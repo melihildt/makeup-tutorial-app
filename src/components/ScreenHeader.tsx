@@ -154,9 +154,14 @@ function WidgetIcon({ active }: { active: boolean }) {
 // Search/Widget is active. Exactly the same tokens + shape HomeScreen.tsx
 // already uses for its own header icons (--color-header-icon-bg/border,
 // --radius-filter-chip — see that token's own tokens.css comment: "V4
-// reuses this same radius for the header icon boxes too"), reused here
-// rather than duplicated under a new name.
-const HEADER_CHIP_STYLE: CSSProperties = {
+// reuses this same radius for the header icon boxes too") — this comment
+// already said "reused here rather than duplicated under a new name" back
+// when this constant was first written, but it was never actually
+// `export`ed, so HomeScreen.tsx's info/user icon buttons and InfoOverlay
+// .tsx's close button each ended up re-typing the same object literal by
+// hand anyway (code review finding #7). Exported now so those call sites
+// can import and spread it instead.
+export const HEADER_CHIP_STYLE: CSSProperties = {
   background: 'var(--color-header-icon-bg)',
   borderColor: 'var(--color-header-icon-border)',
 }
