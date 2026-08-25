@@ -144,8 +144,40 @@ export function StepScreen({
   // to a plain fade (same treatment AllStepsView uses for its own card)
   // instead of guessing a direction that isn't real.
   const prevStepRef = useRef<number | null>(null)
-  const hasKnownDirection = prevStepRef.current !== null
-  const direction = prevStepRef.current !== null && step < prevStepRef.current ? 'backward' : 'forward'
+
+  // hasKnownDirection/direction, frozen per step instead of recomputed on
+  // every render — fixes a real bug, not just a defensive rewrite. Reading
+  // prevStepRef.current fresh on every render (the old approach) meant its
+  // value silently changed between this step's *own* first and second
+  // render: null on the first (nothing committed yet), but already set to
+  // `step` itself by the time any later render of that same step happens,
+  // since the effect below runs right after that first commit. So
+  // hasKnownDirection flipped false → true, and the content div's
+  // `animation` style two effects down actually changed value — from
+  // view-fade-in to step-content-in — on the *second* render of a step the
+  // user never actually navigated away from. A changed animation-name
+  // always (re)starts that animation, so any re-render of the step screen
+  // for an unrelated reason (checking a product, most commonly — step 1's
+  // first product ships pre-checked, so the very first tap a user makes
+  // there is on the second product) replayed the title/description
+  // slide-in. Reported as "the text and description animate when I check
+  // the second product" and confirmed live: getAnimations() on that div
+  // showed a fresh step-content-in run (currentTime 0) starting right on
+  // that tap, not just on Next/Back. Computing this once per step — the
+  // first time that step's content renders — and reusing it for every
+  // later render of the *same* step keeps the style value (and therefore
+  // the animation) stable until the step genuinely changes.
+  const contentAnimRef = useRef<{ step: number; hasKnownDirection: boolean; direction: 'forward' | 'backward' } | null>(
+    null,
+  )
+  if (contentAnimRef.current === null || contentAnimRef.current.step !== step) {
+    contentAnimRef.current = {
+      step,
+      hasKnownDirection: prevStepRef.current !== null,
+      direction: prevStepRef.current !== null && step < prevStepRef.current ? 'backward' : 'forward',
+    }
+  }
+  const { hasKnownDirection, direction } = contentAnimRef.current
   useEffect(() => {
     prevStepRef.current = step
   }, [step])
