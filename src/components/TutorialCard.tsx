@@ -1266,7 +1266,22 @@ function TutorialStackCard({
   // combiner (see the ghost-reveal math below for why that distinction
   // matters).
   const isFrontCard = index === activeCardIndex
-  const liveIndexForOthers = useTransform([activeIndex, dragProgress], ([a, d]) => a + d)
+  // Explicit `number[]` annotation on the destructured callback param —
+  // framer-motion's array-form useTransform overload types its callback
+  // as `(input: I[]) => O` (MultiTransformer, dist/index.d.ts), a plain
+  // array, not a fixed-length tuple. Destructuring a bare `([a, d]) => …`
+  // with no annotation left TS unable to infer `I` from the union input
+  // type (MotionValue<string>[] | MotionValue<number>[] | ...), so both
+  // `a`/`d` came back `unknown` — a real `tsc -b` build failure, not
+  // visible under `tsc --noEmit` alone the same way. `number[]` (not
+  // `[number, number]` — a tuple is a *different*, incompatible type from
+  // what `I[]` actually resolves to, confirmed the hard way: annotating
+  // it as a tuple satisfies this call site but breaks the overload
+  // resolution for every other array-form useTransform call in this file,
+  // cascading into ~17 new errors elsewhere). Every array-form
+  // useTransform call below needed this same `number[]` annotation, not
+  // just this one.
+  const liveIndexForOthers = useTransform([activeIndex, dragProgress], ([a, d]: number[]) => a + d)
   const effectiveIndex = isFrontCard ? activeIndex : liveIndexForOthers
   const { restRotateDeg, opacity, zIndex, detailsOpacity, contentOpacity } = useCardMotion(effectiveIndex, index, total)
   // The live dragProgress preview (above) means the peek's own zIndex can
@@ -1373,8 +1388,8 @@ function TutorialStackCard({
   // outer `opacity` so a departing card's fade-out applies (contentOpacity
   // is always 1 there, so ghostOpacity comes out to 0 — no ghost on exit,
   // only on approach; see contentOpacity's own comment in useCardMotion).
-  const ghostOpacity = useTransform([opacity, contentOpacity], ([slot, content]) => slot * (1 - content))
-  const contentFinalOpacity = useTransform([opacity, contentOpacity], ([slot, content]) => slot * content)
+  const ghostOpacity = useTransform([opacity, contentOpacity], ([slot, content]: number[]) => slot * (1 - content))
+  const contentFinalOpacity = useTransform([opacity, contentOpacity], ([slot, content]: number[]) => slot * content)
   // CardFront's actual rendered opacity — contentFinalOpacity (peek-reveal/
   // departure fade, unrelated to flipping) composed with cardFrontFlipOpacity
   // (the anti-flicker crossfade, see flipRotateY's own comment). Same
@@ -1382,7 +1397,7 @@ function TutorialStackCard({
   // everywhere else rather than picking between two competing opacities.
   const cardFrontOpacity = useTransform(
     [contentFinalOpacity, cardFrontFlipOpacity],
-    ([content, flip]) => content * flip,
+    ([content, flip]: number[]) => content * flip,
   )
   // CardBack's own equivalent — same reasoning as cardFrontOpacity just
   // above, composed with cardBackFlipOpacity instead. Without
@@ -1399,7 +1414,7 @@ function TutorialStackCard({
   // abrupt cut instead of the same graceful fade CardFront gets.
   const cardBackOpacity = useTransform(
     [contentFinalOpacity, cardBackFlipOpacity],
-    ([content, flip]) => content * flip,
+    ([content, flip]: number[]) => content * flip,
   )
   // isFrontCard itself is computed above (needed earlier, for
   // effectiveIndex). Second question here: which card is allowed to
@@ -1439,12 +1454,12 @@ function TutorialStackCard({
   // resolves to the same values the old conditional pose would have
   // picked, just from one continuous, always-live template instead of
   // two competing ones.
-  const totalRotate = useTransform([restRotateDeg, dragRotate], ([rest, drag]) => rest + drag)
+  const totalRotate = useTransform([restRotateDeg, dragRotate], ([rest, drag]: number[]) => rest + drag)
   // gripScale (picked-up feedback) and flightScale (fly-off shrink) are
   // both legitimate, independent reasons this card's own scale might not
   // be 1 — composed the same "always one continuous value" way as
   // totalRotate above, not two competing scale bindings.
-  const totalScale = useTransform([gripScale, flightScale], ([grip, flight]) => grip * flight)
+  const totalScale = useTransform([gripScale, flightScale], ([grip, flight]: number[]) => grip * flight)
   // rotateY sits safely alongside the existing Z-axis `rotate` here: the
   // only card whose flipRotateY is ever nonzero is the Start Over card,
   // right after it's tapped, at which point it's still isFrontCard (see
