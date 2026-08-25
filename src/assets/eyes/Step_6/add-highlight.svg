@@ -1,3 +1,19 @@
+<!-- stdDeviation turned DOWN from the literal Figma export (13.1997) to 5.
+     At the literal value this white glow is invisible — not just here,
+     but in Figma's own composited render too (verified against node
+     693:6908, the Step_7 "Highlight the Inner Corner" frame): a shape
+     this small (~48x27 units) blurred that heavily spreads its white fill
+     so thin that its peak alpha reads as no contrast at all against this
+     illustration's light skin-tone background at this spot. Confirmed via
+     a live-DOM patch test that the shape's *position* is correct (it
+     lands on skin beside the eye corner, not on the white sclera) — the
+     invisibility is purely blur-vs-size, not placement. Reduced blur only
+     (no color/opacity change) is the deliberate fix. Tested visible range
+     is ~0.5 (crisp, hard-edged) to just under 6 — it fades back to
+     imperceptible by 8, so don't go above ~6. Its twin in
+     ../Step_7/add-highlight.svg shares this exact shape and must be kept
+     in sync if this value ever changes. -->
+
 <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="100.234" height="81.6989" viewBox="0 0 100.234 81.6989" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="[Add] Highlight" filter="url(#filter0_f_0_90)">
 <path d="M73.7829 40.7588C73.1216 44.5092 70.3712 48.2228 57.0402 53.0749C41.2538 58.8207 27.3745 52.8071 26.4493 42.231C25.5241 31.6551 37.5962 24.2123 53.3032 26.9818C68.8751 32.3795 74.4442 37.0084 73.7829 40.7588Z" fill="white"/>
@@ -6,7 +22,7 @@
 <filter id="filter0_f_0_90" x="-1.58199e-10" y="-5.83255e-08" width="100.234" height="81.6988" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
 <feFlood flood-opacity="0" result="BackgroundImageFix"/>
 <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-<feGaussianBlur stdDeviation="13.1997" result="effect1_foregroundBlur_0_90"/>
+<feGaussianBlur stdDeviation="5" result="effect1_foregroundBlur_0_90"/>
 </filter>
 </defs>
 </svg>
