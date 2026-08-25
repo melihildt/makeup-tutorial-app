@@ -77,10 +77,30 @@ function App() {
     // on a blank page. md:py-10 keeps some breathing room on short windows
     // before md:max-h-[90dvh] (on the inner frame) kicks in to shrink it
     // instead of overflowing.
-    // overflow-x-hidden here too, not just the inner frame below — belt and
-    // suspenders against horizontal scroll/bounce (see index.css's global
-    // html/body rule for the main fix and why).
-    <div className="flex min-h-dvh w-full flex-col items-center overflow-x-hidden bg-[--color-page-backdrop] md:justify-center md:py-10">
+    // overflow-hidden (was overflow-x-hidden only) — belt and suspenders
+    // against horizontal scroll/bounce (see index.css's global html/body
+    // rule for the main fix and why), but the switch to the shorthand,
+    // hiding *both* axes, is a real bug fix, not just tidying: setting only
+    // overflow-x makes the CSS Overflow spec silently promote the other,
+    // still-default axis from `visible` to `auto` (the exact same "latent
+    // scrollable surface" gotcha AllStepsView.tsx's own scroll container and
+    // HomeScreen.tsx's card stack already call out in their own comments,
+    // just the mirrored axis here). Confirmed as a real, reproducible bug,
+    // not just a defensive worry: at the md breakpoint this wrapper switches
+    // to `md:justify-center md:py-10` (centering the fixed-height inner
+    // frame with padding around it), and the accidental overflow-y:auto
+    // made this wrapper itself a valid scroll target — a real mouse-wheel
+    // scroll gesture anywhere over the app got captured by its own empty,
+    // invisible scroll range instead of ever reaching AllStepsView's nested
+    // overflow-y-auto list underneath, i.e. exactly the "can't scroll on
+    // desktop" bug this was reported as. Verified via getComputedStyle
+    // (overflowY read back as 'auto' despite no overflow-y class ever being
+    // set) and by patching just that one property to 'hidden' at runtime,
+    // which fixed desktop wheel-scrolling immediately. Below md this
+    // wrapper is `min-h-dvh` with content that exactly fills it, so the same
+    // accidental auto never had anything to actually scroll — that's why
+    // this only ever showed up on desktop.
+    <div className="flex min-h-dvh w-full flex-col items-center overflow-hidden bg-[--color-page-backdrop] md:justify-center md:py-10">
       {/* relative + overflow-hidden (already had the latter): the slide
           needs a positioned ancestor its own size to lay the entering/
           exiting screen's `absolute inset-0` against, and to actually

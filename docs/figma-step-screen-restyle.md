@@ -11,7 +11,9 @@ mask is top-58px/h-250px/w-300px/opacity-0.4/soft-light/0.9x grain scale
 (`StepScreen.tsx`); header icons are inline SVG path data at native size,
 no external files (`ScreenHeader.tsx`); eye illustration render size
 tracks `EyeIllustration.tsx`'s `REFERENCE_RENDER_WIDTH = 195.5742950439453`.
-`AllStepsView.tsx` was never touched by this pass — still on V2 styling.
+`AllStepsView.tsx` was never touched by this pass — was still on V2
+styling until a later, dedicated pass closed that gap; see
+`docs/figma-allsteps-restyle.md`.
 
 Source: https://www.figma.com/design/6Mr7K0RONTS8SltZRJtqYj/Tech-Experimentation
 File key `6Mr7K0RONTS8SltZRJtqYj`.
@@ -598,6 +600,214 @@ shipped values**: top-[58px], h-[250px], w-[300px], `opacity-40`,
 soft-light blend, 0.9x grain scale. Verified via computed style (exact
 match on all six values) and a full step 1→7 click-through — no console
 errors, `tsc -b` and `oxlint` both clean on the file.
+
+## Sixth follow-up round — toggle chip's hairline border sometimes missing an edge
+
+Reported via `AllStepsView.tsx` testing (the Search/Widget toggle lives in
+`ScreenHeader.tsx`, shared with `StepScreen`, so the bug affects both):
+the active button's frosted chip — the border+background overlay `<span>`
+that plays a "settling in" animation on mount — would sometimes render
+with one of its four border edges missing after switching between
+Search and Widget.
+
+**First attempt (wrong root cause):** assumed it was the mount animation.
+The chip reused `check-ring-in` (also used by `CheckIndicator`'s ring),
+which animates `transform: scale(0.92 → 1)`. On a 0.5px hairline border
+that scales down to ~0.46px — right at the sub-device-pixel threshold
+where a browser can round an edge of a rounded-rect *border* away
+entirely, differently per edge. `CheckIndicator`'s own ring never hits
+this (2px SVG stroke, ~1.84px even at 0.92 scale). Fixed by adding a new
+opacity-only `header-chip-in` keyframe (index.css) and pointing both chip
+spans at it instead of `check-ring-in`. This was a real, legitimate fix
+for a real problem — but not the *only* problem.
+
+**Second report, more specific: "always the left border."** A
+consistent, position-specific pattern rules out pure animation-timing
+flakiness (that would drop a random edge, not the same one every time) —
+this was a static rendering issue that coexisted with the animation one,
+not caused by it. Plain CSS `border` at sub-1px widths is rasterized as
+four independent side rectangles; depending on the box's exact sub-pixel
+position in the layout, a browser can consistently round *one specific
+side* away, not randomly. **Fix:** replaced `border-[0.5px] border-solid`
++ `borderColor` with `boxShadow: inset 0 0 0 0.5px var(--color-header-
+icon-border)` on both chip spans (Search's and Widget's) — an inset
+box-shadow renders the same 0.5px hairline as one continuous stroke
+around the box rather than four independent sides, which doesn't have
+this per-side rounding failure mode. `HEADER_CHIP_STYLE`'s `border`-based
+version is left alone on Back/Done (plain, non-overlay, non-animated
+buttons — not reported as affected, and no reason to touch what isn't
+broken).
+
+Scope: `ScreenHeader.tsx` + `index.css` only — the fix applies to both
+the per-step screens and AllStepsView, since they share this header.
+Verified: computed `box-shadow` on both spans reads
+`rgba(44, 41, 38, 0.2) 0px 0px 0px 0.5px inset` with `border-width: 0px`
+(confirming no border is applied at all anymore, only the shadow), full
+border visible in a screenshot after toggling either direction, no
+console errors, `tsc -b` and `oxlint` both clean.
+
+## Seventh follow-up round — box-shadow chip moving/cutting on tap
+
+Reported immediately after the sixth round shipped: "when I tap on each
+icon, the selected icon moves slightly and cuts a bit." A new symptom
+introduced by that round's own fix, not a leftover of the original
+missing-border bug.
+
+**Cause:** `.header-icon-button:active { transform: scale(0.93) }` (and
+`:hover { scale(1.05) }`) is old, pre-existing press feedback — but it
+was applied to the *button element*, and the Search/Widget toggle's
+active chip `<span>` (now using `box-shadow: inset` instead of `border`,
+per the sixth round) is a child of that same button. Scaling the button
+scales its child span right along with it — and unlike a plain `border`
+(painted in the same box layer as the element it's on, always in perfect
+sync with any transform applied to that element), an inset `box-shadow`'s
+rounded-corner clip isn't guaranteed to stay composited in lockstep with
+a *live* transform. During the ~100ms press transition specifically, this
+read as the chip "moving slightly and cutting a bit" — exactly the report,
+and exactly why the sixth round's own static screenshot check didn't
+catch it (a transform-in-progress artifact, not a resting-state one).
+
+**Fix:** retargeted the scale from the button to its `svg` child —
+`.header-icon-button:active svg` / `:hover svg` instead of
+`.header-icon-button:active` / `:hover`. The button (and therefore its
+child chip span, box-shadow included) never transforms at all now; only
+the icon glyph scales for press feedback. This sidesteps the desync
+entirely rather than chasing the exact compositing timing — there's
+nothing for the box-shadow to fall out of sync *with*. Applied to all
+four header buttons for consistency (Back/Done's `border`-based chips
+were never actually at risk, since real `border` doesn't have this
+failure mode — but a glyph-only press now reads the same across all four
+rather than three matching and one different).
+
+Verified: the stylesheet now contains `.header-icon-button svg` and
+`.header-icon-button:active svg` rules (confirmed via
+`document.styleSheets`), no rule targeting the bare button's `transform`
+remains, screenshot after toggling looks correct, no console errors,
+`tsc -b` and `oxlint` both clean.
+
+## Eighth follow-up round — same symptom persisted after the seventh round's fix
+
+User re-tested on their actual phone and reported it was "still happening,
+very slightly but noticeable" — with screenshots pinpointing it further:
+happens right on tap, not specific to one particular icon.
+
+**Reconsidered cause, this time a sequencing mismatch, not a rendering
+one:** the icon's `opacity` (0.5 inactive → 0.8 active, `ScreenHeader.tsx`'s
+`ICON_OPACITY_*` constants) is set via an inline style keyed directly off
+React state — it has *no* CSS transition covering it (only `transform` was
+listed in `.header-icon-button svg`'s `transition` property), so it snaps
+to its new value the instant React re-renders. The chip's own background/
+border (`header-chip-in`), by contrast, fades in over `--duration-base`
+(~200ms). Tap the inactive icon and both things kick off at once: the
+icon jumps to full "selected" darkness (0.8) *immediately*, while the
+frosted chip behind it is still mostly transparent and only catches up
+over the next ~200ms — the icon reading as "arrived" well before its own
+background has, which plausibly reads as it "moving" or "cutting" against
+a container that hasn't caught up to it yet. Nothing was actually
+mis-sized or mis-positioned this time (confirmed via `getBoundingClientRect`
+on both buttons/spans at rest — pixel-perfect 40×40, no asymmetry) — this
+is a timing gap between two differently-paced updates, not a layout or
+compositing bug like the sixth and seventh rounds' were.
+
+**Fix:** added `opacity` to `.header-icon-button svg`'s transition list at
+`--duration-base` (matching `header-chip-in`'s own duration), alongside
+the existing `transform` at `--duration-instant` (kept fast — that one's
+still press feedback, wants to feel immediate, not the same concern).
+Icon darkness and chip appearance now settle on the same timescale instead
+of one snapping ahead of the other.
+
+Verified: computed `transition-property: transform, opacity` /
+`transition-duration: 0.15s, 0.2s` on the icon `svg`, no console errors,
+`tsc -b` and `oxlint` clean. **Caveat, stated plainly:** unlike the sixth
+and seventh rounds, this one couldn't be confirmed by forcing a static
+end-state and screenshotting it — the actual symptom only exists *during*
+a ~200ms live transition, which this tooling can't frame-capture. The
+diagnosis (a real, verifiable timing gap between an untransitioned opacity
+snap and an animated chip fade) is solid and the fix directly closes that
+gap, but real on-device confirmation after this round is still the
+deciding check, not a screenshot.
+
+## Ninth follow-up round — still off; user asked for a real sliding toggle instead
+
+The eighth round's fix didn't resolve it (user: "still off"). Rather than
+chase a fourth theory on the mount/unmount-chip approach, the user asked
+for a structurally different interaction: one highlight box that visibly
+*slides* from one icon to the other, like a real segmented-control toggle,
+instead of two independent chips each fading in/out on their own selection.
+
+**Rebuilt the toggle as a single persistent element.** `ScreenHeader.tsx`'s
+Search/Widget group now renders exactly one highlight `<div>` (not two
+conditionally-rendered chip spans), absolutely positioned at the track's
+own left edge, sized `size-[40px]`, translated via
+`transform: translateX(isListView ? '100%' : '0')` — `100%` of its own
+width, not a hardcoded `40px`, so it can't drift out of sync with the
+button size. This is structurally immune to the whole class of bug the
+sixth/seventh/eighth rounds kept re-encountering (border scale-animation,
+box-shadow/transform desync, opacity/fade timing mismatch) — there's only
+ever one element, it never mounts or unmounts on selection, and it has
+nothing else to fall out of sync *with*.
+
+**The real blocker: Search/Widget isn't a same-screen toggle at all.**
+Tracing `TutorialFlow.tsx` turned up something not previously accounted
+for: tapping either icon doesn't flip a boolean within one mounted
+screen — it switches which of `StepScreen`/`AllStepsView` TutorialFlow
+renders, two entirely separate component trees, each with its *own*
+`<ScreenHeader>`. A plain CSS `transition` cannot animate across a
+mount — the freshly-mounted highlight in the new screen has no "old
+position" to interpolate from, it just appears at its final spot,
+instantly, no matter how the transition is authored. This is *why* every
+previous round's fix, even when technically correct, could never actually
+produce a visible slide.
+
+Surfaced this to the user directly rather than guessing at a resolution,
+since it's a real fork with a real tradeoff: hoist `ScreenHeader` to a
+shared parent (guarantees the slide, but conflicts with AllStepsView's
+scroll-hide/frosted header, which depends on the header living inside its
+own scrollable region) vs. the browser's View Transitions API (keeps
+today's structure exactly as-is, animates across the mount anyway). User
+picked View Transitions.
+
+**Implementation:**
+- `index.css`: `.header-toggle-highlight { view-transition-name:
+  header-toggle-highlight; }` on the highlight div — this is what lets
+  the browser match the element across the two separate mounts and morph
+  between their captured positions, which is genuinely different
+  machinery from a CSS `transition` on the real element (that still runs,
+  for any hypothetical same-instance update, but isn't what drives the
+  cross-screen slide). `::view-transition-group(header-toggle-highlight)`
+  overrides the browser's default ~250ms ease with `--duration-base`/
+  `--ease-out-quart`, matching this app's own motion language.
+  `::view-transition-group/old/new(root) { animation: none; }` suppresses
+  the API's *other* default behavior — cross-fading the entire old/new
+  page — so only the highlight visibly moves; every other Search/Widget
+  switch stays the instant, un-animated screen swap it always was.
+- `TutorialFlow.tsx`: new `switchViewWithTransition(updateState)` helper
+  wraps `updateState` in `document.startViewTransition(() =>
+  flushSync(updateState))` — `flushSync` is required so React commits the
+  state change synchronously inside the transition callback; without it,
+  the browser would capture its "after" snapshot before React had
+  actually re-rendered. Falls back to a plain, un-wrapped `updateState()`
+  when `startViewTransition` isn't available (older Safari/Firefox — the
+  same instant swap as before, no breakage) or under
+  `prefers-reduced-motion` (checked directly via `matchMedia`, not
+  Framer Motion's `useReducedMotion` — this file has no other Motion
+  usage). Wraps both directions: `handleSelectStepView` (Widget → Search)
+  and the inline `onSelectListView` handler on `StepScreen` (Search →
+  Widget) — the *entire* set of state changes each already made (not just
+  `setView`), inside the same callback, so they land as one synchronous
+  commit rather than relying on batching semantics across two calls.
+
+Verified: `document.startViewTransition` confirmed present and invoked
+exactly once per tap (instrumented via a temporary wrapper), the DOM
+correctly reflects the new screen afterward, highlight's
+`getBoundingClientRect()` matches the newly-active button's rect exactly
+post-transition, `view-transition-name` confirmed via computed style, no
+console errors across a full reload + toggle cycle, `tsc -b` and `oxlint`
+clean. Same caveat as the eighth round: the *animation itself* — whether
+it genuinely reads as a slide rather than a cut, on a real device — needs
+on-device confirmation, not a static screenshot; what's verified here is
+that the correct API is being invoked correctly and lands on the correct
+end state, not the felt motion.
 
 ## Verification
 

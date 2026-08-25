@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { ScreenHeader } from './ScreenHeader'
 import { ActionButton } from './ActionButton'
 import { ProductCard } from './ProductCard'
@@ -48,12 +48,92 @@ export function AllStepsView({
     .map(([step, content]) => ({ step: Number(step), ...content }))
     .filter(({ step }) => step <= TOTAL_STEPS) // exclude the step-8 "done" entry
 
-  // Drives the header's fade tail (below) — hidden at the very top of the
-  // list so the card's own rounded top corners show cleanly against the
-  // header, and fading in once there's actually something scrolled up
-  // underneath it to blend out. Can't do this with CSS alone: it depends
-  // on live scroll position, not anything expressible as a selector.
+  // Drives the header's frosted background (below) — off at the very top of
+  // the list (scrollTop 0), on once there's actually something scrolled up
+  // underneath it to frost. Reintroduced after briefly being removed: the
+  // frost was originally always-on, and at rest (nothing scrolled beneath
+  // the header yet, since it's the first thing in the document) that just
+  // read as a flat white-ish wash sitting over the page's own gradient
+  // background rather than a glass effect over content — the user asked
+  // for it to only kick in once there's real content behind it to justify
+  // the effect.
   const [isScrolled, setIsScrolled] = useState(false)
+
+  // Drives the *bottom* fade overlay (below) — hidden once the list is
+  // scrolled all the way to its real end, since past that point there's
+  // nothing left underneath to "hint continues below," so the overlay was
+  // just sitting there as a stray band of gradient + rounded corner over
+  // the card's own already-flat white bottom edge — a rendering-glitch
+  // read, not a hint, and exactly what got reported. `scrollerRef` +
+  // the layout effect below cover the case where the list is short enough
+  // to start already-at-bottom (or not overflow at all), since `onScroll`
+  // never fires on its own without an actual scroll gesture.
+  const [hasReachedBottom, setHasReachedBottom] = useState(false)
+  const scrollerRef = useRef<HTMLDivElement>(null)
+
+  // docs/figma-allsteps-restyle.md, item 5 — hides the sticky header on
+  // scroll-down, reveals it on scroll-up, like a native iOS collapsing nav
+  // bar. AllStepsView-local, not built into ScreenHeader itself: StepScreen
+  // (the header's other user) has no scrollable region at all, so there's
+  // nothing there for this to react to — see the doc's "Scope" note.
+  //
+  // Compares each scroll event to the *previous* one (lastScrollTopRef),
+  // not to a fixed origin, with asymmetric thresholds rather than a raw
+  // "any movement" toggle: real trackpad/wheel input fires many small,
+  // noisy scroll events per gesture, and reacting to every single one reads
+  // as jittery. Hiding needs more cumulative downward movement than
+  // revealing needs upward — deliberately easier to bring back than to
+  // dismiss, the standard convention for this pattern (iOS Safari,
+  // Twitter/X, Medium): someone scrolling back up is almost always looking
+  // for the header, so it should come back fast, not need convincing.
+  // HEADER_HIDE_MIN_SCROLL keeps it visible near the very top regardless of
+  // direction, so a small scroll right at the start can never hide it.
+  //
+  // That threshold also has to clear the white card's own rounded top
+  // corner (--radius-card, 20px), not just roughly match the header's own
+  // height (~64px mobile / ~72px desktop) — the card starts immediately
+  // after the header in document flow, no gap, so the rounded-corner region
+  // sits right at ~64-92px. Hiding the header is a `translateY`, not a
+  // layout change, so whatever's scrolled to y=0 once the header's own box
+  // slides away is whatever the document actually has there — if that
+  // threshold sat inside the corner's own range, hiding could expose the
+  // card's curved corner poking up at the very top of the viewport, read
+  // as a stray rounded-corner artifact (reported after shipping the
+  // hide/show behavior — it can't happen while the header is permanently
+  // visible, only once it can move). 120px clears both breakpoints' corner
+  // zones with a safety margin, comfortably inside "still early in a
+  // scroll gesture."
+  //
+  // All three numbers are a reasoned starting guess, not measured against
+  // a real scroll gesture — same "ship a first guess, tune by feel" pass
+  // this codebase's other hand-tuned values went through (WASH_TUNING in
+  // StepScreen.tsx, the removed MotionTuner/WashTuner dev panels).
+  const HEADER_HIDE_MIN_SCROLL = 120 // px — always visible at/under this
+  const HEADER_HIDE_DELTA = 12 // px downward since the last event, to hide
+  const HEADER_REVEAL_DELTA = 4 // px upward since the last event, to reveal
+  const lastScrollTopRef = useRef(0)
+  const [isHeaderHidden, setIsHeaderHidden] = useState(false)
+
+  function updateScrollState(el: HTMLDivElement) {
+    const { scrollTop } = el
+    const delta = scrollTop - lastScrollTopRef.current
+    lastScrollTopRef.current = scrollTop
+
+    setIsScrolled(scrollTop > 0)
+    // <= 1px tolerance for sub-pixel scroll-position rounding (seen across
+    // browsers/zoom levels) rather than requiring an exact 0.
+    setHasReachedBottom(el.scrollHeight - scrollTop - el.clientHeight <= 1)
+
+    if (scrollTop <= HEADER_HIDE_MIN_SCROLL) setIsHeaderHidden(false)
+    else if (delta > HEADER_HIDE_DELTA) setIsHeaderHidden(true)
+    else if (delta < -HEADER_REVEAL_DELTA) setIsHeaderHidden(false)
+    // else: small delta, leave the current hidden/visible state alone —
+    // this is what actually prevents the jitter described above.
+  }
+
+  useLayoutEffect(() => {
+    if (scrollerRef.current) updateScrollState(scrollerRef.current)
+  }, [])
 
   return (
     // Fixed h-dvh (not min-h-dvh), same reasoning as StepScreen: the fade
@@ -78,7 +158,16 @@ export function AllStepsView({
     // fix as App.tsx's own wrapper and HomeScreen/StepScreen's roots.
     <div
       className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl"
-      style={{ background: 'var(--gradient-bg-screen)' }}
+      // docs/figma-allsteps-restyle.md: this view is on the same cream
+      // palette (#f7e9ca → #f9f3eb) as the home screen's gradient, not the
+      // pinkish --gradient-bg-screen every step screen uses — confirmed via
+      // a fresh pull of this view's own frame (node 702:2694). Its own
+      // --gradient-bg-list token, not --gradient-bg-home directly: same
+      // colors, but a fixed-px fade distance instead of a percentage — see
+      // --gradient-bg-list's own comment in tokens.css for why reusing
+      // --gradient-bg-home's percentage here landed the fade at the wrong
+      // pixel offset (a real, user-reported mismatch, not a style choice).
+      style={{ background: 'var(--gradient-bg-list)' }}
     >
       {/* Scrollable region. The header now lives *inside* it (sticky, see
           below) rather than as a sibling above it — sticky positioning
@@ -98,25 +187,44 @@ export function AllStepsView({
           (the tutorial card stack's fly-off animation). Applied here too,
           defensively, since this container has the exact same shape. */}
       <div
+        ref={scrollerRef}
         className="relative flex-1 overflow-y-auto overflow-x-hidden"
-        onScroll={(e) => setIsScrolled(e.currentTarget.scrollTop > 0)}
+        onScroll={(e) => updateScrollState(e.currentTarget)}
       >
-        {/* Sticky header — solid background (#e6d6d1, --gradient-bg-screen's
-            own first stop; keep them in sync if that gradient changes)
-            sized to just the header row itself, plus a separate fade
-            *tail* absolutely positioned right below it. The tail is
-            layout-neutral (position:absolute, out of flow) on purpose —
-            sizing the fade by padding the sticky box's own height instead
-            would push the list content down by that same amount, which
-            isn't what a "fade" should do; this way the header stays a
-            normal ~64px tall and the fade is purely a decorative 32px
-            strip painted over whatever content has scrolled up under it.
-            z-10 so both paint above the list.
+        {/* Sticky header — frosted-glass background (--color-list-header-bg,
+            translucent white, + --blur-list-header's backdrop-filter blur),
+            sized to just the header row itself. z-10 to paint above the
+            list. No separate fade tail below it anymore — an earlier pass
+            had one (to blend a *flat* header color into the content below
+            once scrolled), but the user asked for the tinted gradient it
+            painted to go, and now that the header itself is translucent +
+            blurred rather than flat, the blur already does the "blend into
+            scrolled content" job on its own; the tail was redundant on top
+            of it, not load-bearing.
 
-            The tail is hidden until isScrolled — at rest (scrollTop 0)
-            it would otherwise sit right over the card's own rounded top
-            corners, washing them out with pink instead of letting them
-            read clearly against the header above. */}
+            The frost itself is gated on isScrolled, not always-on: at rest
+            (scrollTop 0) there's nothing scrolled up underneath the header
+            yet — it's the first thing in the document, the white card
+            starts right after it — so a permanent translucent-white wash
+            there just sat over the page's own gradient background as a
+            flat haze, not a glass effect over content. Gating it means the
+            header is fully transparent (no tint, no blur — just the plain
+            gradient background showing through, matching the very-top
+            resting look) until there's actually something behind it worth
+            frosting.
+
+            docs/figma-allsteps-restyle.md, item 5: this header now also
+            hides on scroll-down and reveals on scroll-up, via
+            isHeaderHidden — translateY(-100%) + opacity, not display/
+            height, so it can't reflow the list or feed back into the
+            scroll container's own scrollHeight. `inert` while hidden takes
+            its buttons out of tab order instead of leaving them invisibly
+            focusable off-screen; pointerEvents:none is the mouse/touch
+            equivalent for browsers where `inert` isn't enough on its own.
+            The frosted background is what makes this read as a native-style
+            collapsing nav bar rather than a flat panel popping in and out —
+            content sliding underneath it shows through, blurred, while
+            it's up. */}
         {/* pt-4 md:pt-6, not pt-6 — matches StepScreen's own root split (see
             its comment on the same values): the extra 8px on desktop only
             exists to keep this header's position identical to StepScreen's
@@ -124,20 +232,30 @@ export function AllStepsView({
             not because this sticky header needs it. Without matching them,
             the toggle would sit at a different vertical position in each
             view on mobile — a visible jump switching between them. */}
-        <div className="sticky top-0 z-10 pb-2 pt-4 md:pt-6" style={{ background: '#e6d6d1' }}>
+        <div
+          className="sticky top-0 z-10 pb-2 pt-4 md:pt-6"
+          style={{
+            background: isScrolled ? 'var(--color-list-header-bg)' : 'transparent',
+            // 'blur(0px)', not 'none', for the off state — both render
+            // identically (no visible blur), but only the former lets the
+            // backdrop-filter transition below actually animate: 'none' and
+            // a blur() function aren't interpolatable, so animating between
+            // them would just snap instead of smoothly fading the frost in.
+            backdropFilter: isScrolled ? 'blur(var(--blur-list-header))' : 'blur(0px)',
+            WebkitBackdropFilter: isScrolled ? 'blur(var(--blur-list-header))' : 'blur(0px)',
+            transform: isHeaderHidden ? 'translateY(-100%)' : 'translateY(0)',
+            opacity: isHeaderHidden ? 0 : 1,
+            pointerEvents: isHeaderHidden ? 'none' : 'auto',
+            transition:
+              'transform var(--duration-base) var(--ease-out-quart), opacity var(--duration-base) var(--ease-out-quart), background-color var(--duration-base) var(--ease-out-quart), backdrop-filter var(--duration-base) var(--ease-out-quart)',
+          }}
+          inert={isHeaderHidden}
+        >
           <ScreenHeader
             activeView="list"
             onBack={onBack}
             onDone={onDone}
             onSelectStepView={onSelectStepView}
-          />
-          <div
-            className="pointer-events-none absolute inset-x-0 top-full h-8"
-            style={{
-              background: 'linear-gradient(180deg, #e6d6d1 0%, rgba(230,214,209,0) 100%)',
-              opacity: isScrolled ? 1 : 0,
-              transition: 'opacity var(--duration-base) var(--ease-out-quart)',
-            }}
           />
         </div>
 
@@ -168,7 +286,7 @@ export function AllStepsView({
             }}
           >
             <div className="flex flex-col gap-10">
-              {steps.map(({ step, listTitle, products }, groupIndex) => (
+              {steps.map(({ step, listTitle, description, products }, groupIndex) => (
                 <div
                   key={step}
                   className="flex flex-col gap-4"
@@ -189,27 +307,77 @@ export function AllStepsView({
                     animationDelay: `${groupIndex * 50}ms`,
                   }}
                 >
-                  <div className="flex items-center gap-4 py-3">
-                    <p
-                      className="flex-1 text-[length:var(--font-size-step-title)] opacity-50"
-                      style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--font-weight-semibold)' }}
-                    >
-                      {listTitle}
-                    </p>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <span
-                        className="rounded-[--radius-badge] bg-[--color-badge-bg] px-1 py-[3px] text-[length:var(--font-size-badge)] opacity-50"
+                  {/* "Header + Description" — title/badge row plus the
+                      instruction sentence, grouped as one unit with its own
+                      pb-4 (16px), matching Figma's own nesting: that pb-4
+                      stacks with the outer gap-4 below to put 32px between
+                      the description and the first product row, vs. no gap
+                      at all between the title row and the description
+                      directly above it (neither Figma nor this wrapper
+                      applies one there — only the title row's own py-3
+                      and the paragraph's line-height separate them). */}
+                  <div className="flex flex-col pb-4">
+                    <div className="flex items-center gap-4 py-3">
+                      {/* docs/figma-allsteps-restyle.md: was opacity-50 +
+                          semibold + --font-size-step-title (16px, shared
+                          with StepScreen's own big title) + no tracking — a
+                          fresh pull of this view's own frame shows this
+                          inline group title is full-opacity, Medium weight,
+                          a smaller 15px: a different node from StepScreen's
+                          title, not the same style reused. Tracking started
+                          at -0.3px from that same pull, then the user opened
+                          it up to -0.15px after seeing it on-device — see
+                          --letter-spacing-list-group-title's own comment. */}
+                      <p
+                        className="flex-1 text-[length:var(--font-size-list-group-title)] tracking-[--letter-spacing-list-group-title]"
                         style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--font-weight-medium)' }}
                       >
-                        {step}/{TOTAL_STEPS}
-                      </span>
-                      <span
-                        className="text-[length:var(--font-size-badge)] opacity-50"
-                        style={{ color: 'var(--color-text-primary)' }}
-                      >
-                        steps
-                      </span>
+                        {listTitle}
+                      </p>
+                      <div className="flex shrink-0 items-center gap-1">
+                        {/* docs/figma-allsteps-restyle.md: was opacity-50
+                            stacked on top of a solid --color-text-primary,
+                            reading ~40% dark instead of the intended 80% —
+                            the fresh pull's badge/label color already has
+                            that 80% alpha baked in (--color-text-product,
+                            otherwise only used by ProductCard), so no extra
+                            opacity utility belongs here. Badge background is
+                            --color-badge-bg-list (10%), not the 5%
+                            --color-badge-bg StepScreen's own top badge
+                            uses — confirmed as a genuinely different value
+                            on this view's own frame, not a shared token. */}
+                        <span
+                          className="rounded-[--radius-badge] bg-[--color-badge-bg-list] px-1 py-[3px] text-[length:var(--font-size-badge)] tracking-[--letter-spacing-shade]"
+                          style={{ color: 'var(--color-text-product)', fontWeight: 'var(--font-weight-medium)' }}
+                        >
+                          {step}/{TOTAL_STEPS}
+                        </span>
+                        <span
+                          className="text-[length:var(--font-size-badge)] tracking-[--letter-spacing-shade]"
+                          style={{ color: 'var(--color-text-product)', fontWeight: 'var(--font-weight-medium)' }}
+                        >
+                          steps
+                        </span>
+                      </div>
                     </div>
+                    {/* docs/figma-allsteps-restyle.md: the per-step
+                        instruction sentence was never rendered in this view
+                        at all — the data's been sitting unused in
+                        STEP_CONTENT[step].description since this component
+                        only ever read listTitle/products from it. 12px /
+                        50%-opacity / Medium, matching the badge's own
+                        "dimmed caption" treatment above (rather than
+                        StepScreen's own description, which is a different,
+                        larger 80%-opacity treatment for a different-sized
+                        title). Tracking added after the user tightened it up
+                        on-device — see --letter-spacing-shade's own comment
+                        for why this reuses that token rather than a new one. */}
+                    <p
+                      className="text-[length:var(--font-size-product-sub)] opacity-50 tracking-[--letter-spacing-shade]"
+                      style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--font-weight-medium)' }}
+                    >
+                      {description}
+                    </p>
                   </div>
                   <div className="flex flex-col gap-4">
                     {products.map((product) => {
@@ -232,7 +400,15 @@ export function AllStepsView({
                 </div>
               ))}
 
-              <ActionButton label="Finish" variant="final" onClick={onFinish} />
+              {/* docs/figma-allsteps-restyle.md: this Finish button's own
+                  border-radius is 24px in a fresh pull of this view's
+                  frame — a real pill (--height-action-button is 44px, so
+                  24px clamps past the half-height point), not
+                  ActionButton's usual 12px (--radius-button, shared with
+                  StepScreen's step-7 Finish, left untouched). Scoped to
+                  this call site via ActionButton's style-override prop
+                  rather than changing the component's default. */}
+              <ActionButton label="Finish" variant="final" onClick={onFinish} style={{ borderRadius: 24 }} />
             </div>
           </div>
         </div>
@@ -247,10 +423,23 @@ export function AllStepsView({
           p-4's default to reserve exactly this much clean white space
           below its last item) — any taller than that and it washes over
           the Finish button's solid black fill, which reads as a
-          rendering glitch rather than a hint. */}
+          rendering glitch rather than a hint.
+
+          docs/figma-allsteps-restyle.md: hidden once hasReachedBottom —
+          without this it stayed pinned to the viewport bottom even once
+          the list was scrolled all the way to its actual end, sitting over
+          the card's already-flat, already-white bottom edge as a stray
+          rounded-corner band with nothing left to fade out underneath it
+          (reported as "I see the rounded corners at the end of the page").
+          Same opacity-transition treatment as the header's own fade tail
+          above, not an abrupt show/hide. */}
       <div
         className="pointer-events-none absolute inset-x-[--space-xs] bottom-0 h-10 rounded-b-[--radius-card]"
-        style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff 100%)' }}
+        style={{
+          background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff 100%)',
+          opacity: hasReachedBottom ? 0 : 1,
+          transition: 'opacity var(--duration-base) var(--ease-out-quart)',
+        }}
       />
     </div>
   )

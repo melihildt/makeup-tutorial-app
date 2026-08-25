@@ -58,6 +58,20 @@ type ScreenHeaderProps = {
 // design change since then).
 const ICON_OPACITY_ACTIVE = 0.8
 const ICON_OPACITY_INACTIVE = 0.5
+// This inline `opacity` swap eases over --duration-base via index.css's
+// `.header-icon-button svg` rule, not React — added there specifically so
+// it settles on the same timescale as the toggle's sliding highlight
+// (also --duration-base, see that highlight's own comment). Before that
+// addition, opacity had no transition at all and snapped instantly on tap
+// while the chip behind it was still animating (originally a fade-in on a
+// freshly-mounted chip; now a still-in-transit slide) — the icon reading
+// as fully "selected" before its own background had caught up, which read
+// as the icon "moving slightly and cutting" during the switch. Not a
+// layout bug — nothing was actually mis-sized or mis-positioned — just
+// two differently-timed updates landing far enough apart to read as one.
+// Still needed after the mount/unmount chip was replaced with the sliding
+// highlight below: the highlight still takes --duration-base to travel,
+// so an untransitioned opacity would still race ahead of it.
 
 function BackIcon() {
   return (
@@ -175,50 +189,87 @@ export function ScreenHeader({
 
   return (
     <div className="flex w-full items-start justify-between px-[12px]">
-      {/* No back button on the All Steps list view — it's reached by
-          switching the Search/Widget toggle below, not by drilling in, so
-          there's nothing to go "back" from. Kept as an equal-size spacer
-          (rather than just omitted) so the toggle group and Done button
-          stay in the same spots as the per-step header. */}
-      {isListView ? (
-        <div className="size-[40px] shrink-0" aria-hidden="true" />
-      ) : (
-        <button
-          type="button"
-          onClick={onBack}
-          className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
-          style={HEADER_CHIP_STYLE}
-        >
-          <BackIcon />
-        </button>
-      )}
+      {/* Real back button on both views, not just the per-step screens.
+          Previously hidden (an invisible spacer) on the All Steps list
+          view under the assumption there was nothing to go "back" from
+          there — a V2-era guess never actually checked against this
+          view's own Figma frame. A fresh pull (docs/figma-allsteps-
+          restyle.md, node 702:2694) shows the same back-arrow chip
+          present on this view too, and TutorialFlow's onBack already has
+          sensible behavior from here (steps back one step, or exits at
+          step 1) — it was only ever visually unreachable. */}
+      <button
+        type="button"
+        onClick={onBack}
+        className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+        style={HEADER_CHIP_STYLE}
+      >
+        <BackIcon />
+      </button>
 
-      {/* Outer group: content-sized (two 40px buttons, no fixed width
-          needed now that there's no sliding element to travel across a
-          wider track) — rgba(255,255,255,0.6), matching Figma exactly
-          (was rgba(255,255,255,0.2) under the old pill). */}
-      <div className="flex h-[40px] shrink-0 items-center rounded-[--radius-filter-chip] bg-[rgba(255,255,255,0.6)]">
+      {/* Outer group: content-sized (two 40px buttons) — rgba(255,255,255,0.6),
+          matching Figma exactly (was rgba(255,255,255,0.2) under the old
+          pill). `relative` so the sliding highlight below can position
+          itself against this track, not against the whole header row. */}
+      <div className="relative flex h-[40px] shrink-0 items-center rounded-[--radius-filter-chip] bg-[rgba(255,255,255,0.6)]">
+        {/* Sliding highlight — a real segmented-control toggle, not two
+            buttons independently mounting/unmounting their own chip. Was
+            the latter through several rounds of trying to fix a border/
+            timing bug (see the chip's own git history) that kept
+            resurfacing in different forms each round: a scale-animated
+            hairline border missing an edge, then a box-shadow chip
+            desyncing from the button's own press-transform, then the
+            icon's opacity snapping ahead of the chip's fade-in — three
+            different root causes, but all stemming from the same
+            structural choice: two independently-animated elements that
+            only *happen* to look continuous when their timing lines up
+            exactly. A single persistent element that slides between two
+            fixed positions doesn't have that class of bug at all — there's
+            only ever one chip, it never mounts/unmounts, and there's
+            nothing else it needs to stay in sync with. `translateX(100%)`
+            (not a hardcoded 40px) ties the slide distance to this
+            element's own width, so it can't drift out of sync with
+            `size-[40px]` if that ever changes.
+            docs/figma-step-screen-restyle.md's "old rounded-full pill +
+            sliding-highlight-circle toggle" note is about a genuinely
+            different, older (pre-V5) design — this isn't a revert to
+            that, just the same "one element translates" mechanism applied
+            to the current two-square-chip shape, at the user's own
+            request after the mount/unmount approach kept producing new
+            timing bugs.
+
+            One more wrinkle this ran into: Search/Widget don't actually
+            toggle state *within* one mounted screen — tapping either one
+            switches TutorialFlow between rendering StepScreen and
+            AllStepsView entirely (see TutorialFlow.tsx), each with its
+            *own* `<ScreenHeader>`. This exact div unmounts and a fresh one
+            mounts on every switch — plain CSS `transition` (below) can't
+            animate across that, a freshly-mounted element has no "old
+            position" to interpolate from, it just appears at its final
+            spot. `header-toggle-highlight` (index.css) is the actual fix:
+            a `view-transition-name` that lets the browser's View
+            Transitions API match this element across the two separate
+            mounts and morph between their captured positions — see
+            TutorialFlow.tsx's `document.startViewTransition` calls for
+            the other half of this. The `transition` property below still
+            matters for its own sake (any future same-instance update to
+            this element), just isn't what drives the cross-screen slide. */}
+        <div
+          aria-hidden="true"
+          className="header-toggle-highlight pointer-events-none absolute left-0 top-0 size-[40px] rounded-[--radius-filter-chip]"
+          style={{
+            background: 'var(--color-header-icon-bg)',
+            boxShadow: 'inset 0 0 0 0.5px var(--color-header-icon-border)',
+            transform: isListView ? 'translateX(100%)' : 'translateX(0)',
+            transition: 'transform var(--duration-base) var(--ease-out-quart)',
+          }}
+        />
         <button
           type="button"
           onClick={onSelectStepView}
           aria-pressed={!isListView}
           className="header-icon-button relative flex size-[40px] items-center justify-center rounded-[--radius-filter-chip]"
         >
-          {/* The chip itself is a separate absolutely-positioned overlay,
-              not chrome on the button — that's what lets it play a fresh
-              "settling in" animation on mount (a plain style on the button
-              would just appear, no motion). Only rendered when active, so
-              there's nothing to animate *out* — the button reverts to bare
-              instantly when the other one becomes active, same "no exit,
-              only entrance" treatment as CheckIndicator's own ring. Reuses
-              check-ring-in directly (see this component's doc comment). */}
-          {!isListView && (
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 rounded-[--radius-filter-chip] border-[0.5px] border-solid"
-              style={{ ...HEADER_CHIP_STYLE, animation: 'check-ring-in var(--duration-base) var(--ease-out-quart)' }}
-            />
-          )}
           <SearchIcon active={!isListView} />
         </button>
         <button
@@ -227,13 +278,6 @@ export function ScreenHeader({
           aria-pressed={isListView}
           className="header-icon-button relative flex size-[40px] items-center justify-center rounded-[--radius-filter-chip]"
         >
-          {isListView && (
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 rounded-[--radius-filter-chip] border-[0.5px] border-solid"
-              style={{ ...HEADER_CHIP_STYLE, animation: 'check-ring-in var(--duration-base) var(--ease-out-quart)' }}
-            />
-          )}
           <WidgetIcon active={isListView} />
         </button>
       </div>

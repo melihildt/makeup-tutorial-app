@@ -50,7 +50,21 @@ body {
      starts at 0.92 (AUDIT.md's Physicality & origin band is 0.9–0.97;
      this was 0.85, outside it — nothing in the real world appears from
      nothing, so the entrance should read as a small settle, not a near-
-     invisible-to-full pop). */
+     invisible-to-full pop). Safe here specifically because CheckIndicator's
+     ring is a 2px SVG stroke (--check-stroke-checked/unchecked-width) —
+     even at 0.92 scale that's still ~1.84px, comfortably above a full
+     device pixel.
+
+     ScreenHeader's Search/Widget toggle briefly had its own sibling
+     keyframe here (header-chip-in, opacity-only — this one's scale(0.92)
+     wasn't safe on that chip's 0.5px hairline border, the same "sub-1px
+     border + scale" problem this comment already covers). Removed, not
+     just because it was already opacity-only workaround for a mount/
+     unmount pattern: that whole pattern (each button independently
+     mounting its own chip on selection) was replaced with a single
+     persistent sliding indicator (docs/figma-step-screen-restyle.md's
+     eighth+ follow-up rounds) that doesn't mount/unmount at all, so
+     there's no entrance to animate and no keyframe needed there anymore. */
   from { opacity: 0; transform: scale(0.92); }
   to { opacity: 1; transform: scale(1); }
 }
@@ -134,16 +148,43 @@ body {
    should feel identical to press. Scale amounts are slightly larger than
    .action-button's (0.93/1.05 vs 0.97/1.02): these are small 40x40px icon
    buttons, not a full-width bar, so they need more visible travel for the
-   same press to register at all. */
-.header-icon-button {
-  transition: transform var(--duration-instant) var(--ease-out-quart);
+   same press to register at all.
+
+   Targets the `svg` child, not the button element itself — was on the
+   button until a real bug turned up: the Search/Widget toggle's active
+   chip used to be a `<span>` *inside* whichever button was currently
+   active, using an inset `box-shadow` for its hairline border. Scaling
+   the button scaled that child span right along with it, and box-shadow's
+   rounded-corner clip didn't necessarily stay composited in sync with a
+   live `transform`, which read as the chip "moving slightly and cutting a
+   bit" during the press transition. Scaling only the icon glyph sidestepped
+   it — the button never transformed at all, so there was nothing for a
+   box-shadow to desync from.
+
+   That chip has since moved out of the buttons entirely — Search/Widget
+   is now a single sliding highlight, a sibling of both buttons rather
+   than a child of either (ScreenHeader.tsx) — so this specific failure
+   mode can't happen regardless of which element the press-scale targets
+   anymore. Left on the `svg` anyway rather than reverted to the button:
+   no regression either way, and a glyph-only press still reads the same
+   across all four header buttons (Back/Done included) rather than three
+   matching and one different. */
+/* transform at --duration-instant (press feedback, wants to feel
+   immediate) and opacity at --duration-base (matches the sliding
+   highlight's own transition duration) are deliberately different
+   speeds, not an oversight — see below for why opacity needed adding
+   here at all. */
+.header-icon-button svg {
+  transition:
+    transform var(--duration-instant) var(--ease-out-quart),
+    opacity var(--duration-base) var(--ease-out-quart);
 }
 @media (hover: hover) {
-  .header-icon-button:hover {
+  .header-icon-button:hover svg {
     transform: scale(1.05);
   }
 }
-.header-icon-button:active {
+.header-icon-button:active svg {
   transform: scale(0.93);
 }
 
@@ -183,6 +224,49 @@ body {
 @keyframes view-fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ScreenHeader's Search/Widget toggle highlight — a real slide across the
+   *screen* swap (TutorialFlow renders StepScreen and AllStepsView as
+   separate trees; ScreenHeader.tsx's own doc comment on this div has the
+   full "why," this is just the CSS half). `view-transition-name` opts
+   this specific element into the browser's View Transitions API: when
+   TutorialFlow.tsx wraps its `setView` calls in
+   `document.startViewTransition`, the browser captures this element
+   before and after the mount/unmount swap and generates its own
+   pseudo-element animation morphing between the two captured positions —
+   entirely separate machinery from a plain CSS `transition` on the real
+   element, which can't animate across a mount at all.
+
+   Name must be unique among simultaneously-*rendered* elements (not
+   simultaneously-existing across the whole transition, which is fine —
+   the old StepScreen/AllStepsView is gone before the new one mounts,
+   same synchronous swap either way) — only one component ever renders
+   this class at a time already, so no extra uniqueness handling needed. */
+.header-toggle-highlight {
+  view-transition-name: header-toggle-highlight;
+}
+/* Overrides the browser's own default duration/easing for *this specific*
+   named element's transition, matching the app's own token pair instead
+   of leaving it at the browser default (~250ms ease). Doesn't affect the
+   root cross-fade below — each named element (and the unnamed "root")
+   gets its own independent group here. */
+::view-transition-group(header-toggle-highlight) {
+  animation-duration: var(--duration-base);
+  animation-timing-function: var(--ease-out-quart);
+}
+/* The View Transitions API's default behavior isn't just "animate named
+   elements" — with no other config, it *also* cross-fades the entire
+   old/new page (the implicit "root" element) during any transition,
+   including ones only started for this one small highlight. Every other
+   Search/Widget switch today is (and should stay) an instant, un-animated
+   screen swap — only the highlight itself should visibly move. Setting
+   `animation: none` on the root pseudo-elements suppresses that default
+   whole-page fade without touching the named highlight's own group above. */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
 }
 
 /* Respect prefers-reduced-motion globally — see docs/handoff.md phase 5.

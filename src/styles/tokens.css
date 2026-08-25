@@ -40,7 +40,10 @@
   --color-border-hairline: rgba(44, 41, 38, 0.2); /* V5 (was rgba(14,11,6,0.05)) — real contrast increase, not just a recolor */
   --color-border-card: rgba(255, 255, 255, 0.3); /* deprecated: V2 card has no visible stroke */
   --color-image-placeholder: #e5e5e7; /* fallback bg behind product images before load */
-  --color-badge-bg: rgba(44, 41, 38, 0.05); /* V5 (was rgba(14,11,6,0.07)) */
+  --color-badge-bg: rgba(44, 41, 38, 0.05); /* V5 (was rgba(14,11,6,0.07)) — StepScreen's own top-of-screen "N/7 steps" badge only; confirmed against its own pull in the V5 pass. Not the same value as AllStepsView's per-group badge, see --color-badge-bg-list below — the two instances turned out to be genuinely different alphas in the design, not one shared value. */
+  --color-badge-bg-list: rgba(44, 41, 38, 0.1); /* docs/figma-allsteps-restyle.md — AllStepsView's own per-group "N/7 steps" pill, confirmed against a fresh pull of node 702:2694 (double the alpha of --color-badge-bg above). */
+  --color-list-header-bg: rgba(249, 243, 235, 0.72); /* docs/figma-allsteps-restyle.md, item 5 — AllStepsView's sticky header, paired with --blur-list-header below for a frosted-glass look, shown only once scrolled. NOT sourced from Figma — this is the user's own request, tuned twice after testing on-device: first pass reused the page's own cream (rgba(247,233,202,...), --gradient-bg-list's *first* stop) and read as a visible yellow tint; second pass went to plain white (rgba(255,255,255,...)) instead; this third pass is rgb(249,243,235) — which is exactly --gradient-bg-list's *second*, settled-flat stop (#f9f3eb, the color the page background actually is everywhere below its top ~53px fade) — so the frost now tints toward the same color the content behind it is already sitting on, rather than either the more saturated top-of-page cream or a colorless white. Same 72% alpha throughout all three passes; still a starting guess to tune further by feel, not a measured value. */
+  --blur-list-header: 16px; /* docs/figma-allsteps-restyle.md, item 5 — pairs with --color-list-header-bg above. Also not Figma-sourced (see that token's own note); 16px lands in the normal range for this kind of frosted nav-bar treatment (Tailwind's own backdrop-blur-lg default), picked as a reasonable starting point rather than measured. */
 
   /* deprecated: V1's card background was a stacked gradient. V2 uses a
      flat --color-surface (white) + --shadow-card instead. */
@@ -50,7 +53,11 @@
     linear-gradient(90deg, #fff8f3 0%, #fff8f3 100%),
     linear-gradient(90deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.03) 100%);
 
-  /* V2: full-screen background gradient, top to bottom. */
+  /* V2: full-screen background gradient, top to bottom — StepScreen only.
+     docs/figma-allsteps-restyle.md: AllStepsView used this too until a
+     fresh pull of its own frame (node 702:2694) showed it's actually on
+     the same cream palette as --gradient-bg-home (see --gradient-bg-list
+     below), not a shared step-screen token as previously assumed. */
   --gradient-bg-screen: linear-gradient(180deg, #e6d6d1 0%, #f5e7de 35.561%, #fbf7f5 77.86%);
 
   /* ---------- Radius ---------- */
@@ -86,6 +93,7 @@
   --font-family: 'Inter', sans-serif;
   --font-size-step-label: 18px;   /* deprecated: V2 replaces "Step N" + title with step-title/step-description below */
   --font-size-step-title: 16px;        /* V2: e.g. "Add Concealer" — V5 (docs/figma-step-screen-restyle.md) dropped the opacity-50 pairing, now full opacity, see StepScreen.tsx */
+  --font-size-list-group-title: 15px;  /* docs/figma-allsteps-restyle.md — AllStepsView's own per-group title (e.g. "Concealer"), a separate size from --font-size-step-title above: that 16px value is StepScreen's big top-of-screen title, confirmed correct there; this smaller inline title is a different node in the design. */
   --font-size-step-description: 12px;  /* V5 (was 14px) — instruction sentence, confirmed on Step 1/2/3/5/6/7 pulls; also moved to opacity-80 and Medium weight, see StepScreen.tsx. Not used by AllStepsView (grep-confirmed) so safe to change directly, unlike --font-size-step-title above which that deferred screen still shares. */
   --font-size-product-name: 14px;
   --font-size-product-sub: 12px;  /* shade line, e.g. "79 - Spices" — pair with opacity-50, --letter-spacing-shade */
@@ -97,7 +105,8 @@
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --letter-spacing-tight: -0.14px;  /* brand/product name */
-  --letter-spacing-shade: -0.12px;  /* V2: shade line */
+  --letter-spacing-shade: -0.12px;  /* V2: shade line. docs/figma-allsteps-restyle.md — a fresh pull showed this is Figma's shared "BeautyNotes/p-12" caption tracking, not a shade-line-only value: AllStepsView's own per-group description and its "N/7 steps" badge/label use this exact same -0.12px, reused here rather than duplicated under a new name. */
+  --letter-spacing-list-group-title: -0.15px; /* docs/figma-allsteps-restyle.md — AllStepsView's per-group title, pairs with --font-size-list-group-title above. Was -0.3px; corrected to -0.15px after the user tightened it up on a second look (phone testing) and a re-pull confirmed the new value. */
 
   /* ---------- Fixed component sizes ---------- */
   --size-product-image-w: 56px;  /* V3 (was 64px, before that 80px) — node 615:3037, tighter mobile spacing pass */
@@ -127,14 +136,39 @@
   --color-header-icon-bg: rgba(255, 255, 255, 0.6); /* V4: info/profile icon boxes, node 635:4792 */
   --color-header-icon-border: rgba(44, 41, 38, 0.2); /* V4: 0.5px hairline on those same boxes */
 
-  /* V4 background — node 635:4792 ("Updated UI" / LookSelector redesign). Home-
-     screen-only: deliberately NOT folded into --gradient-bg-screen above, since
-     that token is still shared by StepScreen/AllStepsView and this gradient is
-     a materially different gold/cream family, not a refinement of the same one.
-     Two color stops only — flat --color-home-bg-end for the rest of the
-     screen once the top ~7% fades in, unlike --gradient-bg-screen's 3-stop
-     fade across the full height. */
+  /* V4 background — node 635:4792 ("Updated UI" / LookSelector redesign).
+     Home-screen-only. Deliberately NOT folded into --gradient-bg-screen
+     above, since that token is shared by StepScreen and this gradient is a
+     materially different gold/cream family, not a refinement of the same
+     one. Two color stops only — flat --color-home-bg-end for the rest of
+     the screen once the top ~7% fades in, unlike --gradient-bg-screen's
+     3-stop fade across the full height. The 7.179% stop is sized against
+     HomeScreen's own root, which never scrolls taller than one viewport —
+     see --gradient-bg-list below for why AllStepsView, despite sharing
+     these same two hex values, needed its own token rather than reusing
+     this one as-is. */
   --gradient-bg-home: linear-gradient(180deg, #f7e9ca 0%, #f9f3eb 7.179%);
+
+  /* docs/figma-allsteps-restyle.md — AllStepsView's own background (node
+     702:2694), same two hex values as --gradient-bg-home above but a fixed
+     53px second stop instead of a percentage. This isn't a rounding
+     shortcut, it's the actual fix for a real mismatch: the user's Figma
+     source pulls this gradient at a *much* smaller percentage (2.582%) than
+     --gradient-bg-home's 7.179%, because in Figma the background layer is
+     sized to the full flattened export of the scrollable list (2065px
+     tall, covering every group at once) rather than to one screen's worth
+     — a percentage is relative to *that* element's own height. 2.582% of
+     2065px ≈ 53px is the actual fixed distance-from-top the fade is meant
+     to cover; reusing --gradient-bg-home's 7.179% here would have measured
+     that percentage against AllStepsView's own (much shorter, single-
+     viewport-tall) root instead, landing the fade at the wrong pixel
+     offset — faster/shorter than intended, not "immaterial" as first
+     assumed. A fixed px stop sidesteps needing to match container heights
+     between the two screens at all: the fade always covers the same ~53px
+     from the top regardless of how tall the element it's painted on is,
+     which is exactly "the same transition point as StepTutorial, just on a
+     background that had to be made taller" per the user's own framing. */
+  --gradient-bg-list: linear-gradient(180deg, #f7e9ca 0%, #f9f3eb 53px);
 
   /* ---------- Tutorial stack card (V3) ----------
      "BigCard" component, node 642:5092 (Tech-Experimentation) — replaces

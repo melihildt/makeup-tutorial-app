@@ -1,9 +1,20 @@
+import type { CSSProperties } from 'react'
+
 type ActionButtonVariant = 'default' | 'final'
 
 type ActionButtonProps = {
   label: string
   variant: ActionButtonVariant
   onClick?: () => void
+  /** Per-call-site style overrides, merged on top of the variant's own
+   *  computed style (spread last, so these win). Exists for
+   *  AllStepsView's "Finish" button specifically — see its own call site
+   *  for why: that button's border-radius diverges from StepScreen's
+   *  step-7 "Finish" (24px pill vs. this component's usual 12px), a real
+   *  difference confirmed via a fresh pull of AllStepsView's own frame
+   *  (docs/figma-allsteps-restyle.md, node 702:2694), not something to
+   *  apply to every caller of this shared component. */
+  style?: CSSProperties
 }
 
 /**
@@ -17,7 +28,7 @@ type ActionButtonProps = {
  * are correct here (contrast ScreenHeader/CheckIndicator, which need
  * mount-triggered `animation`s instead because they remount).
  */
-export function ActionButton({ label, variant, onClick }: ActionButtonProps) {
+export function ActionButton({ label, variant, onClick, style }: ActionButtonProps) {
   const isFinal = variant === 'final'
   return (
     <button
@@ -36,6 +47,7 @@ export function ActionButton({ label, variant, onClick }: ActionButtonProps) {
         color: isFinal ? 'var(--color-action-button-final-text)' : 'var(--color-text-primary)',
         background: isFinal ? 'var(--color-action-button-final-bg)' : 'var(--color-action-button)',
         borderColor: isFinal ? 'var(--color-action-button-final-bg)' : 'var(--color-action-button-border)',
+        ...style,
       }}
     >
       {label}
