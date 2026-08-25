@@ -1,6 +1,6 @@
 # Animation plans
 
-Produced by three `improve-animations` audits. **001-005** are from the
+Produced by four `improve-animations` audits. **001-005** are from the
 original audit (`src/components/TutorialCard.tsx` only, against commit
 `628b8b7`). **006-007** are from a follow-up audit (Start Over redesign,
 tutorial-card detail flip, `CardBehind`'s duck-and-reveal filter swap, the
@@ -14,8 +14,14 @@ once rather than just the home-stack component. **008-011** were the four
 findings picked first and executed same-session; **012-021** are the
 audit's findings 5-14 (in that audit's own original numbering — the table
 below uses each plan's own file number instead), written up as plans
-afterward and, as of the latest session, all executed too — **every plan
-in this file, 001-021, is now DONE or resolved-moot**. Full findings
+afterward and, as of the latest session, all executed too — **001-021 are
+all DONE or resolved-moot**. **022-024** are from a fourth audit, scoped to
+just the About/Info overlay (`src/components/InfoOverlay.tsx`, opened from
+`HomeScreen.tsx`'s info icon — a screen that didn't exist during the first
+three audits), against commit `9f1aa24` — small enough in scope (one file
+plus its two-line trigger) that it was audited directly rather than via
+subagent fan-out. All three of that audit's findings were selected to
+become plans, and all three are now executed too. Full findings
 tables live in the conversations that produced each; this index tracks
 execution. **For the
 fuller current picture of this whole feature area** (Start Over's
@@ -47,6 +53,9 @@ handoff, this README only tracks plan execution.
 | 019 | [Drive the chip press-flash sweep via transform instead of background-position](019-chip-flash-sweep-transform.md) | MEDIUM | Performance | Home | DONE |
 | 020 | [Move AllStepsView's scroll-shadow transition onto the app's tokens](020-allstepsview-scroll-shadow-tokens.md) | LOW | Cohesion & tokens | All steps view | DONE |
 | 021 | [Give StepScreen's per-step content swap its own faster duration budget](021-step-content-duration-budget.md) | LOW | Easing & duration | Tutorial step | DONE |
+| 022 | [Add press feedback to InfoOverlay's Portfolio/Email link rows](022-infooverlay-link-press-feedback.md) | MEDIUM | Physicality & origin | About/Info overlay | DONE |
+| 023 | [Stagger InfoOverlay's card entrance behind its backdrop](023-infooverlay-card-entrance-stagger.md) | LOW | Cohesion & tokens | About/Info overlay | DONE (one correction — see note below) |
+| 024 | [Give CopyEmailButton's "Couldn't copy" failure state its own motion cue](024-copy-email-failure-shake.md) | LOW | Missed opportunity | About/Info overlay | DONE |
 
 **002's specific fix (`isFlipping` local state) no longer exists in the
 code** — it was removed during the Start Over two-face-flip redesign
@@ -368,6 +377,76 @@ paint properties, `tokens.css`'s stale "no bounce" doc comment) was not
 turned into a plan — noted in the original audit conversation as thin
 enough to fold into other work rather than justify its own plan.
 
+**022-024 all executed in the same session they were written, directly in
+the working tree** (same reasoning as every other batch above — the repo
+had uncommitted changes at execution time, and a fresh git-worktree
+checkout would have missed them). All three re-verified against current
+file content immediately before editing; no drift found from the commit
+`9f1aa24` citations.
+
+- **022 executed exactly as planned** — `LINK_ROW_CLASS` gained
+  `cursor-pointer active:scale-[0.97]`, a new `LINK_ROW_STYLE` constant
+  added (`transform var(--duration-instant) var(--ease-out-quart)`), both
+  the Portfolio `<a>` and the Email `<button>` gained `style={LINK_ROW_STYLE}`.
+  Verified: `getComputedStyle` on both elements shows the exact expected
+  `transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)` and
+  `cursor: pointer`; the live compiled stylesheet contains the expected
+  `.active\:scale-\[0\.97\]:active` rule with `--tw-scale-x/-y: 0.97`. A true
+  held `:active` state can't be forced through this environment's synthetic
+  clicks (same limitation as 009/018's own notes above), so verification
+  relied on confirming the rule's presence and the elements' computed
+  transition rather than a live press.
+- **023 executed, but with a real correction found during execution** — the
+  plan's own Boundaries flagged a risk ("if the shared `transition` object
+  actually produces a delayed exit... fix it") and told the executor to
+  check for it, which is exactly what happened: applying the plan exactly
+  as written (`delay: reduceMotion ? 0 : 0.06` in the card's single
+  top-level `transition` prop) was checked live via
+  `element.getAnimations()[].effect.getComputedTiming()` immediately after
+  clicking the close button, and it **did** carry the 60ms delay into the
+  exit (`cardDelay: [60, 60]` vs the backdrop's `overlayDelay: [0]`) — the
+  card would have visibly lingered ~60ms after the backdrop had already
+  faded on every close. Fixed per the plan's own prescribed remedy: the
+  `transition` is now embedded per-target instead of shared — inside
+  `animate` (with the 60ms entrance delay) and separately inside `exit`
+  (with an explicit `delay: 0`) — rather than one top-level prop applied to
+  both. Re-verified live after the fix: entrance still shows
+  `overlayAnims: [0]` / `cardAnims: [60, 60]`; a fresh open-then-close now
+  shows `cardAnims: []` at the delay-check point because (confirmed
+  separately via direct `getComputedStyle` polling across the open→close
+  sequence) the exit now starts and completes in sync with the backdrop,
+  with `cardOpacityBefore: "1"` immediately before the close click —
+  i.e. no lingering. This is a good example of why this skill's plans carry
+  a feel-check step and an explicit "if this happens, here's the fix"
+  contingency instead of assuming the mechanically-obvious version of a
+  fix is automatically correct.
+- **024 executed exactly as planned** — `--ease-in-out` added to
+  `tokens.css` immediately after `--ease-out-quart`; `EASE_IN_OUT` added
+  locally in `InfoOverlay.tsx`; `CopyEmailButton` gained its own
+  `useReducedMotion()` call, a `shakeOnFailure` constant, and the
+  conditional `animate`/`transition` shake on the label. Verified live by
+  temporarily forcing both copy paths to fail (`navigator.clipboard =
+  undefined`, `document.execCommand` stubbed to return `false`) and reading
+  the mounted label's real `getAnimations()` output: a 6-keyframe
+  `translateX` oscillation (`0 → -4 → 4 → -3 → 3 → 0`, 300ms) confirmed
+  running alongside the 200ms opacity fade, only on the `'failed'` label.
+  Reduced motion was verified using this repo's own established workaround
+  for `useReducedMotion()`'s environment limitation (`window.matchMedia`
+  overrides from outside don't propagate — see 011's note above): a
+  temporary `|| true` forced directly on the hook's return value,
+  confirmed the label still swaps to "Couldn't copy" with only the plain
+  200ms fade and no shake, then reverted (confirmed gone via `grep -n
+  "TEMP TEST" src/components/InfoOverlay.tsx`, zero matches, and a clean
+  `tsc -b`). Also confirmed the "Copied!" success state is pixel-for-pixel
+  unaffected — same plain fade, no shake, no keyframes.
+
+Mechanical check across all three: `npx tsc -b` clean throughout, including
+the final pass after all three plans and the 023 correction. No new
+console/dev-server errors during editing or the live verification passes
+above (the only console errors present in this session's history are
+stale, timestamped to mid-edit HMR states from *before* this batch of
+plans existed).
+
 ## Recommended execution order
 
 1. **001, 002** — already done (see Status column).
@@ -416,6 +495,20 @@ enough to fold into other work rather than justify its own plan.
    `index.css`, 015/018 both touching `TutorialCard.tsx`) landed in
    non-overlapping regions, sequentially, exactly per this section's own
    guidance. Nothing left open from this queue.
+7. **022-024, all done, all touch `src/components/InfoOverlay.tsx`
+   but in non-overlapping regions**: 022 touches `LINK_ROW_CLASS`
+   (~line 109) plus the two link elements' opening tags (~lines 202, 338);
+   023 touches only the card `motion.div`'s `transition` prop (~line 306);
+   024 touches the top-of-file constants (~line 3) plus `CopyEmailButton`'s
+   body (~lines 186-227) and adds one line to `src/styles/tokens.css`. 022
+   and 024 both edit code inside/around `CopyEmailButton` (022 adds a
+   `style` prop to its `<button>` opening tag, 024 rewrites its
+   `motion.span`) — safe to run in either order since they touch different
+   lines within the same function, but if executing both, re-verify each
+   plan's own "current code" citations against whichever one landed first
+   rather than trusting the original line numbers, per each plan's own
+   Boundaries. 023 is fully independent of both — different element,
+   different prop, safe fully parallel with either.
 
 001-005 touch only `src/components/TutorialCard.tsx` and were
 written against commit `628b8b7` — **now well behind current** (see

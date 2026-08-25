@@ -173,10 +173,12 @@ else in this doc still says otherwise:
   the same. Marked `deprecated` in tokens.css rather than deleted, per
   this file's own convention for values like it.
 
-**Git state**: branch `feature/home-tutorial-stack`, pushed through
-`aea2d5f` (this update's own commit lands after it) — a PR into `main`
-was opened the same session, see the repo's PR list rather than trusting
-a stale link pasted here later. Run `git status`/`git log --oneline -5`
+**Git state**: **2026-08-25 update — `feature/home-tutorial-stack`'s PR
+(#1) merged into `main`** (`9f1aa24`); this file's own scope (the step-flow/
+illustration work) wasn't touched by anything since. New, unrelated work
+after the merge (the About/Info overlay + its own animation-audit plans)
+is out of this doc's scope — see `docs/home-stack-handoff.md`'s own
+git-state note for that branch. Run `git status`/`git log --oneline -5`
 regardless on a fresh session start, same standing caveat as every earlier
 git-state note in this doc.
 
