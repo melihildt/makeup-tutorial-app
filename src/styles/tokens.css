@@ -239,6 +239,40 @@
   --check-stroke-unchecked: rgba(44, 41, 38, 0.3);  /* V5 (was rgba(14,11,6,0.3)) — same alpha, new ink base; exact V5 value wasn't in the pulled dump, inferred from the global migration */
   --check-stroke-unchecked-width: 2px;              /* V2 (was 1px) */
   --check-stroke-unchecked-dash: 4 5;               /* V2 (was "3 3") */
+
+  /* ---------- Info/About overlay ----------
+     InfoOverlay.tsx (Figma node 730:5706) — HomeScreen's info icon opens
+     this over the live app, not a device-chrome mock, so unlike this
+     screen's other values (still literal Figma numbers where the design
+     genuinely specifies them) these two are tuned-by-feel, not
+     Figma-sourced — same situation and same convention as
+     --color-list-header-bg/--blur-list-header above (AllStepsView's own
+     frosted sticky header): promoted here (code review finding #5) rather
+     than left as local JS constants in InfoOverlay.tsx, since that's
+     exactly the same kind of value with an existing precedent for where it
+     belongs. Two colors, not one bare alpha number, because the tint is a
+     2-stop gradient between two different base hex values (matching
+     --Background-blur in Figma) — both carry the same alpha for now
+     (tuned together as one dial by feel), but a full rgba() per stop is
+     this file's own established shape for a color token, not a deviation
+     invented for this pair. */
+  --color-info-overlay-tint-top: rgba(249, 243, 235, 0.68);
+  --color-info-overlay-tint-bottom: rgba(247, 233, 202, 0.68);
+  --blur-info-overlay-backdrop: 18px;
+
+  /* Two more ink-color variants specific to this screen (code review
+     finding #6) — full-opacity body copy already just reuses
+     --color-tutorial-card-text directly at its call sites, no separate
+     token needed for that part. These two are the alpha variants
+     get_design_context's own style dump named "Dark / 50%" and
+     "Dark / 80%" respectively (both #2c2926 at that alpha) — same base ink
+     as --color-tutorial-card-text, following this file's established
+     pattern of one dedicated token per alpha variant rather than deriving
+     opacity from the base token at each call site (see
+     --color-border-hairline, --color-badge-bg, --color-text-product for
+     the same pattern elsewhere in this file). */
+  --color-info-overlay-heading: rgba(44, 41, 38, 0.5); /* "About" header label */
+  --color-info-overlay-body-secondary: rgba(44, 41, 38, 0.8); /* credits card's second paragraph */
 }
 
 /*

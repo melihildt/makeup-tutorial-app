@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { EASE_OUT_QUART } from './TutorialCard'
+import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import infoCardTexture from '../assets/home/InfoCard.png'
 
 // Local mirror of tokens.css's --ease-in-out, same "CSS var + JS-array
@@ -34,22 +35,17 @@ const EASE_IN_OUT = [0.77, 0, 0.175, 1] as const
 // as literal Figma values (linear-gradient stops at 15.883%/74.765%) since
 // it's a real design decision (warming the blur toward the app's cream
 // palette), not a device-chrome artifact like the layers this skips.
-
-// ---- Tweak knobs: how much of the live Home screen shows through ----
-// Two independent dials, both trending the same direction (turn either one
-// down to reveal more of Home behind the overlay, up to hide more of it):
-//   - BACKDROP_TINT_OPACITY: the cream gradient's own alpha. 0 = fully
-//     see-through tint (blur only), 1 = fully opaque (Home invisible).
-//   - BACKDROP_BLUR_PX: the backdrop-filter blur radius. 0 = Home shows
-//     sharp behind the tint, higher = softer/less legible.
-// Went 0.9/23px (literal Figma numbers, which bake in an extra opaque layer
-// Figma's own mock doesn't need to fake blur — see comment above) → 0.45/
-// 12px (too little tint, Home read as distracting rather than "behind
-// glass") → these values, tuned by feel each round rather than re-derived
-// from Figma (there's no literal source value for "a real backdrop-filter
-// blurring real content," only for the duplicated-layer trick Figma used).
-const BACKDROP_TINT_OPACITY = 0.68
-const BACKDROP_BLUR_PX = 18
+//
+// Tweak knobs for how much of the live Home screen shows through
+// (--color-info-overlay-tint-top/-bottom, --blur-info-overlay-backdrop —
+// tokens.css's own "Info/About overlay" section) live there now, not as
+// local JS constants — code review finding #5: the same kind of
+// tuned-by-feel, not-Figma-sourced frosted-glass pair already has a home in
+// tokens.css (--color-list-header-bg/--blur-list-header, AllStepsView's
+// sticky header), so this pair belongs there too rather than as a
+// one-off local exception. See that section's own comment for the tuning
+// history (0.9/23px → 0.45/12px → the current values) and why two colors,
+// not one bare alpha number.
 
 type InfoOverlayProps = {
   open: boolean
@@ -110,6 +106,22 @@ function AtIcon() {
 
 const EMAIL = 'melhildt@gmail.com'
 
+type CopyStatus = 'idle' | 'copied' | 'failed'
+
+// Single source of truth for everything CopyEmailButton's `status` drives —
+// code review finding #8: the visible label, the underline, and the
+// sr-only announcement used to be three independent ternary chains over
+// the same three cases, kept in sync by hand. A status that's missing from
+// this map is a TypeScript error (Record<CopyStatus, ...> requires all
+// three keys), not a silently-forgotten branch.
+const STATUS_CONTENT: Record<CopyStatus, { label: string; underline: boolean; srText: string }> = {
+  idle: { label: 'Email', underline: true, srText: '' },
+  copied: { label: 'Copied!', underline: false, srText: 'Email address copied to clipboard' },
+  // Label is the literal address itself, not a generic message — see
+  // CopyEmailButton's own doc comment (findings #3/#8) for why.
+  failed: { label: EMAIL, underline: false, srText: `Could not copy automatically. Email address: ${EMAIL}` },
+}
+
 // Shared by the Portfolio <a> and the Email <button> below so the two rows
 // stay visually identical (same chip-less "icon + underlined text" link
 // style) despite being genuinely different elements now — Portfolio still
@@ -117,7 +129,7 @@ const EMAIL = 'melhildt@gmail.com'
 const LINK_ROW_CLASS = 'flex items-center gap-3 py-3 cursor-pointer active:scale-[0.97]'
 const LINK_ROW_STYLE = { transition: 'transform var(--duration-instant) var(--ease-out-quart)' } as const
 const LINK_LABEL_CLASS = 'text-[20px] tracking-[-0.4px]'
-const LINK_LABEL_STYLE = { color: '#2c2926', fontWeight: 'var(--font-weight-semibold)' } as const
+const LINK_LABEL_STYLE = { color: 'var(--color-tutorial-card-text)', fontWeight: 'var(--font-weight-semibold)' } as const
 // Trailing size-[20px] spacer mirrors the icon's own width, so gap-3 puts
 // equal space on both sides of the *text* — icon + gap-3 + text + gap-3 +
 // spacer. Without it, `items-center` centers the icon+text block as a
@@ -183,30 +195,72 @@ async function copyToClipboard(text: string): Promise<boolean> {
 // Copies the email to the clipboard instead of a mailto: link — per the
 // user's own follow-up ask, since mailto hands off to whatever mail client
 // (or none) happens to be configured rather than just letting someone grab
-// the address directly. Feedback is the label swapping to "Copied!" (or
-// "Couldn't copy" on a genuine failure — silently doing nothing when both
-// copy paths fail reads as a dead button, worse than an honest failure
-// message) for a beat (--duration-base fade, this app's own "small state
-// change" pace — tokens.css) — no toast/snackbar component exists
-// elsewhere in this app to reuse, and one felt like more machinery than a
-// two-second confirmation on an about screen needs. The underline is
-// dropped for both non-"Email" states so they read as status messages, not
-// a second, different link.
+// the address directly. Feedback is the label swapping to "Copied!" on
+// success (auto-reverts after a beat, --duration-base fade, this app's own
+// "small state change" pace — tokens.css) or, on a genuine failure, to the
+// literal address itself — silently doing nothing when both copy paths
+// fail reads as a dead button, and a generic "Couldn't copy" message is
+// still a dead end (code review, 2026-08-25 pass, findings #3/#8): if
+// scripted copying is blocked (a locked-down in-app WebView is the
+// realistic case — see copyToClipboard's own comment), showing the address
+// as plain selectable text is the only remaining way to actually get it,
+// so the failure state does NOT auto-revert like the success one does —
+// reverting it on a timer would yank away the one fallback that exists
+// right when someone's trying to long-press-select it. It only clears once
+// the user retries (taps again) or leaves the screen (fresh mount). No
+// toast/snackbar component exists elsewhere in this app to reuse, and one
+// felt like more machinery than this needs. The underline is dropped for
+// both non-"Email" states so they read as status messages/content, not a
+// second, different link.
 function CopyEmailButton() {
-  const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const [status, setStatus] = useState<CopyStatus>('idle')
   const timeoutRef = useRef<number | undefined>(undefined)
+  // Two independent guards checked together after the `await` below, not
+  // one: `isMountedRef` covers the component having unmounted entirely
+  // (overlay closed mid-copy — code review finding #2); `requestIdRef`
+  // covers a *second* tap starting before the first one's async copy
+  // resolves (finding #1) — each call captures its own id and only the
+  // call whose id still matches the ref when it resolves is allowed to
+  // apply its result, so a slow first tap can never clobber a fresher
+  // second tap's outcome (or its aria-live announcement) after the fact.
+  const isMountedRef = useRef(true)
+  const requestIdRef = useRef(0)
   const reduceMotion = useReducedMotion()
 
-  useEffect(() => () => window.clearTimeout(timeoutRef.current), [])
+  useEffect(() => {
+    // The setup body has to re-arm `isMountedRef.current = true`, not just
+    // rely on the `useRef(true)` initializer above — React StrictMode
+    // double-invokes effects in dev (setup → cleanup → setup again) without
+    // actually discarding the component's refs between those steps. With
+    // no reset here, that first simulated cleanup would leave the ref
+    // permanently `false` after the very first render, silently no-op'ing
+    // every real copy attempt for the component's actual lifetime.
+    // (Caught by exactly that behavior while verifying this fix.)
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      window.clearTimeout(timeoutRef.current)
+    }
+  }, [])
 
   async function handleCopy() {
+    const requestId = ++requestIdRef.current
     const succeeded = await copyToClipboard(EMAIL)
-    setStatus(succeeded ? 'copied' : 'failed')
+    // Stale: either this component is gone, or a later tap already started
+    // (and will apply its own result when it resolves) — either way, this
+    // call's result is no longer the one that should reach the screen.
+    if (!isMountedRef.current || requestId !== requestIdRef.current) return
     window.clearTimeout(timeoutRef.current)
-    timeoutRef.current = window.setTimeout(() => setStatus('idle'), 1600)
+    if (succeeded) {
+      setStatus('copied')
+      timeoutRef.current = window.setTimeout(() => setStatus('idle'), 1600)
+    } else {
+      // No revert timeout here — see this function's own doc comment above.
+      setStatus('failed')
+    }
   }
 
-  const label = status === 'copied' ? 'Copied!' : status === 'failed' ? "Couldn't copy" : 'Email'
+  const { label, underline, srText } = STATUS_CONTENT[status]
   // Only the *first* time a given mount lands on 'failed' plays the shake —
   // see plans/024's own Boundaries for the accepted repeat-tap limitation.
   const shakeOnFailure = status === 'failed' && !reduceMotion
@@ -217,7 +271,7 @@ function CopyEmailButton() {
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
           key={label}
-          className={`${LINK_LABEL_CLASS} ${status === 'idle' ? 'underline' : ''}`}
+          className={`${LINK_LABEL_CLASS} ${underline ? 'underline' : ''}`}
           style={LINK_LABEL_STYLE}
           initial={{ opacity: 0 }}
           animate={
@@ -250,11 +304,7 @@ function CopyEmailButton() {
       </AnimatePresence>
       <TrailingSpacer />
       <span className="sr-only" aria-live="polite">
-        {status === 'copied'
-          ? 'Email address copied to clipboard'
-          : status === 'failed'
-            ? 'Could not copy email address'
-            : ''}
+        {srText}
       </span>
     </button>
   )
@@ -288,9 +338,10 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
         <motion.div
           className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-2xl"
           style={{
-            background: `linear-gradient(0deg, rgba(249,243,235,${BACKDROP_TINT_OPACITY}) 25.235%, rgba(247,233,202,${BACKDROP_TINT_OPACITY}) 84.117%)`,
-            backdropFilter: `blur(${BACKDROP_BLUR_PX}px)`,
-            WebkitBackdropFilter: `blur(${BACKDROP_BLUR_PX}px)`,
+            background:
+              'linear-gradient(0deg, var(--color-info-overlay-tint-top) 25.235%, var(--color-info-overlay-tint-bottom) 84.117%)',
+            backdropFilter: 'blur(var(--blur-info-overlay-backdrop))',
+            WebkitBackdropFilter: 'blur(var(--blur-info-overlay-backdrop))',
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -306,11 +357,22 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
               chrome + hover/press feedback every other header icon button
               in this app already shares (.header-icon-button,
               --color-header-icon-bg/border — ScreenHeader.tsx's own icon
-              buttons, HomeScreen's info/user icons). */}
-          <div className="flex shrink-0 items-center justify-between px-[--space-sm] pt-[--space-2xs]">
+              buttons, HomeScreen's info/user icons).
+
+              items-start, not items-center — code review finding #4: this
+              row was still on items-center, the exact thing HomeScreen.tsx's
+              own header row (see its comment there) was deliberately
+              changed away from after finding it pushes a 40px icon button's
+              top edge below the intended --space-2xs inset whenever a
+              sibling's line-box exceeds 40px. Harmless today (the "About"
+              label's own line-box stays under 40px), but left on
+              items-center this file would silently reproduce that exact
+              bug the moment the label ever grows — matching HomeScreen's
+              fix now closes that gap instead of leaving it latent. */}
+          <div className="flex shrink-0 items-start justify-between px-[--space-sm] pt-[--space-2xs]">
             <p
               className="text-[20px] tracking-[-0.4px]"
-              style={{ color: 'rgba(44, 41, 38, 0.5)', fontWeight: 'var(--font-weight-medium)' }}
+              style={{ color: 'var(--color-info-overlay-heading)', fontWeight: 'var(--font-weight-medium)' }}
             >
               About
             </p>
@@ -319,7 +381,13 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
               onClick={onClose}
               aria-label="Close"
               className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
-              style={{ background: 'var(--color-header-icon-bg)', borderColor: 'var(--color-header-icon-border)', color: 'var(--color-tutorial-card-text)' }}
+              // Spreads the shared chip style (code review finding #7)
+              // rather than substituting it outright — this button also
+              // needs `color` set (CloseIcon's path uses fill="currentColor"),
+              // which HEADER_CHIP_STYLE itself doesn't carry since
+              // ScreenHeader.tsx's own buttons set their icon color directly
+              // on each path instead.
+              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-tutorial-card-text)' }}
             >
               <CloseIcon />
             </button>
@@ -376,14 +444,14 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
                 alt=""
                 className="pointer-events-none absolute inset-0 size-full object-cover"
               />
-              <p className="relative text-[15px] tracking-[-0.15px]" style={{ color: '#2c2926' }}>
+              <p className="relative text-[15px] tracking-[-0.15px]" style={{ color: 'var(--color-tutorial-card-text)' }}>
                 <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>Beauty Notes</span> is a small app
                 designed and built by Melisa Hildt using Figma and Claude Code and optimized for a mobile
                 experience.
               </p>
               <p
                 className="relative text-[14px] tracking-[-0.14px]"
-                style={{ color: 'rgba(44, 41, 38, 0.8)', fontWeight: 'var(--font-weight-medium)' }}
+                style={{ color: 'var(--color-info-overlay-body-secondary)', fontWeight: 'var(--font-weight-medium)' }}
               >
                 Inspired by fashion magazines and Kevin Aucoin books.
               </p>

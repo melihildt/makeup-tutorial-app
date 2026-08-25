@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { TUTORIALS, TutorialStack } from './TutorialCard'
 import { InfoOverlay } from './InfoOverlay'
+import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import dayTexture from '../assets/filter-chips/day-texture.jpg'
 import nightTexture from '../assets/filter-chips/night-texture.jpg'
 import glamTexture from '../assets/filter-chips/glam-texture.jpg'
@@ -455,13 +456,13 @@ export function HomeScreen({ onSelectLook }: HomeScreenProps) {
                 onClick={() => setInfoOpen(true)}
                 aria-label="About"
                 className="header-icon-button flex size-[40px] items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
-                style={{ background: 'var(--color-header-icon-bg)', borderColor: 'var(--color-header-icon-border)' }}
+                style={HEADER_CHIP_STYLE}
               >
                 <InfoIcon />
               </button>
               <div
                 className="flex size-[40px] items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
-                style={{ background: 'var(--color-header-icon-bg)', borderColor: 'var(--color-header-icon-border)' }}
+                style={HEADER_CHIP_STYLE}
               >
                 <UserIcon />
               </div>

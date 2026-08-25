@@ -1,3 +1,14 @@
+<!-- stdDeviation turned DOWN from the literal Figma export (13.1997) to 5.
+     Same fix as Step_6's copy of this layer (identical shape/canvas) — see
+     that file's comment for the full reasoning: at the literal value this
+     white glow is invisible, in Figma's own composited render too, purely
+     because the blur is too large relative to the shape's size (~48x27
+     units) for a plain white fill to keep any contrast against this
+     illustration's light skin tone. Position was confirmed correct via a
+     live-DOM test; only the blur changed. Keep this file's value in sync
+     with Step_6's — currently 5. Safe range: 0.5 (crisp) to just under 6
+     (fades to invisible again by 8). -->
+
 <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="100.234" height="81.6989" viewBox="0 0 100.234 81.6989" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="[Add] Highlight" filter="url(#filter0_f_0_101)">
 <path d="M73.7829 40.7588C73.1216 44.5092 70.3712 48.2228 57.0402 53.0749C41.2538 58.8207 27.3745 52.8071 26.4493 42.231C25.5241 31.6551 37.5962 24.2123 53.3032 26.9818C68.8751 32.3795 74.4442 37.0084 73.7829 40.7588Z" fill="white"/>
@@ -6,7 +17,7 @@
 <filter id="filter0_f_0_101" x="-1.58199e-10" y="-5.83255e-08" width="100.234" height="81.6988" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
 <feFlood flood-opacity="0" result="BackgroundImageFix"/>
 <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-<feGaussianBlur stdDeviation="13.1997" result="effect1_foregroundBlur_0_101"/>
+<feGaussianBlur stdDeviation="5" result="effect1_foregroundBlur_0_101"/>
 </filter>
 </defs>
 </svg>
