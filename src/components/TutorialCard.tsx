@@ -28,6 +28,13 @@ import cardGhostTextureGlam from '../assets/looks/card-ghost-texture-glam.png'
 import previewEyeshadowImg from '../assets/product-images/Product_Eyeshadow.png'
 import previewMascaraImg from '../assets/product-images/Product_Mascara.png'
 import previewHighlightImg from '../assets/product-images/Product_Highlight.png'
+// The remaining four of the same seven product photos — reused below as the
+// "coming soon" thumbnails' blurred base image (see PLACEHOLDER_PRODUCT_IMAGES),
+// rather than sourcing new stock photography for a placeholder state.
+import previewConcealerImg from '../assets/product-images/Product_Concealer.png'
+import previewConcealerBrushImg from '../assets/product-images/Product_Concealer-Bush.png'
+import previewEyelinerImg from '../assets/product-images/Product_Eyeliner.png'
+import previewMeritBrushImg from '../assets/product-images/Product_Merit-Brush.png'
 import type { LookType } from './HomeScreen'
 
 /** The numeric (JS array) form of tokens.css's --ease-out-quart
@@ -89,15 +96,18 @@ export type Tutorial = {
   lookType: LookType
   durationMinutes: number
   /** Declared per-tutorial (true only for Soft Smokey Eye). HomeScreen's own
-   *  card stack still doesn't gate on it — the CTA/tap on *any* tutorial
-   *  there opens the same hard-coded TutorialFlow (Soft Smokey Eye's real
-   *  steps), mislabeled for every other card; known, accepted for now, real
-   *  per-tutorial content is coming later. BookmarksScreen.tsx *does* gate
-   *  on this field (only a tutorial with real content opens the flow from
-   *  there; everything else shows a "coming soon" toast instead) — a
-   *  deliberate product decision for that screen specifically, not a bug,
-   *  but it does mean this field's behavior now differs by which screen
-   *  you tap from. */
+   *  card stack now gates on it too: TutorialDetailCard's CTA is
+   *  StartTutorialButton (wired to `onSelect`/TutorialFlow) only when this
+   *  is true, and ComingSoonButton — an inert disabled button, no
+   *  TutorialFlow wiring at all — otherwise (see TutorialDetailCard's own
+   *  comment). Previously every card's CTA opened the same hard-coded
+   *  TutorialFlow (Soft Smokey Eye's real steps) regardless of this field,
+   *  mislabeled for every other card; fixed per the user's own "coming
+   *  soon" ask rather than left as the earlier known-accepted gap.
+   *  BookmarksScreen.tsx gates on this field too (a tutorial with real
+   *  content opens the flow from there; everything else shows a "coming
+   *  soon" toast instead) — a separate mechanism (toast vs. disabled
+   *  button) for a separate entry point, not a duplicate of this one. */
   hasContent: boolean
   images: [string, string]
   /** Drives the flipped card's level pill (LevelIcon + label) — see
@@ -617,6 +627,75 @@ function DetailPill({ children }: { children: React.ReactNode }) {
  *  comment). */
 const PRODUCTS_PREVIEW_COUNT = 3
 
+/** The seven real product photos this app already has (three of them are
+ *  Soft Smokey Eye's own real preview above) — reused as the *base* photo
+ *  behind a "coming soon" thumbnail's blur+tint (see ComingSoonThumbnail),
+ *  rather than inventing new placeholder imagery for a tutorial that has
+ *  no real content yet. Not meant to claim these specific products are
+ *  used in any given coming-soon look; they're just believable-looking
+ *  makeup photography to blur, same spirit as --color-product-placeholder
+ *  but with actual texture instead of a flat swatch. */
+const PLACEHOLDER_PRODUCT_IMAGES = [
+  previewEyeshadowImg,
+  previewMascaraImg,
+  previewHighlightImg,
+  previewConcealerImg,
+  previewConcealerBrushImg,
+  previewEyelinerImg,
+  previewMeritBrushImg,
+]
+
+/** "Saturated notes" for a coming-soon thumbnail's colored blur — three
+ *  passes at the user's own request each time. First: vivid, varied hues
+ *  (rose red/amber/blue/plum/sage/orchid), well past the source Figma
+ *  mock's own near-pastel tints (rgba(240,224,227,0.5) etc, node
+ *  754:11030). Second, per the user's follow-up: pulled all the way back
+ *  to a washed-out beige/greige/taupe family — same warm neutral hues, but
+ *  low enough saturation it read closer to the page's own ink/cream tokens
+ *  than as a colored note at all. This third pass keeps that same warm
+ *  beige/terracotta/caramel hue family (no blue/plum/sage — this stays a
+ *  neutral palette, not the first pass's rainbow) but with noticeably more
+ *  pigment in each color — the middle ground the user asked for between
+ *  the two previous passes, not a full reversion to either. */
+const COMING_SOON_TINTS = [
+  'rgba(206, 156, 96, 0.5)', // gold sand
+  'rgba(176, 128, 92, 0.5)', // clay
+  'rgba(150, 98, 68, 0.5)', // mocha
+  'rgba(198, 126, 108, 0.5)', // dusty rose
+  'rgba(180, 148, 96, 0.5)', // bronze
+  'rgba(210, 156, 88, 0.5)', // caramel
+]
+
+/** Cheap, dependency-free string hash — good enough to turn a tutorial's
+ *  `id` into a stable seed (see pickDistinct below), not for anything
+ *  security-sensitive. */
+function hashString(value: string): number {
+  let hash = 0
+  for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) | 0
+  return Math.abs(hash)
+}
+
+/** Picks `count` distinct items out of `pool`, deterministically, from a
+ *  numeric seed — "random" per the user's ask in the sense that different
+ *  tutorials land on different combinations, but *stable* for a given
+ *  tutorial across re-renders (ProductsPreview remounts on every flip, via
+ *  its own `key={String(justRevealed)}` — a real Math.random() here would
+ *  reshuffle the photos every time a card flips, which would read as
+ *  broken rather than as a fixed placeholder look). Plain linear scan
+ *  rather than a Fisher-Yates shuffle: `count` is always tiny (3) here, so
+ *  there's no reason to shuffle the whole pool just to take a few items
+ *  from it. */
+function pickDistinct<T>(pool: T[], seed: number, count: number): T[] {
+  const result: T[] = []
+  let i = seed
+  while (result.length < count) {
+    const candidate = pool[i % pool.length]
+    if (!result.includes(candidate)) result.push(candidate)
+    i++
+  }
+  return result
+}
+
 /** The flipped card's product-photo row + caption, node 673:3751
  *  ("Images"). Three overlapping thumbnails (∓7° tilt on the outer two,
  *  matching ImagePair's own tilt-the-outer-two-oppositely shape above) —
@@ -685,7 +764,47 @@ function ProductsPreview({ tutorial, justRevealed = false }: { tutorial: Tutoria
       {image && <img src={image} alt="" className="size-full object-cover" />}
     </div>
   )
+  // No real tutorial yet (see Tutorial's own `hasContent` doc comment) —
+  // node 754:11030 of the "Coming Soon" reference mock (Tech-Experimentation)
+  // shows this same row as a real photo with a colored blur laid over it,
+  // rather than the flat --color-product-placeholder swatch `thumbnail`
+  // above renders for a plain missing image. A sharp 3px rim (the white
+  // border every thumbnail already has) framing a blurred, tinted center
+  // reads as "there's a photo here, just not ready to show yet" — instead
+  // of either an invented real-looking product photo (this tutorial has no
+  // real products behind it to show) or the same flat gray every other
+  // "no image" case in this app uses (which reads as broken/missing here,
+  // not deliberately withheld).
+  const comingSoonThumbnail = (rotateDeg: number, image: string, tint: string) => (
+    <div
+      className="relative h-[108px] w-[96px] shrink-0 overflow-hidden rounded-[18px] border-[3px] border-solid border-white"
+      style={{ boxShadow: shadow, transform: rotateDeg ? `rotate(${rotateDeg}deg)` : undefined }}
+    >
+      <img src={image} alt="" className="absolute inset-0 size-full object-cover" />
+      {/* backdrop-blur (not a blur on the img itself): blurring the img
+          directly would also have to fight this div's own rounded-corner
+          clip re-revealing a hard edge at the seam. inset-0, flush with the
+          image and the white border around it — not inset-[3px] the way
+          the source Figma mock built this (node 754:11035/38/41, an
+          exactly-3px-inset blur layer): that left a 3px ring of the raw,
+          unblurred photo showing between the white border and the blurred
+          center, which reads as an unwanted second (often gray, since
+          these product photos have light studio backgrounds right at
+          their edges) border — the user's own catch, comparing this
+          against the real-photo thumbnail's plain single white border. */}
+      <div className="absolute inset-0 rounded-[15px] backdrop-blur-[6px]" style={{ background: tint }} />
+    </div>
+  )
   const [imageA, imageB, imageC] = tutorial.productImages ?? []
+  // Seeded off the tutorial's own id (see pickDistinct's own comment for
+  // why not Math.random()) — a `+ 1` offset on the tint seed so a given
+  // tutorial doesn't always land on "photo N paired with tint N," which
+  // would make the seed pattern visually obvious across cards.
+  const placeholderSeed = hashString(tutorial.id)
+  const [placeholderImageA, placeholderImageB, placeholderImageC] = tutorial.hasContent
+    ? []
+    : pickDistinct(PLACEHOLDER_PRODUCT_IMAGES, placeholderSeed, 3)
+  const [tintA, tintB, tintC] = tutorial.hasContent ? [] : pickDistinct(COMING_SOON_TINTS, placeholderSeed + 1, 3)
   return (
     <div className="flex w-full flex-col items-center gap-2 px-6 pt-6">
       {/* key={String(justRevealed)}: forces this row to remount every time
@@ -705,16 +824,16 @@ function ProductsPreview({ tutorial, justRevealed = false }: { tutorial: Tutoria
           className="mr-[-16px] flex h-[119px] w-[108px] shrink-0 items-center justify-center"
           style={popStyle(POP_BASE_DELAY_MS + POP_STAGGER_MS)}
         >
-          {thumbnail(-7, imageA)}
+          {tutorial.hasContent ? thumbnail(-7, imageA) : comingSoonThumbnail(-7, placeholderImageA, tintA)}
         </div>
         <div className="mr-[-16px]" style={popStyle(POP_BASE_DELAY_MS)}>
-          {thumbnail(0, imageB)}
+          {tutorial.hasContent ? thumbnail(0, imageB) : comingSoonThumbnail(0, placeholderImageB, tintB)}
         </div>
         <div
           className="flex h-[119px] w-[108px] shrink-0 items-center justify-center"
           style={popStyle(POP_BASE_DELAY_MS + POP_STAGGER_MS)}
         >
-          {thumbnail(7, imageC)}
+          {tutorial.hasContent ? thumbnail(7, imageC) : comingSoonThumbnail(7, placeholderImageC, tintC)}
         </div>
       </div>
       <p
@@ -762,6 +881,62 @@ function StartTutorialButton({ onStart, disabled }: { onStart?: () => void; disa
       <span className="text-[16px] text-white" style={{ fontWeight: 'var(--font-weight-medium)' }}>
         Start Tutorial
       </span>
+    </button>
+  )
+}
+
+/** Lock icon for ComingSoonButton (below) — node 754:11046 ("fi-br-lock",
+ *  Tech-Experimentation's "Coming Soon" reference mock), real path data
+ *  pulled via get_design_context, not hand-approximated (same standard as
+ *  BookmarkIcon/RotateRightIcon/LevelIcon above). Source export had both
+ *  paths' fill hardcoded to the literal hex #2C2926 at 80% opacity — swapped
+ *  for `var(--color-tutorial-card-text)` + fillOpacity since that's the
+ *  exact same color as this file's shared ink token already, matching how
+ *  every other icon here is themed. */
+function LockIcon() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 11.7405 14" fill="none" aria-hidden="true">
+      <path
+        d="M9.97946 4.9639V4.1092C9.97946 1.83975 8.13971 0 5.87026 0C3.6008 0 1.76108 1.83975 1.76108 4.10918V4.96388C0.681428 5.51485 0.00132081 6.62408 0 7.8362V10.7713C0.0019537 12.5537 1.44631 13.998 3.22864 14H8.51187C10.2942 13.998 11.7386 12.5537 11.7405 10.7713V7.83622C11.7392 6.62411 11.0591 5.51485 9.97946 4.9639ZM5.87026 1.76108C7.16707 1.76108 8.21835 2.81236 8.21835 4.10918V4.60756H3.52216V4.10918C3.52216 2.81236 4.57344 1.76108 5.87026 1.76108ZM9.97946 10.7713C9.97946 11.5818 9.32241 12.2389 8.5119 12.2389H3.22866C2.41815 12.2389 1.76111 11.5818 1.76111 10.7713V7.83622C1.76111 7.02572 2.41815 6.36867 3.22866 6.36867H8.5119C9.32241 6.36867 9.97946 7.02572 9.97946 7.83622V10.7713V10.7713Z"
+        fill="var(--color-tutorial-card-text)"
+        fillOpacity={0.8}
+      />
+      <path
+        d="M5.57678 8.12972H6.16379C6.6501 8.12972 7.04433 8.52395 7.04433 9.01026C7.04433 9.49656 6.6501 9.89079 6.16379 9.89079H5.57678C5.09047 9.89079 4.69624 9.49656 4.69624 9.01026C4.69624 8.52395 5.09047 8.12972 5.57678 8.12972Z"
+        fill="var(--color-tutorial-card-text)"
+        fillOpacity={0.8}
+      />
+    </svg>
+  )
+}
+
+/** "Coming soon" CTA — replaces StartTutorialButton for a tutorial with no
+ *  real content yet (`!tutorial.hasContent`, see that field's own doc
+ *  comment), node 754:11044 ("Back-button") of the same "Coming Soon"
+ *  reference mock LockIcon above comes from. A real disabled `<button>`,
+ *  not a styled div: a disabled button doesn't dispatch click at all, so
+ *  tapping it neither "starts" anything nor bubbles up to flip the card
+ *  back to front (no stopPropagation needed here the way
+ *  StartTutorialButton's onClick needs one) — it just inertly communicates
+ *  "not tappable," matching the lock icon. Same 290x52 pill footprint as
+ *  StartTutorialButton so swapping between the two doesn't reflow anything
+ *  else in the card. */
+function ComingSoonButton() {
+  return (
+    <button
+      type="button"
+      disabled
+      aria-label="Coming soon — this tutorial isn't available yet"
+      className="flex h-[52px] w-[290px] shrink-0 items-center justify-center gap-2 overflow-hidden rounded-[30px] border-[0.5px] border-solid"
+      style={{ background: 'rgba(44, 41, 38, 0.1)', borderColor: 'rgba(44, 41, 38, 0.1)' }}
+    >
+      <span
+        className="text-[15px] opacity-80"
+        style={{ color: 'var(--color-tutorial-card-text)', fontWeight: 'var(--font-weight-medium)', letterSpacing: '-0.15px' }}
+      >
+        Coming soon
+      </span>
+      <LockIcon />
     </button>
   )
 }
@@ -851,7 +1026,11 @@ function TutorialDetailCard({
       </div>
       <ProductsPreview tutorial={tutorial} justRevealed={justRevealed} />
       <div className="flex w-full flex-1 items-end justify-center pt-4">
-        <StartTutorialButton onStart={disabled ? undefined : onStart} disabled={disabled} />
+        {tutorial.hasContent ? (
+          <StartTutorialButton onStart={disabled ? undefined : onStart} disabled={disabled} />
+        ) : (
+          <ComingSoonButton />
+        )}
       </div>
     </div>
   )
