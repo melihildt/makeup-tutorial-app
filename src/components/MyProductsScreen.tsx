@@ -124,7 +124,16 @@ function MyProductRow({
             onMenuClick()
           }}
           aria-label={`More options for ${product.brand} ${product.name}`}
-          className={`flex shrink-0 items-center justify-center p-2 ${product.shade ? 'self-start' : ''}`}
+          // header-icon-button (index.css) — reused here purely for its
+          // shared hover/press feedback on a descendant <svg>
+          // (scale(1.05) hover, scale(0.93) active, --duration-instant/
+          // --ease-out-quart), not its chip background: this button has no
+          // background/border classes, so only that svg-targeting rule
+          // actually applies. find-animation-opportunities pass: this was
+          // the only icon-only button in the app with no press feedback at
+          // all — every other one already gets this for free via the same
+          // class.
+          className={`header-icon-button flex shrink-0 items-center justify-center p-2 ${product.shade ? 'self-start' : ''}`}
           style={{ color: 'var(--color-tutorial-card-text)' }}
         >
           <span className="flex size-[20px] items-center justify-center">

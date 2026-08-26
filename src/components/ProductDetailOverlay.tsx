@@ -99,19 +99,44 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
                 {/* object-contain, not ProductCard/MyProductRow's
                     object-cover — this is a large single hero image, not a
                     small thumbnail crop, matching the design's own square
-                    "Card" (node 759:11502). */}
-                <div
+                    "Card" (node 759:11502).
+
+                    Settle-in scale+fade, staggered slightly behind the
+                    backdrop — copied verbatim from InfoOverlay.tsx's own
+                    "About" card (see its own comment for why `transition`
+                    is embedded per-target rather than shared: a shared prop
+                    would also delay the *exit*, confirmed there via
+                    getAnimations()). find-animation-opportunities pass:
+                    this overlay reused InfoOverlay's backdrop but had
+                    dropped this half of the pattern, so the image just
+                    materialized flatly with the backdrop instead of
+                    settling into place after it. Text below stays plain,
+                    matching InfoOverlay's own Portfolio/Email links (also
+                    un-animated below its card) — only the one hero visual
+                    gets the treatment, not everything on screen. */}
+                <motion.div
                   className="relative size-[238px] shrink-0 overflow-hidden rounded-[24px] border border-solid"
                   style={{
                     borderColor: 'var(--color-border-hairline)',
                     boxShadow: '0px 0px 8px rgba(14, 11, 6, 0.03)',
                     background: 'var(--color-image-placeholder)',
                   }}
+                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: 'scale(0.96)' }}
+                  animate={{
+                    opacity: 1,
+                    transform: 'scale(1)',
+                    transition: { duration: reduceMotion ? 0.2 : 0.35, ease: EASE_OUT_QUART, delay: reduceMotion ? 0 : 0.06 },
+                  }}
+                  exit={
+                    reduceMotion
+                      ? { opacity: 0, transition: { duration: 0.2, ease: EASE_OUT_QUART, delay: 0 } }
+                      : { opacity: 0, transform: 'scale(0.96)', transition: { duration: 0.35, ease: EASE_OUT_QUART, delay: 0 } }
+                  }
                 >
                   {displayedProduct.image && (
                     <img src={displayedProduct.image} alt="" className="size-full object-contain" />
                   )}
-                </div>
+                </motion.div>
                 <div className="flex w-full max-w-[238px] flex-col gap-[2px]">
                   <div
                     className="flex flex-col gap-[2px] text-[length:var(--font-size-product-name)] tracking-[--letter-spacing-tight] text-[--color-text-product]"

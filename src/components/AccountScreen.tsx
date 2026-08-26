@@ -121,7 +121,15 @@ function AccountRow({ icon, label, onClick, trailing }: AccountRowProps) {
       type="button"
       onClick={onClick}
       disabled={!onClick}
-      className="flex w-full items-center gap-4 py-3 disabled:cursor-default"
+      // active:scale-[0.98] + --duration-instant/--ease-out-quart — same
+      // recipe MyProductsScreen.tsx's own tappable rows already use
+      // (find-animation-opportunities pass: this row had no press feedback
+      // at all, the only tappable row in the app without it). Beauty
+      // Calculator's row has no onClick, so `disabled` is true there and
+      // this never fires — nothing implies interactivity on a row that has
+      // none.
+      className="flex w-full items-center gap-4 py-3 active:scale-[0.98] disabled:cursor-default"
+      style={{ transition: 'transform var(--duration-instant) var(--ease-out-quart)' }}
     >
       <span
         className="flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
