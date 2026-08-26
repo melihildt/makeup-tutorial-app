@@ -24,6 +24,12 @@ type HomeScreenProps = {
    *  which owns none of it locally any more. */
   savedTutorialIds: Set<string>
   onToggleSavedTutorial: (id: string) => void
+  /** Whether the info icon's About/credits overlay (InfoOverlay.tsx) is
+   *  open — lifted to App.tsx for the same reason `savedTutorialIds` is:
+   *  it now doubles as this app's /about URL (see router.ts), and App.tsx's
+   *  path-sync effect needs to read it without HomeScreen in between. */
+  infoOpen: boolean
+  onInfoOpenChange: (open: boolean) => void
 }
 
 // Sun/Moon/Diamond below are authored as single inline SVGs rather than the
@@ -397,9 +403,10 @@ export function HomeScreen({
   onOpenAccount,
   savedTutorialIds,
   onToggleSavedTutorial,
+  infoOpen,
+  onInfoOpenChange,
 }: HomeScreenProps) {
   const [selectedType, setSelectedType] = useState<LookType>('day')
-  const [infoOpen, setInfoOpen] = useState(false)
   // The filter's actual effect — see this component's own module comment.
   // Not memoized: TUTORIALS is a module-level constant (never changes
   // identity) and this only re-filters when selectedType itself changes,
@@ -480,7 +487,7 @@ export function HomeScreen({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setInfoOpen(true)}
+                onClick={() => onInfoOpenChange(true)}
                 aria-label="About"
                 className="header-icon-button flex size-[40px] items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
                 style={HEADER_CHIP_STYLE}
@@ -549,7 +556,7 @@ export function HomeScreen({
         </div>
       </div>
 
-      <InfoOverlay open={infoOpen} onClose={() => setInfoOpen(false)} />
+      <InfoOverlay open={infoOpen} onClose={() => onInfoOpenChange(false)} />
     </div>
   )
 }
