@@ -158,7 +158,11 @@ export const TUTORIALS: Tutorial[] = [
  *  inner hole-cutout subpath dropped — i.e. the identical shape, just
  *  solid instead of hollow — painted at full opacity (Figma's "Dark/100%",
  *  no dimming), not the hand-approximated curve this had before. */
-function BookmarkIcon({ filled }: { filled: boolean }) {
+// Exported: BookmarksScreen.tsx reuses this exact icon (filled=true for
+// every row there — everything shown is, definitionally, already saved —
+// and unfilled for its own empty state) rather than re-authoring the same
+// path data a second time.
+export function BookmarkIcon({ filled }: { filled: boolean }) {
   return (
     <svg
       width={22}
@@ -1027,6 +1031,14 @@ type TutorialStackProps = {
    *  for now, threaded straight through to every TutorialStackCard as
    *  `lookType`. */
   lookType: LookType
+  /** Bookmark toggle state, lifted all the way up to App.tsx now (and from
+   *  there persisted to localStorage) — no longer owned here. Moved once
+   *  BookmarksScreen.tsx needed the same state from a sibling screen: this
+   *  component's own local `useState` never survived HomeScreen unmounting
+   *  (every screen switch in App.tsx), which a real Bookmarks page would
+   *  make an obvious, immediate bug rather than a latent one. */
+  savedIds: Set<string>
+  onToggleSave: (id: string) => void
 }
 
 /** Signed distance from `cardIndex` to the current `v`, wrapped around a
@@ -2013,7 +2025,7 @@ function TutorialStackCard({
 // live outside it.
 let hasPlayedStackEntrance = false
 
-export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackProps) {
+export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggleSave }: TutorialStackProps) {
   const reduceMotion = useReducedMotion()
   // Lazy initializer runs exactly once per mount, reading *and* flipping
   // the module flag together — the next TutorialStack instance (a return
@@ -2094,35 +2106,19 @@ export function TutorialStack({ tutorials, onSelect, lookType }: TutorialStackPr
   // `DEFAULT_MOTION_TUNING` itself, unaffected by this being a plain
   // reference instead of a state value.
   const tuning = DEFAULT_MOTION_TUNING
-  // Bookmark state, per tutorial id. Owned here rather than inside
-  // TutorialLookCard itself: that component is instantiated twice per
-  // tutorial across the app's lifetime (once for the drag stack, once for
-  // the prefers-reduced-motion static list — see the `reduceMotion` branch
-  // below), and *within* the drag stack every card's own TutorialLookCard
-  // instance stays mounted continuously as it cycles through peek/front/
-  // peek again (only its pose changes) — so local state would technically
-  // survive that, but would NOT survive a live prefers-reduced-motion
-  // toggle switching which branch renders, and two independent copies of
-  // "the same" saved state (one per branch) was never the intent. A Set
-  // instead of Record<string, boolean>: only ever asking "is this id in
-  // it", never iterating/serializing it elsewhere yet.
-  const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set())
-
+  // handleInteraction() first, then the real (now lifted, see
+  // TutorialStackProps' own comment) toggle — a thin local wrapper so every
+  // call site below keeps calling one `handleToggleSave(id)`, same as
+  // before this state moved to App.tsx, rather than needing its own
+  // "mark interacted, then toggle" pair inline at each of the (several)
+  // call sites.
   function handleToggleSave(id: string) {
     // Tap-driven engagement with the stack — see TutorialStackCard's
     // onInteraction prop doc comment. Called directly (not via a card's own
     // onInteraction prop) since this handler lives up here, not on
     // TutorialStackCard itself.
     handleInteraction()
-    setSavedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
+    onToggleSave(id)
   }
 
   // Reduced-motion equivalent of the normal-motion flip's `isFlipped` —

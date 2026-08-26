@@ -1,12 +1,40 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { EASE_OUT_QUART } from './components/TutorialCard'
+import { EASE_OUT_QUART, TUTORIALS } from './components/TutorialCard'
 import { HomeScreen } from './components/HomeScreen'
 import { AccountScreen } from './components/AccountScreen'
 import { MyProductsScreen } from './components/MyProductsScreen'
+import { BookmarksScreen } from './components/BookmarksScreen'
 import { TutorialFlow } from './TutorialFlow'
 
-type Screen = 'home' | 'tutorial' | 'account' | 'my-products'
+type Screen = 'home' | 'tutorial' | 'account' | 'my-products' | 'bookmarks'
+
+// localStorage-backed saved-tutorial ids — lifted here (not owned inside
+// TutorialCard.tsx's TutorialStack, where it used to live) for two reasons:
+// BookmarksScreen is a sibling of HomeScreen, not a descendant, so it needs
+// this state at a common ancestor either way; and TutorialStack's own state
+// didn't even survive navigating Home → Account and back (it unmounts along
+// with HomeScreen on every screen switch — see App.tsx's own conditional
+// render below), which a real Bookmarks page would make immediately obvious
+// as broken. Persisted to localStorage (not just lifted here as in-memory
+// state) per the user's own call, so a bookmark actually survives a page
+// reload, not just in-app navigation.
+const SAVED_TUTORIALS_STORAGE_KEY = 'beautynotes:saved-tutorial-ids'
+
+function readSavedTutorialIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SAVED_TUTORIALS_STORAGE_KEY)
+    if (!raw) return new Set()
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) ? new Set(parsed.filter((id): id is string => typeof id === 'string')) : new Set()
+  } catch {
+    // Malformed JSON (hand-edited/corrupted storage) or localStorage itself
+    // unavailable (private browsing in some browsers, storage disabled) —
+    // either way, starting from "nothing saved" is the only sane fallback,
+    // not a crash.
+    return new Set()
+  }
+}
 
 /** Home↔Tutorial slide — standard Framer Motion "directional navigation"
  *  recipe (AnimatePresence + a `custom` payload fed into per-key
@@ -55,6 +83,29 @@ function App() {
   const [direction, setDirection] = useState<1 | -1>(1)
   const reduceMotion = useReducedMotion()
 
+  // Lazy initializer (not a bare `new Set()`) so reading localStorage only
+  // ever happens once, on mount — not on every re-render.
+  const [savedTutorialIds, setSavedTutorialIds] = useState<Set<string>>(readSavedTutorialIds)
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SAVED_TUTORIALS_STORAGE_KEY, JSON.stringify([...savedTutorialIds]))
+    } catch {
+      // Storage full/disabled — the toggle itself already succeeded in
+      // memory for this session, silently failing to persist is the
+      // correct degrade here, not surfacing an error for a background save.
+    }
+  }, [savedTutorialIds])
+
+  function toggleSavedTutorial(id: string) {
+    setSavedTutorialIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   function goToTutorial() {
     setDirection(1)
     setScreen('tutorial')
@@ -83,6 +134,14 @@ function App() {
   function goToHomeFromAccount() {
     setDirection(-1)
     setScreen('home')
+  }
+  function goToBookmarks() {
+    setDirection(1)
+    setScreen('bookmarks')
+  }
+  function goToAccountFromBookmarks() {
+    setDirection(-1)
+    setScreen('account')
   }
 
   return (
@@ -143,12 +202,39 @@ function App() {
             exit="exit"
             transition={{ duration: reduceMotion ? 0.2 : 0.35, ease: EASE_OUT_QUART }}
           >
-            {screen === 'home' && <HomeScreen onSelectLook={goToTutorial} onOpenAccount={goToAccount} />}
+            {screen === 'home' && (
+              <HomeScreen
+                onSelectLook={goToTutorial}
+                onOpenAccount={goToAccount}
+                savedTutorialIds={savedTutorialIds}
+                onToggleSavedTutorial={toggleSavedTutorial}
+              />
+            )}
             {screen === 'tutorial' && <TutorialFlow onExit={goToHome} />}
             {screen === 'account' && (
-              <AccountScreen onClose={goToHomeFromAccount} onOpenMyProducts={goToMyProducts} />
+              <AccountScreen
+                onClose={goToHomeFromAccount}
+                onOpenMyProducts={goToMyProducts}
+                onOpenBookmarks={goToBookmarks}
+              />
             )}
             {screen === 'my-products' && <MyProductsScreen onClose={goToAccountFromProducts} />}
+            {screen === 'bookmarks' && (
+              <BookmarksScreen
+                tutorials={TUTORIALS}
+                savedTutorialIds={savedTutorialIds}
+                onToggleSavedTutorial={toggleSavedTutorial}
+                onClose={goToAccountFromBookmarks}
+                // Same hand-off as HomeScreen's own card stack — see
+                // TutorialStackProps' own comment: every tutorial ends up
+                // routing to the one real TutorialFlow (Soft Smokey Eye's
+                // steps) regardless of *which* card started it, so this
+                // needs no argument telling it which bookmark was tapped.
+                // BookmarksScreen itself decides whether a given tap should
+                // call this at all (only tutorials with real content do).
+                onOpenTutorial={goToTutorial}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
