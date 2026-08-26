@@ -36,7 +36,7 @@
   --color-text-primary: var(--color-tutorial-card-text);    /* V5: warm near-black ink (was flat #0e0b06) — the tutorial flow now shares the home screen's V4 ink token instead of its own separate one */
   --color-text-caption: rgba(0, 0, 0, 0.4);   /* deprecated: "90s inspired" caption removed in V2 */
   --color-text-subtle: rgba(0, 0, 0, 0.7);    /* product sub-line, e.g. "79 - Spices" */
-  --color-text-product: rgba(44, 41, 38, 0.8);   /* V5 (was rgba(0,0,0,0.8)) — product name block, same ink migration as everywhere else in this pass; only used by ProductCard.tsx, safe to change directly */
+  --color-text-product: rgba(44, 41, 38, 0.8);   /* V5 (was rgba(0,0,0,0.8)) — product name block, same ink migration as everywhere else in this pass. Also reused by AccountScreen.tsx/MyProductsScreen.tsx's "Coming soon" pill text — same "Dark/80%" style (BeautyNotes/p-14) in both pulls, not a coincidence; no longer ProductCard.tsx-only. */
   --color-border-hairline: rgba(44, 41, 38, 0.2); /* V5 (was rgba(14,11,6,0.05)) — real contrast increase, not just a recolor */
   --color-border-card: rgba(255, 255, 255, 0.3); /* deprecated: V2 card has no visible stroke */
   --color-image-placeholder: #e5e5e7; /* fallback bg behind product images before load */
@@ -273,6 +273,42 @@
      the same pattern elsewhere in this file). */
   --color-info-overlay-heading: rgba(44, 41, 38, 0.5); /* "About" header label */
   --color-info-overlay-body-secondary: rgba(44, 41, 38, 0.8); /* credits card's second paragraph */
+
+  /* ---------- Account / My Products ----------
+     AccountScreen.tsx (Figma node 749:10533, "Home/Profile") and
+     MyProductsScreen.tsx (node 734:7550, "Home/Profile-MyProducts") — opened
+     from HomeScreen's own user-icon button. Both screens' "Account"/"My
+     Products" title labels reuse --color-info-overlay-heading directly
+     (confirmed identical rgba(44,41,38,0.5) in both pulls, not a
+     coincidence worth a second token) and their card containers reuse
+     --radius-card/--shadow-card (My Products) — these two are the values
+     genuinely new to this pair of screens. */
+  --radius-account-card: 24px; /* Account's own options card — rounder than --radius-card (20px), confirmed on its own pull, not a rounding of that token */
+  --color-list-row-icon-bg: rgba(44, 41, 38, 0.05); /* Account row icon boxes (My Products/Bookmarks/Beauty Calculator) — same value as --color-badge-bg but kept separate since it's a different element/meaning, per this file's own one-token-per-meaning convention (see --shadow-card vs --shadow-tutorial-card) */
+
+  /* ---------- Toast (Toast.tsx) ----------
+     Not Figma-sourced — this app had no toast/snackbar component until the
+     user asked for one directly (replacing the anchored "Coming soon" pill
+     AccountScreen.tsx/MyProductsScreen.tsx used at first). A genuine orange,
+     not a reuse of this file's existing gold accent (#E3B345, LOOK_TYPES'
+     Day tint / InfoOverlay's LinkIcon-AtIcon) — that gold already carries
+     its own meaning elsewhere and reusing it here would blur the two. */
+  --color-toast-accent: #e8871e;
+
+  /* ---------- Scroll-end fade (ScrollEndFade.tsx) ----------
+     Bottom-of-scroll hint gradient — fades a white card's own surface
+     color to transparent, hinting there's more to scroll below. First
+     built directly in AllStepsView.tsx (docs/figma-allsteps-restyle.md,
+     a hardcoded `linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff
+     100%)`); promoted to this token + ScrollEndFade.tsx once
+     MyProductsScreen.tsx needed the identical pattern, so it's one shared
+     source now instead of a second hand-copied gradient. `#fff` swapped
+     for `--color-surface` here since that token already *is* #ffffff
+     (tokens.css's own "V2: card background" entry) — same value, but tied
+     to the semantic token every white card surface in this app already
+     uses, so this fade can't silently drift from that color if it's ever
+     retuned. */
+  --gradient-scroll-end-fade: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, var(--color-surface) 100%);
 }
 
 /*

@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { EASE_OUT_QUART } from './components/TutorialCard'
 import { HomeScreen } from './components/HomeScreen'
+import { AccountScreen } from './components/AccountScreen'
+import { MyProductsScreen } from './components/MyProductsScreen'
 import { TutorialFlow } from './TutorialFlow'
 
-type Screen = 'home' | 'tutorial'
+type Screen = 'home' | 'tutorial' | 'account' | 'my-products'
 
 /** Home↔Tutorial slide — standard Framer Motion "directional navigation"
  *  recipe (AnimatePresence + a `custom` payload fed into per-key
@@ -58,6 +60,27 @@ function App() {
     setScreen('tutorial')
   }
   function goToHome() {
+    setDirection(-1)
+    setScreen('home')
+  }
+  // Account/My Products form their own fixed 3-deep chain off Home (Home →
+  // Account → My Products), not a generic screen stack — each pair below
+  // just mirrors goToTutorial/goToHome's own explicit direction-setting
+  // convention rather than introducing new machinery for what's only ever
+  // these two extra hops.
+  function goToAccount() {
+    setDirection(1)
+    setScreen('account')
+  }
+  function goToMyProducts() {
+    setDirection(1)
+    setScreen('my-products')
+  }
+  function goToAccountFromProducts() {
+    setDirection(-1)
+    setScreen('account')
+  }
+  function goToHomeFromAccount() {
     setDirection(-1)
     setScreen('home')
   }
@@ -120,7 +143,12 @@ function App() {
             exit="exit"
             transition={{ duration: reduceMotion ? 0.2 : 0.35, ease: EASE_OUT_QUART }}
           >
-            {screen === 'home' ? <HomeScreen onSelectLook={goToTutorial} /> : <TutorialFlow onExit={goToHome} />}
+            {screen === 'home' && <HomeScreen onSelectLook={goToTutorial} onOpenAccount={goToAccount} />}
+            {screen === 'tutorial' && <TutorialFlow onExit={goToHome} />}
+            {screen === 'account' && (
+              <AccountScreen onClose={goToHomeFromAccount} onOpenMyProducts={goToMyProducts} />
+            )}
+            {screen === 'my-products' && <MyProductsScreen onClose={goToAccountFromProducts} />}
           </motion.div>
         </AnimatePresence>
       </div>

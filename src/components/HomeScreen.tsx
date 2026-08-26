@@ -16,6 +16,8 @@ export type LookType = 'day' | 'night' | 'glam'
 type HomeScreenProps = {
   /** Called when the (only, for now) look card is tapped — hands off to the tutorial flow. */
   onSelectLook?: () => void
+  /** Called when the user icon is tapped — opens AccountScreen. */
+  onOpenAccount?: () => void
 }
 
 // Sun/Moon/Diamond below are authored as single inline SVGs rather than the
@@ -372,12 +374,14 @@ function LookSelectorChip({
  * TutorialStack's own prop and CardBehind/StartOverCard in TutorialCard.tsx)
  * — a deliberate first step toward the filters doing something, taken
  * before the actual per-look card sets exist, per the user's own framing
- * ("until we add more cards"). The user icon button is still purely
- * decorative, same "not functional yet" spirit as the filters otherwise
- * still are — but the info icon now opens InfoOverlay.tsx's About/credits
- * modal (Figma node 730:5706), see that file's own doc comment.
+ * ("until we add more cards"). The info icon opens InfoOverlay.tsx's
+ * About/credits modal (Figma node 730:5706, see that file's own doc
+ * comment); the user icon now opens AccountScreen.tsx (`onOpenAccount`,
+ * an App.tsx `Screen`, not an in-place overlay like InfoOverlay — its own
+ * design is a full opaque screen, not a blur-over-Home modal) rather than
+ * being purely decorative.
  */
-export function HomeScreen({ onSelectLook }: HomeScreenProps) {
+export function HomeScreen({ onSelectLook, onOpenAccount }: HomeScreenProps) {
   const [selectedType, setSelectedType] = useState<LookType>('day')
   const [infoOpen, setInfoOpen] = useState(false)
 
@@ -460,12 +464,15 @@ export function HomeScreen({ onSelectLook }: HomeScreenProps) {
               >
                 <InfoIcon />
               </button>
-              <div
-                className="flex size-[40px] items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+              <button
+                type="button"
+                onClick={onOpenAccount}
+                aria-label="Account"
+                className="header-icon-button flex size-[40px] items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
                 style={HEADER_CHIP_STYLE}
               >
                 <UserIcon />
-              </div>
+              </button>
             </div>
           </div>
 
