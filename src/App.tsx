@@ -106,17 +106,34 @@ function App() {
     })
   }
 
+  // Where exiting the tutorial should land — 'home' for the common case
+  // (opened from HomeScreen's own card stack), 'bookmarks' when it was
+  // opened by tapping a saved look on BookmarksScreen instead (per the
+  // user's own ask: exiting there should return to Bookmarks, not always
+  // Home). Not a generic back-stack — this app doesn't have one anywhere
+  // else either (Account/My Products/Bookmarks below are each a fixed hop,
+  // not a push/pop stack) — just enough state for this one specific
+  // "same destination, two possible origins" case. Set by whichever
+  // goToTutorial* function is actually called, read once by exitTutorial.
+  const [tutorialOrigin, setTutorialOrigin] = useState<'home' | 'bookmarks'>('home')
+
   function goToTutorial() {
+    setTutorialOrigin('home')
     setDirection(1)
     setScreen('tutorial')
   }
-  function goToHome() {
+  function goToTutorialFromBookmarks() {
+    setTutorialOrigin('bookmarks')
+    setDirection(1)
+    setScreen('tutorial')
+  }
+  function exitTutorial() {
     setDirection(-1)
-    setScreen('home')
+    setScreen(tutorialOrigin)
   }
   // Account/My Products form their own fixed 3-deep chain off Home (Home →
   // Account → My Products), not a generic screen stack — each pair below
-  // just mirrors goToTutorial/goToHome's own explicit direction-setting
+  // just mirrors goToTutorial/exitTutorial's own explicit direction-setting
   // convention rather than introducing new machinery for what's only ever
   // these two extra hops.
   function goToAccount() {
@@ -210,7 +227,7 @@ function App() {
                 onToggleSavedTutorial={toggleSavedTutorial}
               />
             )}
-            {screen === 'tutorial' && <TutorialFlow onExit={goToHome} />}
+            {screen === 'tutorial' && <TutorialFlow onExit={exitTutorial} />}
             {screen === 'account' && (
               <AccountScreen
                 onClose={goToHomeFromAccount}
@@ -225,14 +242,17 @@ function App() {
                 savedTutorialIds={savedTutorialIds}
                 onToggleSavedTutorial={toggleSavedTutorial}
                 onClose={goToAccountFromBookmarks}
-                // Same hand-off as HomeScreen's own card stack — see
-                // TutorialStackProps' own comment: every tutorial ends up
-                // routing to the one real TutorialFlow (Soft Smokey Eye's
-                // steps) regardless of *which* card started it, so this
-                // needs no argument telling it which bookmark was tapped.
-                // BookmarksScreen itself decides whether a given tap should
-                // call this at all (only tutorials with real content do).
-                onOpenTutorial={goToTutorial}
+                // Not goToTutorial — see tutorialOrigin's own comment above:
+                // this variant marks the exit as returning to Bookmarks
+                // instead of Home. Otherwise the same hand-off as
+                // HomeScreen's own card stack (see TutorialStackProps' own
+                // comment: every tutorial routes to the one real
+                // TutorialFlow regardless of *which* card started it, so
+                // this needs no argument telling it which bookmark was
+                // tapped). BookmarksScreen itself decides whether a given
+                // tap should call this at all (only tutorials with real
+                // content do).
+                onOpenTutorial={goToTutorialFromBookmarks}
               />
             )}
           </motion.div>
