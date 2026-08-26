@@ -50,7 +50,13 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
     <AnimatePresence>
       {open && (
         <motion.div
-          className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-2xl"
+          // md:py-6 — see InfoOverlay.tsx's own comment on this same class:
+          // without it this overlay's header sits flush at the very top on
+          // desktop instead of matching MyProductsScreen's own 24px inset
+          // (inherited from copying InfoOverlay's structure — the bug was
+          // already there, just unnoticed on that screen too until a real
+          // ≥768px check).
+          className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-2xl md:py-6"
           style={{
             background:
               'linear-gradient(0deg, var(--color-info-overlay-tint-top) 25.235%, var(--color-info-overlay-tint-bottom) 84.117%)',

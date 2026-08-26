@@ -341,7 +341,19 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-2xl"
+          // md:py-6 — without it, this overlay's header sits flush at the
+          // very top on desktop instead of matching HomeScreen's own
+          // 24px inset (the whole reason HomeScreen has md:py-6 at all —
+          // see its own comment). `inset-0` on an absolutely positioned
+          // element resolves against the ancestor's *padding box*, which
+          // already includes that padding, so this element fills right
+          // through it regardless of the ancestor's own md:py-6 — the two
+          // never actually stack, this has to carry its own copy. Confirmed
+          // via a real ≥768px viewport (getBoundingClientRect: header sat
+          // 8px from the frame top instead of HomeScreen's 32px) — not
+          // visible below md, where HomeScreen's own py-6 is 0 too, which
+          // is why this went unnoticed until now.
+          className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-2xl md:py-6"
           style={{
             background:
               'linear-gradient(0deg, var(--color-info-overlay-tint-top) 25.235%, var(--color-info-overlay-tint-bottom) 84.117%)',
