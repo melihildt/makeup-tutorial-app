@@ -99,6 +99,16 @@ function BookmarkRow({
               {tutorial.brand}
             </p>
           </div>
+          {/* p-2 + a fixed icon box — MyProductRow's own kebab-button recipe
+              (MyProductsScreen.tsx), not the earlier -m-1/p-1 pair: that
+              combination canceled itself out in the row's layout (padding
+              added, then pulled back by an equal negative margin) but left
+              the actual hit target at 30×32px — the smallest tap target
+              in the app, on a control right next to a *different* action
+              (the row's own tap-to-open), where a mis-tap costs more than
+              usual. BookmarkIcon's own box is 24px (its taller dimension),
+              not MenuDotsIcon's 20px, so this uses size-[24px] to land on
+              the same 40×40 total MyProductRow's kebab gets. */}
           <button
             type="button"
             onClick={(e) => {
@@ -106,10 +116,12 @@ function BookmarkRow({
               onToggleSavedTutorial(tutorial.id)
             }}
             aria-label={`Remove ${tutorial.title} from bookmarks`}
-            className="header-icon-button -m-1 flex shrink-0 items-center justify-center p-1"
+            className="header-icon-button flex shrink-0 items-center justify-center p-2"
             style={{ color: 'var(--color-tutorial-card-text)' }}
           >
-            <BookmarkIcon filled />
+            <span className="flex size-[24px] items-center justify-center">
+              <BookmarkIcon filled />
+            </span>
           </button>
         </div>
         <p className="text-[12px] leading-[normal] tracking-[-0.12px] opacity-50" style={{ color: 'var(--color-tutorial-card-text)' }}>
