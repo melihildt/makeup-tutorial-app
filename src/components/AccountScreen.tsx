@@ -1,10 +1,10 @@
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { CloseIcon } from './InfoOverlay'
-import { Toast, useToast } from './Toast'
 
 type AccountScreenProps = {
   onClose: () => void
   onOpenMyProducts: () => void
+  onOpenBookmarks: () => void
 }
 
 // Figma: node 749:10533 ("Home/Profile"), file Tech-Experimentation — opened
@@ -74,9 +74,10 @@ function ChevronRightIcon() {
 // style (BeautyNotes/p-14) as elsewhere, reusing --color-badge-bg-list/
 // --color-text-product rather than new tokens since both already carry
 // exactly this value (AllStepsView's own per-group pill; ProductCard's
-// product-name ink — see their own tokens.css comments). Tap feedback for
-// Bookmarks/"+"/"⋮" (not permanently-disabled rows like this one) now goes
-// through Toast.tsx instead of a variant of this pill — see useToast below.
+// product-name ink — see their own tokens.css comments). This is the only
+// remaining non-functional row on this screen now that Bookmarks navigates
+// for real — Toast.tsx (formerly used for Bookmarks' own "coming soon" tap
+// feedback) isn't needed on this screen any more.
 export function ComingSoonPill() {
   return (
     <span
@@ -101,11 +102,10 @@ const ROW_ICON_STYLE = {
 type AccountRowProps = {
   icon: React.ReactNode
   label: string
-  /** Present → row is tappable and shows a chevron (My Products navigates;
-   *  Bookmarks shows the "coming soon" Toast instead — see AccountScreen
-   *  below). Omitted → the row is permanently inert with `trailing` shown
-   *  in the chevron's place (Beauty Calculator's own already-disabled
-   *  state). */
+  /** Present → row is tappable and shows a chevron (My Products and
+   *  Bookmarks both navigate for real now). Omitted → the row is
+   *  permanently inert with `trailing` shown in the chevron's place
+   *  (Beauty Calculator's own already-disabled state). */
   onClick?: () => void
   trailing?: React.ReactNode
 }
@@ -150,24 +150,20 @@ function AccountRow({ icon, label, onClick, trailing }: AccountRowProps) {
 
 /**
  * Account screen — HomeScreen's user-icon button opens this (Figma node
- * 749:10533, "Home/Profile"). Three options: My Products (real, drills into
- * MyProductsScreen.tsx), Bookmarks (no destination screen designed yet —
- * tapping it shows the "coming soon" Toast, see useToast/Toast.tsx), and
- * Beauty Calculator (already shown disabled with a "Coming soon" pill in
- * the design itself). Same screen-level structure as HomeScreen.tsx's own
- * root (gradient bg, screen-edge margin tokens) since App.tsx renders this
- * as a sibling `Screen`, not an overlay over Home the way InfoOverlay.tsx
- * is.
+ * 749:10533, "Home/Profile"). Three options: My Products and Bookmarks both
+ * drill into their own real screens (MyProductsScreen.tsx/
+ * BookmarksScreen.tsx), Beauty Calculator stays shown disabled with a
+ * "Coming soon" pill, matching the design itself. Same screen-level
+ * structure as HomeScreen.tsx's own root (gradient bg, screen-edge margin
+ * tokens) since App.tsx renders this as a sibling `Screen`, not an overlay
+ * over Home the way InfoOverlay.tsx is.
  */
-export function AccountScreen({ onClose, onOpenMyProducts }: AccountScreenProps) {
-  const [toastOpen, showToast, hideToast] = useToast()
-
+export function AccountScreen({ onClose, onOpenMyProducts, onOpenBookmarks }: AccountScreenProps) {
   return (
     <div
       className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl md:py-6"
       style={{ background: 'var(--gradient-bg-home)' }}
     >
-      <Toast open={toastOpen} onClose={hideToast} />
       <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-[--space-sm] pb-2 pt-[--space-2xs]">
         <div className="flex items-start justify-between">
           <p
@@ -192,7 +188,7 @@ export function AccountScreen({ onClose, onOpenMyProducts }: AccountScreenProps)
           data-node-id="749:10542"
         >
           <AccountRow icon={<BoxIcon />} label="My Products" onClick={onOpenMyProducts} />
-          <AccountRow icon={<BookmarkIcon />} label="Bookmarks" onClick={showToast} />
+          <AccountRow icon={<BookmarkIcon />} label="Bookmarks" onClick={onOpenBookmarks} />
           <AccountRow icon={<CalculatorIcon />} label="Beauty Calculator" trailing={<ComingSoonPill />} />
         </div>
       </div>

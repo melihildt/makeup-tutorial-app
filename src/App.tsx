@@ -1,12 +1,40 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { EASE_OUT_QUART } from './components/TutorialCard'
+import { EASE_OUT_QUART, TUTORIALS, toggleInSet } from './components/TutorialCard'
 import { HomeScreen } from './components/HomeScreen'
 import { AccountScreen } from './components/AccountScreen'
 import { MyProductsScreen } from './components/MyProductsScreen'
+import { BookmarksScreen } from './components/BookmarksScreen'
 import { TutorialFlow } from './TutorialFlow'
 
-type Screen = 'home' | 'tutorial' | 'account' | 'my-products'
+type Screen = 'home' | 'tutorial' | 'account' | 'my-products' | 'bookmarks'
+
+// localStorage-backed saved-tutorial ids — lifted here (not owned inside
+// TutorialCard.tsx's TutorialStack, where it used to live) for two reasons:
+// BookmarksScreen is a sibling of HomeScreen, not a descendant, so it needs
+// this state at a common ancestor either way; and TutorialStack's own state
+// didn't even survive navigating Home → Account and back (it unmounts along
+// with HomeScreen on every screen switch — see App.tsx's own conditional
+// render below), which a real Bookmarks page would make immediately obvious
+// as broken. Persisted to localStorage (not just lifted here as in-memory
+// state) per the user's own call, so a bookmark actually survives a page
+// reload, not just in-app navigation.
+const SAVED_TUTORIALS_STORAGE_KEY = 'beautynotes:saved-tutorial-ids'
+
+function readSavedTutorialIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SAVED_TUTORIALS_STORAGE_KEY)
+    if (!raw) return new Set()
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) ? new Set(parsed.filter((id): id is string => typeof id === 'string')) : new Set()
+  } catch {
+    // Malformed JSON (hand-edited/corrupted storage) or localStorage itself
+    // unavailable (private browsing in some browsers, storage disabled) —
+    // either way, starting from "nothing saved" is the only sane fallback,
+    // not a crash.
+    return new Set()
+  }
+}
 
 /** Home↔Tutorial slide — standard Framer Motion "directional navigation"
  *  recipe (AnimatePresence + a `custom` payload fed into per-key
@@ -55,17 +83,61 @@ function App() {
   const [direction, setDirection] = useState<1 | -1>(1)
   const reduceMotion = useReducedMotion()
 
-  function goToTutorial() {
+  // Lazy initializer (not a bare `new Set()`) so reading localStorage only
+  // ever happens once, on mount — not on every re-render.
+  const [savedTutorialIds, setSavedTutorialIds] = useState<Set<string>>(readSavedTutorialIds)
+
+  // Code review finding, deferred: no cross-tab sync — this effect
+  // unconditionally overwrites the whole key with whatever's in memory, so
+  // two tabs open at once can silently clobber each other's saves (last
+  // write wins, no `storage` event listener reconciling them). Not fixed
+  // here: it'd add a genuinely new code path (a listener that can trigger
+  // a re-render from an event source that didn't exist before) for a
+  // multi-tab scenario this personal, single-user app doesn't really have
+  // — revisit if that stops being true.
+  useEffect(() => {
+    try {
+      localStorage.setItem(SAVED_TUTORIALS_STORAGE_KEY, JSON.stringify([...savedTutorialIds]))
+    } catch {
+      // Storage full/disabled — the toggle itself already succeeded in
+      // memory for this session, silently failing to persist is the
+      // correct degrade here, not surfacing an error for a background save.
+    }
+  }, [savedTutorialIds])
+
+  function toggleSavedTutorial(id: string) {
+    setSavedTutorialIds((prev) => toggleInSet(prev, id))
+  }
+
+  // Where exiting the tutorial should land — 'home' for the common case
+  // (opened from HomeScreen's own card stack), 'bookmarks' when it was
+  // opened by tapping a saved look on BookmarksScreen instead (per the
+  // user's own ask: exiting there should return to Bookmarks, not always
+  // Home). Not a generic back-stack — this app doesn't have one anywhere
+  // else either (Account/My Products/Bookmarks below are each a fixed hop,
+  // not a push/pop stack) — just enough state for this one specific
+  // "same destination, two possible origins" case. Set by whichever
+  // goToTutorial* function is actually called, read once by exitTutorial.
+  const [tutorialOrigin, setTutorialOrigin] = useState<'home' | 'bookmarks'>('home')
+
+  // Default param (not two near-identical functions, code review finding)
+  // — `origin` defaults to 'home' so this still works as a bare no-arg
+  // callback everywhere it's passed as one (HomeScreen's onSelectLook is
+  // invoked as `onSelect?.()`, no arguments); BookmarksScreen's own
+  // onOpenTutorial wraps this in `() => goToTutorial('bookmarks')` instead
+  // since it needs to pass the one non-default value.
+  function goToTutorial(origin: 'home' | 'bookmarks' = 'home') {
+    setTutorialOrigin(origin)
     setDirection(1)
     setScreen('tutorial')
   }
-  function goToHome() {
+  function exitTutorial() {
     setDirection(-1)
-    setScreen('home')
+    setScreen(tutorialOrigin)
   }
   // Account/My Products form their own fixed 3-deep chain off Home (Home →
   // Account → My Products), not a generic screen stack — each pair below
-  // just mirrors goToTutorial/goToHome's own explicit direction-setting
+  // just mirrors goToTutorial/exitTutorial's own explicit direction-setting
   // convention rather than introducing new machinery for what's only ever
   // these two extra hops.
   function goToAccount() {
@@ -83,6 +155,14 @@ function App() {
   function goToHomeFromAccount() {
     setDirection(-1)
     setScreen('home')
+  }
+  function goToBookmarks() {
+    setDirection(1)
+    setScreen('bookmarks')
+  }
+  function goToAccountFromBookmarks() {
+    setDirection(-1)
+    setScreen('account')
   }
 
   return (
@@ -143,12 +223,41 @@ function App() {
             exit="exit"
             transition={{ duration: reduceMotion ? 0.2 : 0.35, ease: EASE_OUT_QUART }}
           >
-            {screen === 'home' && <HomeScreen onSelectLook={goToTutorial} onOpenAccount={goToAccount} />}
-            {screen === 'tutorial' && <TutorialFlow onExit={goToHome} />}
+            {screen === 'home' && (
+              <HomeScreen
+                onSelectLook={goToTutorial}
+                onOpenAccount={goToAccount}
+                savedTutorialIds={savedTutorialIds}
+                onToggleSavedTutorial={toggleSavedTutorial}
+              />
+            )}
+            {screen === 'tutorial' && <TutorialFlow onExit={exitTutorial} />}
             {screen === 'account' && (
-              <AccountScreen onClose={goToHomeFromAccount} onOpenMyProducts={goToMyProducts} />
+              <AccountScreen
+                onClose={goToHomeFromAccount}
+                onOpenMyProducts={goToMyProducts}
+                onOpenBookmarks={goToBookmarks}
+              />
             )}
             {screen === 'my-products' && <MyProductsScreen onClose={goToAccountFromProducts} />}
+            {screen === 'bookmarks' && (
+              <BookmarksScreen
+                tutorials={TUTORIALS}
+                savedTutorialIds={savedTutorialIds}
+                onToggleSavedTutorial={toggleSavedTutorial}
+                onClose={goToAccountFromBookmarks}
+                // 'bookmarks' origin — see tutorialOrigin's own comment
+                // above: marks the exit as returning to Bookmarks instead
+                // of Home. Otherwise the same hand-off as HomeScreen's own
+                // card stack (see TutorialStackProps' own comment: every
+                // tutorial routes to the one real TutorialFlow regardless
+                // of *which* card started it, so this needs no argument
+                // telling it which bookmark was tapped). BookmarksScreen
+                // itself decides whether a given tap should call this at
+                // all (only tutorials with real content do).
+                onOpenTutorial={() => goToTutorial('bookmarks')}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

@@ -18,6 +18,12 @@ type HomeScreenProps = {
   onSelectLook?: () => void
   /** Called when the user icon is tapped — opens AccountScreen. */
   onOpenAccount?: () => void
+  /** Bookmark toggle state — lifted to App.tsx (see its own comment) so
+   *  BookmarksScreen, a sibling of this screen rather than a descendant,
+   *  can read the same state. Threaded straight through to TutorialStack,
+   *  which owns none of it locally any more. */
+  savedTutorialIds: Set<string>
+  onToggleSavedTutorial: (id: string) => void
 }
 
 // Sun/Moon/Diamond below are authored as single inline SVGs rather than the
@@ -381,7 +387,12 @@ function LookSelectorChip({
  * design is a full opaque screen, not a blur-over-Home modal) rather than
  * being purely decorative.
  */
-export function HomeScreen({ onSelectLook, onOpenAccount }: HomeScreenProps) {
+export function HomeScreen({
+  onSelectLook,
+  onOpenAccount,
+  savedTutorialIds,
+  onToggleSavedTutorial,
+}: HomeScreenProps) {
   const [selectedType, setSelectedType] = useState<LookType>('day')
   const [infoOpen, setInfoOpen] = useState(false)
 
@@ -508,7 +519,13 @@ export function HomeScreen({ onSelectLook, onOpenAccount }: HomeScreenProps) {
             gracefully (collapses toward the filter row, no extra gap) on a
             short viewport where header + card barely fit together. */}
         <div className="flex flex-1 items-center justify-center">
-          <TutorialStack tutorials={TUTORIALS} onSelect={onSelectLook} lookType={selectedType} />
+          <TutorialStack
+            tutorials={TUTORIALS}
+            onSelect={onSelectLook}
+            lookType={selectedType}
+            savedIds={savedTutorialIds}
+            onToggleSave={onToggleSavedTutorial}
+          />
         </div>
       </div>
 
