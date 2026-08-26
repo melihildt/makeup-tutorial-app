@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { EASE_OUT_QUART, TUTORIALS } from './components/TutorialCard'
+import { EASE_OUT_QUART, TUTORIALS, toggleInSet } from './components/TutorialCard'
 import { HomeScreen } from './components/HomeScreen'
 import { AccountScreen } from './components/AccountScreen'
 import { MyProductsScreen } from './components/MyProductsScreen'
@@ -87,6 +87,14 @@ function App() {
   // ever happens once, on mount — not on every re-render.
   const [savedTutorialIds, setSavedTutorialIds] = useState<Set<string>>(readSavedTutorialIds)
 
+  // Code review finding, deferred: no cross-tab sync — this effect
+  // unconditionally overwrites the whole key with whatever's in memory, so
+  // two tabs open at once can silently clobber each other's saves (last
+  // write wins, no `storage` event listener reconciling them). Not fixed
+  // here: it'd add a genuinely new code path (a listener that can trigger
+  // a re-render from an event source that didn't exist before) for a
+  // multi-tab scenario this personal, single-user app doesn't really have
+  // — revisit if that stops being true.
   useEffect(() => {
     try {
       localStorage.setItem(SAVED_TUTORIALS_STORAGE_KEY, JSON.stringify([...savedTutorialIds]))
@@ -98,12 +106,7 @@ function App() {
   }, [savedTutorialIds])
 
   function toggleSavedTutorial(id: string) {
-    setSavedTutorialIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    setSavedTutorialIds((prev) => toggleInSet(prev, id))
   }
 
   // Where exiting the tutorial should land — 'home' for the common case
@@ -117,13 +120,14 @@ function App() {
   // goToTutorial* function is actually called, read once by exitTutorial.
   const [tutorialOrigin, setTutorialOrigin] = useState<'home' | 'bookmarks'>('home')
 
-  function goToTutorial() {
-    setTutorialOrigin('home')
-    setDirection(1)
-    setScreen('tutorial')
-  }
-  function goToTutorialFromBookmarks() {
-    setTutorialOrigin('bookmarks')
+  // Default param (not two near-identical functions, code review finding)
+  // — `origin` defaults to 'home' so this still works as a bare no-arg
+  // callback everywhere it's passed as one (HomeScreen's onSelectLook is
+  // invoked as `onSelect?.()`, no arguments); BookmarksScreen's own
+  // onOpenTutorial wraps this in `() => goToTutorial('bookmarks')` instead
+  // since it needs to pass the one non-default value.
+  function goToTutorial(origin: 'home' | 'bookmarks' = 'home') {
+    setTutorialOrigin(origin)
     setDirection(1)
     setScreen('tutorial')
   }
@@ -242,17 +246,16 @@ function App() {
                 savedTutorialIds={savedTutorialIds}
                 onToggleSavedTutorial={toggleSavedTutorial}
                 onClose={goToAccountFromBookmarks}
-                // Not goToTutorial — see tutorialOrigin's own comment above:
-                // this variant marks the exit as returning to Bookmarks
-                // instead of Home. Otherwise the same hand-off as
-                // HomeScreen's own card stack (see TutorialStackProps' own
-                // comment: every tutorial routes to the one real
-                // TutorialFlow regardless of *which* card started it, so
-                // this needs no argument telling it which bookmark was
-                // tapped). BookmarksScreen itself decides whether a given
-                // tap should call this at all (only tutorials with real
-                // content do).
-                onOpenTutorial={goToTutorialFromBookmarks}
+                // 'bookmarks' origin — see tutorialOrigin's own comment
+                // above: marks the exit as returning to Bookmarks instead
+                // of Home. Otherwise the same hand-off as HomeScreen's own
+                // card stack (see TutorialStackProps' own comment: every
+                // tutorial routes to the one real TutorialFlow regardless
+                // of *which* card started it, so this needs no argument
+                // telling it which bookmark was tapped). BookmarksScreen
+                // itself decides whether a given tap should call this at
+                // all (only tutorials with real content do).
+                onOpenTutorial={() => goToTutorial('bookmarks')}
               />
             )}
           </motion.div>

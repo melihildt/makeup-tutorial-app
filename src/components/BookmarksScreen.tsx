@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { CloseIcon } from './InfoOverlay'
 import { Toast, useToast } from './Toast'
@@ -57,7 +58,14 @@ function capitalizeLevel(level: TutorialLevel): string {
  *  as MyProductRow (MyProductsScreen.tsx) — image + text + trailing icon
  *  button, row itself tappable — but a differently-shaped image (80×90,
  *  not 57×64: Figma's own row here, not a reuse of that component) and a
- *  different trailing action (un-save, not a non-functional menu). */
+ *  different trailing action (un-save, not a non-functional menu).
+ *
+ *  Code review (2026-08-26): this near-duplicates MyProductRow's own
+ *  role="button"-row + nested-button structure rather than sharing it —
+ *  left as-is for now (extracting a shared component means touching
+ *  MyProductsScreen.tsx, already shipped and working, for a DRY-ness
+ *  benefit with no functional need behind it yet); revisit if a third
+ *  near-identical row shows up. */
 function BookmarkRow({
   tutorial,
   onToggleSavedTutorial,
@@ -69,16 +77,23 @@ function BookmarkRow({
   onOpenTutorial: () => void
   onUnavailable: () => void
 }) {
+  // Factored out of onClick/onKeyDown (code review finding: the same
+  // hasContent ternary was written out twice, once inline and once
+  // expanded) — one branch, used by both activation paths.
+  function handleActivate() {
+    if (tutorial.hasContent) onOpenTutorial()
+    else onUnavailable()
+  }
+
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={tutorial.hasContent ? onOpenTutorial : onUnavailable}
+      onClick={handleActivate}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return
         e.preventDefault()
-        if (tutorial.hasContent) onOpenTutorial()
-        else onUnavailable()
+        handleActivate()
       }}
       className="flex w-full cursor-pointer items-start gap-4 active:scale-[0.98]"
       style={{ transition: 'transform var(--duration-instant) var(--ease-out-quart)' }}
@@ -115,6 +130,16 @@ function BookmarkRow({
               e.stopPropagation()
               onToggleSavedTutorial(tutorial.id)
             }}
+            // stopPropagation on keydown too, not just click (code review
+            // finding): without it, pressing Enter/Space while focused on
+            // this button doesn't un-save at all — the keydown bubbles to
+            // the row's own onKeyDown first, which matches Enter/Space and
+            // calls preventDefault() before this button's native keyboard
+            // activation (which fires after bubbling completes) can run,
+            // so the row's tap-to-open fires instead. Click never had this
+            // problem (the row has no separate click-activation step to
+            // race against), only the keyboard path did.
+            onKeyDown={(e) => e.stopPropagation()}
             aria-label={`Remove ${tutorial.title} from bookmarks`}
             className="header-icon-button flex shrink-0 items-center justify-center p-2"
             style={{ color: 'var(--color-tutorial-card-text)' }}
@@ -176,8 +201,34 @@ export function BookmarksScreen({
   const { ref: scrollerRef, atEnd, onScroll } = useAtScrollEnd<HTMLDivElement>()
   const savedTutorials = tutorials.filter((tutorial) => savedTutorialIds.has(tutorial.id))
 
+  // Code review finding: useAtScrollEnd only recomputes `atEnd` on a real
+  // onScroll event or once at mount (ScrollEndFade.tsx) — it has no way to
+  // know the list itself just changed shape. This is the one screen in the
+  // app where that matters: un-saving a bookmark can shrink the list down
+  // to where it no longer overflows, with no scroll event ever firing, so
+  // `atEnd` would stay stale and ScrollEndFade would keep showing its fade
+  // over content with nothing left underneath it — exactly what that
+  // component exists to prevent (its own module comment). AllStepsView and
+  // MyProductsScreen never remove rows in place, so they've never hit this;
+  // fixed here rather than in the shared hook to avoid touching two
+  // already-shipped screens for a case only this one has. Feeds `onScroll`
+  // a plain object carrying the real scroller node — all `check()` reads
+  // off it internally — rather than duplicating useAtScrollEnd's own
+  // scrollHeight/scrollTop/clientHeight formula a second time here.
+  useEffect(() => {
+    if (scrollerRef.current) onScroll({ currentTarget: scrollerRef.current } as React.UIEvent<HTMLDivElement>)
+  }, [savedTutorials.length, scrollerRef, onScroll])
+
   return (
     <div
+      // Code review finding: this root + the title/close-button header
+      // below duplicate AccountScreen.tsx/MyProductsScreen.tsx's own shell
+      // class-for-class (a third copy now). Left as-is — extracting a
+      // shared wrapper means touching two already-shipped screens for a
+      // DRY-ness benefit with no functional need behind it yet; revisit if
+      // a shared tweak (padding, radius, the overflow fix App.tsx's own
+      // comment describes for a similar latent-scroll bug) needs applying
+      // to all three at once.
       className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl md:py-6"
       style={{ background: 'var(--gradient-bg-home)' }}
     >
@@ -210,7 +261,11 @@ export function BookmarksScreen({
         ) : (
           <div
             // pb-10 — same ScrollEndFade breathing-room reasoning as
-            // MyProductsScreen's own card (see ScrollEndFade.tsx).
+            // MyProductsScreen's own card (see ScrollEndFade.tsx). The rest
+            // of this className also duplicates that card's own classes
+            // verbatim (code review finding) — same "not worth touching an
+            // already-shipped screen for DRY-ness alone" call as the root
+            // shell above.
             className="mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] bg-[--color-surface] px-[--space-sm] pb-10 pt-[--space-sm] shadow-[--shadow-card]"
             data-node-id="761:12030"
           >

@@ -38,6 +38,19 @@ import type { LookType } from './HomeScreen'
  *  curve for a Framer animation (see App.tsx) rather than retyping it. */
 export const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const
 
+/** Toggles `value`'s membership in `set`, returning a new Set (never
+ *  mutates the input) — shared by this file's own `flippedIds` toggle
+ *  (below) and App.tsx's `toggleSavedTutorial`, rather than each hand-
+ *  rolling the identical copy/delete-or-add/return body a third time
+ *  (code review finding — a near-identical version used to live inline
+ *  here for `savedIds` too, before that state moved to App.tsx). */
+export function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
+  const next = new Set(set)
+  if (next.has(value)) next.delete(value)
+  else next.add(value)
+  return next
+}
+
 /**
  * Tutorial stack card — "BigCard" component, node 642:5092
  * (Tech-Experimentation). TutorialLookCard is the card's own look, at
@@ -63,12 +76,16 @@ export type Tutorial = {
   title: string
   brand: string
   durationMinutes: number
-  /** Not consumed anywhere yet — declared per-tutorial (true only for Soft
-   *  Smokey Eye) but nothing gates navigation on it: the CTA/tap on *any*
-   *  tutorial, `hasContent` or not, opens the same hard-coded TutorialFlow
-   *  (Soft Smokey Eye's real steps), mislabeled for the other three.
-   *  Known, accepted for now — real per-tutorial content is coming later,
-   *  not a bug to fix today. */
+  /** Declared per-tutorial (true only for Soft Smokey Eye). HomeScreen's own
+   *  card stack still doesn't gate on it — the CTA/tap on *any* tutorial
+   *  there opens the same hard-coded TutorialFlow (Soft Smokey Eye's real
+   *  steps), mislabeled for the other three; known, accepted for now, real
+   *  per-tutorial content is coming later. BookmarksScreen.tsx *does* gate
+   *  on this field (only a tutorial with real content opens the flow from
+   *  there; the other three show a "coming soon" toast instead) — a
+   *  deliberate product decision for that screen specifically, not a bug,
+   *  but it does mean this field's behavior now differs by which screen
+   *  you tap from. */
   hasContent: boolean
   images: [string, string]
   /** Drives the flipped card's level pill (LevelIcon + label) — see
@@ -2131,15 +2148,7 @@ export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggl
 
   function handleToggleFlip(id: string) {
     handleInteraction()
-    setFlippedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
+    setFlippedIds((prev) => toggleInSet(prev, id))
   }
 
   function handleCommitStart() {
