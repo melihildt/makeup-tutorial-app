@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { ScreenHeader } from './ScreenHeader'
 import { ActionButton } from './ActionButton'
 import { ProductCard } from './ProductCard'
+import { ScrollEndFade } from './ScrollEndFade'
 import { STEP_CONTENT, TOTAL_STEPS } from '../data/stepContent'
 
 type AllStepsViewProps = {
@@ -429,34 +430,22 @@ export function AllStepsView({
       {/* Fade overlay pinned to the bottom of the viewport (a sibling of
           the scrollable region, not inside it) — hints that the list
           continues below, whatever happens to be scrolled into view
-          underneath it. Fades to white to match the card's own surface
-          color, since this sits directly over the card. Sized to match
-          the card's own pb-10 (the card's bottom padding was bumped from
-          p-4's default to reserve exactly this much clean white space
-          below its last item) — any taller than that and it washes over
-          the Finish button's solid black fill, which reads as a
-          rendering glitch rather than a hint.
+          underneath it. Sized to match the card's own pb-10 (the card's
+          bottom padding was bumped from p-4's default to reserve exactly
+          this much clean white space below its last item) — any taller
+          than that and it washes over the Finish button's solid black
+          fill, which reads as a rendering glitch rather than a hint.
 
-          docs/figma-allsteps-restyle.md: hidden once hasReachedBottom —
-          without this it stayed pinned to the viewport bottom even once
-          the list was scrolled all the way to its actual end, sitting over
-          the card's already-flat, already-white bottom edge as a stray
-          rounded-corner band with nothing left to fade out underneath it
-          (reported as "I see the rounded corners at the end of the page").
-          Same opacity-transition treatment as the header's own fade tail
-          above, not an abrupt show/hide. */}
-      {/* inset-x-[--space-sm] — must track the card wrapper's own
-          horizontal inset above (also --space-sm now, was --space-xs) so
-          this fade's rounded bottom corners actually land on the card's
-          real edges rather than sitting narrower than it. */}
-      <div
-        className="pointer-events-none absolute inset-x-[--space-sm] bottom-0 h-10 rounded-b-[--radius-card]"
-        style={{
-          background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff 100%)',
-          opacity: hasReachedBottom ? 0 : 1,
-          transition: 'opacity var(--duration-base) var(--ease-out-quart)',
-        }}
-      />
+          Now ScrollEndFade.tsx (its own doc comment has the rest of this
+          reasoning — hidden once hasReachedBottom, why it's a sibling of
+          the scroller rather than inside it, etc.): originally this
+          screen's own inline div, pulled into a shared component once
+          MyProductsScreen.tsx needed the identical pattern, per the user's
+          ask that it live reusably rather than get hand-copied a second
+          time. Default className already matches this card's own shape
+          (--space-sm inset, --radius-card rounding), so no override needed
+          here. */}
+      <ScrollEndFade hidden={hasReachedBottom} />
     </div>
   )
 }

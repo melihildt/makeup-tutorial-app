@@ -6,6 +6,14 @@ import highlightImg from '../assets/product-images/Product_Highlight.png'
 import eyelinerImg from '../assets/product-images/Product_Eyeliner.png'
 import mascaraImg from '../assets/product-images/Product_Mascara.png'
 
+/** MyProductsScreen.tsx's own grouping — see that file and getMyProducts()
+ *  below. Distinct from `listTitle`: several steps share the same
+ *  underlying products (e.g. steps 2/3/5 all use the same eyeshadow palette
+ *  + brush while covering different parts of the look), so `listTitle`
+ *  alone would over-fragment the My Products view into one group per step
+ *  instead of one group per real product category. */
+export type ProductCategory = 'Concealer' | 'Eye Shadows' | 'Brushes' | 'Highlight' | 'Eyeliner and Mascara'
+
 export type Product = {
   brand: string
   name: string
@@ -13,6 +21,7 @@ export type Product = {
   shade?: string
   checked: boolean
   image?: string
+  category: ProductCategory
 }
 
 export type StepContent = {
@@ -54,8 +63,8 @@ export const STEP_CONTENT: Record<number, StepContent> = {
     description:
       "Dab concealer under the brow and inner corner, then pat gently to blend. Don't rub, just press it in.",
     products: [
-      { brand: 'MERIT', name: 'The Minimalist', checked: true, image: concealerImg },
-      { brand: 'Hourglass', name: 'Concealer Brush', checked: false, image: concealerBrushImg },
+      { brand: 'MERIT', name: 'The Minimalist', checked: true, image: concealerImg, category: 'Concealer' },
+      { brand: 'Hourglass', name: 'Concealer Brush', checked: false, image: concealerBrushImg, category: 'Brushes' },
     ],
   },
   2: {
@@ -63,8 +72,15 @@ export const STEP_CONTENT: Record<number, StepContent> = {
     listTitle: 'Base Shadow',
     description: 'Sweep a neutral shade across the lid side to side.',
     products: [
-      { brand: 'Chanel', name: 'Les 4 Ombres', shade: '79 - Spices', checked: true, image: eyeshadowImg },
-      { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg },
+      {
+        brand: 'Chanel',
+        name: 'Les 4 Ombres',
+        shade: '79 - Spices',
+        checked: true,
+        image: eyeshadowImg,
+        category: 'Eye Shadows',
+      },
+      { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg, category: 'Brushes' },
     ],
   },
   3: {
@@ -73,8 +89,15 @@ export const STEP_CONTENT: Record<number, StepContent> = {
     description:
       'Using a smaller brush, sweep a darker shade into the outer corner and crease with a back-and-forth motion.',
     products: [
-      { brand: 'Chanel', name: 'Les 4 Ombres', shade: '79 - Spices', checked: true, image: eyeshadowImg },
-      { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg },
+      {
+        brand: 'Chanel',
+        name: 'Les 4 Ombres',
+        shade: '79 - Spices',
+        checked: true,
+        image: eyeshadowImg,
+        category: 'Eye Shadows',
+      },
+      { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg, category: 'Brushes' },
     ],
   },
   4: {
@@ -82,7 +105,9 @@ export const STEP_CONTENT: Record<number, StepContent> = {
     listTitle: 'Blend',
     description:
       "Discharge the powder residue of the brush onto a tissue, then buff the edges in small circular motions so there's no harsh line between the shades.",
-    products: [{ brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg }],
+    products: [
+      { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg, category: 'Brushes' },
+    ],
   },
   5: {
     title: 'Define the Lower Lash Line',
@@ -90,8 +115,15 @@ export const STEP_CONTENT: Record<number, StepContent> = {
     description:
       'Apply a bit of the dark shade using the smaller side of the brush, moving from the outer corner inward.',
     products: [
-      { brand: 'Chanel', name: 'Les 4 Ombres', shade: '79 - Spices', checked: true, image: eyeshadowImg },
-      { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg },
+      {
+        brand: 'Chanel',
+        name: 'Les 4 Ombres',
+        shade: '79 - Spices',
+        checked: true,
+        image: eyeshadowImg,
+        category: 'Eye Shadows',
+      },
+      { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg, category: 'Brushes' },
     ],
   },
   6: {
@@ -105,6 +137,7 @@ export const STEP_CONTENT: Record<number, StepContent> = {
         name: 'Hollywood Glow Glide Face Architect Highlighter',
         checked: false,
         image: highlightImg,
+        category: 'Highlight',
       },
     ],
   },
@@ -113,8 +146,20 @@ export const STEP_CONTENT: Record<number, StepContent> = {
     listTitle: 'Eyeliner and Mascara',
     description: 'Line the upper lash line close to the roots, then finish with a few coats of mascara.',
     products: [
-      { brand: 'Westman Atelier', name: 'Eye Pencil', checked: true, image: eyelinerImg },
-      { brand: 'Westman Atelier', name: 'Eye Want You Mascara', checked: false, image: mascaraImg },
+      {
+        brand: 'Westman Atelier',
+        name: 'Eye Pencil',
+        checked: true,
+        image: eyelinerImg,
+        category: 'Eyeliner and Mascara',
+      },
+      {
+        brand: 'Westman Atelier',
+        name: 'Eye Want You Mascara',
+        checked: false,
+        image: mascaraImg,
+        category: 'Eyeliner and Mascara',
+      },
     ],
   },
   // Terminal "done" screen shown after Finish — not one of the 7 makeup
@@ -126,4 +171,55 @@ export const STEP_CONTENT: Record<number, StepContent> = {
     description: 'Remember to apply settling spray to make the look last longer.',
     products: [],
   },
+}
+
+export type ProductGroup = {
+  category: ProductCategory
+  products: Product[]
+}
+
+// Figma's own group order (node 734:7550, "Home/Profile-MyProducts") —
+// fixed here rather than derived from first-appearance-across-steps order,
+// since that would put "Eye Shadows" before "Concealer" (step 1's second
+// product, the concealer brush, is tagged "Brushes"; step 2 is the first
+// "Eye Shadows" product, but step 1's *own* "Concealer" product still
+// belongs first).
+const CATEGORY_ORDER: ProductCategory[] = ['Concealer', 'Eye Shadows', 'Brushes', 'Highlight', 'Eyeliner and Mascara']
+
+/**
+ * MyProductsScreen.tsx's data source: every product used across the
+ * tutorial (steps 1-{@link TOTAL_STEPS}, excluding step 8's terminal "done"
+ * screen, which has none), grouped by `category` and deduped by brand+name
+ * within a group — several steps intentionally reuse the same eyeshadow
+ * palette/brush while covering different parts of the look (see steps 2/3/5
+ * above), and My Products shows each real product once, not once per step
+ * that happens to use it.
+ *
+ * Figma's own pull of this screen shows "Hourglass Concealer Brush" listed
+ * under *both* Concealer and Brushes — kept here as Brushes-only (its
+ * `category` tag on the step 1 entry above): a product appearing in two
+ * groups at once doesn't fit this screen's own "N products" per-group count,
+ * and reads as a Figma authoring duplicate rather than an intentional
+ * design decision, the same call already made for this screen's stray
+ * "Finish" button and the "Chanel"-labeled highlighter.
+ */
+export function getMyProducts(): ProductGroup[] {
+  const byCategory = new Map<ProductCategory, Map<string, Product>>()
+
+  for (let step = 1; step <= TOTAL_STEPS; step++) {
+    for (const product of STEP_CONTENT[step].products) {
+      let seen = byCategory.get(product.category)
+      if (!seen) {
+        seen = new Map()
+        byCategory.set(product.category, seen)
+      }
+      const key = `${product.brand}|${product.name}`
+      if (!seen.has(key)) seen.set(key, product)
+    }
+  }
+
+  return CATEGORY_ORDER.filter((category) => byCategory.has(category)).map((category) => ({
+    category,
+    products: [...byCategory.get(category)!.values()],
+  }))
 }

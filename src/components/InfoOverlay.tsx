@@ -52,7 +52,12 @@ type InfoOverlayProps = {
   onClose: () => void
 }
 
-function CloseIcon() {
+// Exported: AccountScreen.tsx and MyProductsScreen.tsx reuse this same
+// close-chip glyph for their own header ✕ buttons rather than each
+// re-authoring the identical path data a third/fourth time (this app
+// already treats that kind of duplication as a code-review finding worth
+// fixing — see HEADER_CHIP_STYLE's own history, ScreenHeader.tsx).
+export function CloseIcon() {
   return (
     <svg width={20} height={20} viewBox="0 0 20 20" fill="none" aria-hidden="true">
       <path
