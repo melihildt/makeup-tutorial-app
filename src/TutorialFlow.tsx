@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { flushSync } from 'react-dom'
 import { StepScreen } from './components/StepScreen'
 import { AllStepsView } from './components/AllStepsView'
@@ -47,6 +47,17 @@ type TutorialFlowProps = {
    *  screen). Purely a "close/return" action for now, not a completion
    *  state — it fires the same regardless of which step the user is on. */
   onExit?: () => void
+  /** Which makeup step (1-7) or the terminal "done" screen (8, see
+   *  DONE_STEP) is showing. Lifted to App.tsx — not owned locally as it
+   *  used to be — so the current step can double as this app's /stepN URL
+   *  (see router.ts): App.tsx's own path-sync effect watches this value
+   *  the same way it watches `screen`, and needs to be able to read it
+   *  without TutorialFlow in between. `setStep` is passed straight through
+   *  from App.tsx's own `useState` setter, so every existing call site
+   *  below (Next/Back/Finish, and the list view's own jump-to-step) keeps
+   *  working unchanged — only where the state itself lives moved. */
+  step: number
+  setStep: Dispatch<SetStateAction<number>>
 }
 
 /**
@@ -60,8 +71,7 @@ type TutorialFlowProps = {
  * yet — this just swaps content for now. See docs/figma-v2-redesign.md,
  * phase 5.
  */
-export function TutorialFlow({ onExit }: TutorialFlowProps) {
-  const [step, setStep] = useState(1)
+export function TutorialFlow({ onExit, step, setStep }: TutorialFlowProps) {
   const [view, setView] = useState<View>('step')
 
   // Keyed by step + product (not just product identity), so the same

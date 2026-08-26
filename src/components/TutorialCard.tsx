@@ -61,10 +61,13 @@ export function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
  *
  * Only "Soft Smokey Eye" has a real tutorial behind it (TutorialFlow is
  * hard-coded to that content, and doesn't even take a tutorial id — see
- * `hasContent`'s own comment) — the other three now have real photos too
- * (all four `images` are set) but are still decorative taps, same "not
- * wired up yet" spirit as HomeScreen's Day/Night/Glam filter chips:
- * looking real now, not functional yet.
+ * `hasContent`'s own comment) — every other entry is still a decorative
+ * tap. The original four have real photos of their own (see `images`);
+ * the eight added to fill Day/Night/Glam out to four cards each (see
+ * `lookType`) reuse those same four image pairs as dummy placeholders
+ * until real per-look photography lands — looking real now (and, since
+ * HomeScreen actually filters on `lookType`, sorted into the right chip
+ * now too), not functional yet.
  */
 /** Node 674:3974 ("Icons", the level pill's own icon) — 'easy' lights only
  *  the shortest of the three ascending bars, 'medium' adds the middle one,
@@ -75,24 +78,32 @@ export type Tutorial = {
   id: string
   title: string
   brand: string
+  /** Which Day/Night/Glam filter chip (HomeScreen's own LookType) this
+   *  tutorial belongs to — HomeScreen filters `TUTORIALS` down to just the
+   *  four whose `lookType` matches the selected chip before handing the
+   *  list to TutorialStack, so this is what actually makes the filter row
+   *  do something instead of just recoloring the ghost card. One type per
+   *  tutorial, not a set: every tutorial here is still a placeholder look
+   *  (see `hasContent`), so there's no real case yet for one look
+   *  legitimately belonging to more than one category at once. */
+  lookType: LookType
   durationMinutes: number
   /** Declared per-tutorial (true only for Soft Smokey Eye). HomeScreen's own
    *  card stack still doesn't gate on it — the CTA/tap on *any* tutorial
    *  there opens the same hard-coded TutorialFlow (Soft Smokey Eye's real
-   *  steps), mislabeled for the other three; known, accepted for now, real
+   *  steps), mislabeled for every other card; known, accepted for now, real
    *  per-tutorial content is coming later. BookmarksScreen.tsx *does* gate
    *  on this field (only a tutorial with real content opens the flow from
-   *  there; the other three show a "coming soon" toast instead) — a
+   *  there; everything else shows a "coming soon" toast instead) — a
    *  deliberate product decision for that screen specifically, not a bug,
    *  but it does mean this field's behavior now differs by which screen
    *  you tap from. */
   hasContent: boolean
   images: [string, string]
   /** Drives the flipped card's level pill (LevelIcon + label) — see
-   *  TutorialLevel. Placeholder values for now on all four, per the user's
-   *  own call: real per-tutorial levels wait until the other three
-   *  tutorials have real content behind them the way Soft Smokey Eye
-   *  does. */
+   *  TutorialLevel. Placeholder values for now on every card, per the
+   *  user's own call: real per-tutorial levels wait until each tutorial
+   *  has real content behind it the way Soft Smokey Eye does. */
   level: TutorialLevel
   /** Total product count backing the flipped card's "+N products used"
    *  caption — PRODUCTS_PREVIEW_COUNT (ProductsPreview) are ever shown as
@@ -100,7 +111,7 @@ export type Tutorial = {
    *  raw total (see ProductsPreview's own comment). Placeholder values for
    *  now, same reasoning as `level` — soft-smokey-eye's value (8) is the
    *  one the source Figma mockup itself demonstrates (25min/Easy/8
-   *  products → "+5"), the other three are invented for visual variety
+   *  products → "+5"), every other card's is invented for visual variety
    *  across the three levels while placeholder, not real counts yet. */
   productsUsedCount: number
   /** Real photos for the flipped card's product-preview row (ProductsPreview)
@@ -116,11 +127,68 @@ export type Tutorial = {
   productImages?: [string, string, string]
 }
 
+// Four cards per Day/Night/Glam chip (see HomeScreen's filter row and
+// Tutorial's own `lookType` doc comment) — the real ask this data set now
+// has to satisfy. Only the original four tutorials have real photography
+// (src/assets/looks); the eight new ones added to fill out every chip to
+// four reuse those same four image pairs round-robin rather than block on
+// new photography, since the user is gathering real per-look images/copy
+// separately and asked for dummy data to unblock the filter itself in the
+// meantime. Swap `images`/`title`/`brand`/etc. in place per card once real
+// assets land — `id`, `lookType`, and the shape of each entry aren't
+// expected to change.
 export const TUTORIALS: Tutorial[] = [
+  // — Day —
+  {
+    id: 'everyday-mattes',
+    title: 'Everyday Mattes',
+    brand: 'Westman Gucci',
+    lookType: 'day',
+    durationMinutes: 15,
+    hasContent: false,
+    images: [mattesImage2, mattesImage1],
+    level: 'easy',
+    productsUsedCount: 5,
+  },
+  {
+    id: 'sunlit-glow',
+    title: 'Sunlit Glow',
+    brand: 'Rare Beauty',
+    lookType: 'day',
+    durationMinutes: 12,
+    hasContent: false,
+    images: [lookImage2, lookImage1],
+    level: 'easy',
+    productsUsedCount: 4,
+  },
+  {
+    id: 'fresh-face-five',
+    title: 'Fresh Face Five',
+    brand: 'Glossier',
+    lookType: 'day',
+    durationMinutes: 10,
+    hasContent: false,
+    images: [miaImage1, miaImage2],
+    level: 'easy',
+    productsUsedCount: 5,
+  },
+  {
+    id: 'golden-hour-glow',
+    title: 'Golden Hour Glow',
+    brand: 'Rhode',
+    lookType: 'day',
+    durationMinutes: 18,
+    hasContent: false,
+    images: [autumnImage1, autumnImage2],
+    level: 'medium',
+    productsUsedCount: 7,
+  },
+  // — Night —
   {
     id: 'soft-smokey-eye',
     title: 'Soft Smokey Eye',
     brand: 'Tom Ford SS 2019',
+    lookType: 'night',
     durationMinutes: 25,
     hasContent: true,
     images: [lookImage1, lookImage2],
@@ -129,9 +197,44 @@ export const TUTORIALS: Tutorial[] = [
     productImages: [previewEyeshadowImg, previewMascaraImg, previewHighlightImg],
   },
   {
+    id: 'midnight-velvet',
+    title: 'Midnight Velvet',
+    brand: 'Pat McGrath Labs',
+    lookType: 'night',
+    durationMinutes: 30,
+    hasContent: false,
+    images: [mattesImage1, mattesImage2],
+    level: 'experienced',
+    productsUsedCount: 10,
+  },
+  {
+    id: 'after-dark-liner',
+    title: 'After Dark Liner',
+    brand: 'Charlotte Tilbury',
+    lookType: 'night',
+    durationMinutes: 20,
+    hasContent: false,
+    images: [autumnImage2, autumnImage1],
+    level: 'medium',
+    productsUsedCount: 6,
+  },
+  {
+    id: 'noir-romance',
+    title: 'Noir Romance',
+    brand: 'YSL Beauté',
+    lookType: 'night',
+    durationMinutes: 22,
+    hasContent: false,
+    images: [miaImage2, miaImage1],
+    level: 'medium',
+    productsUsedCount: 7,
+  },
+  // — Glam —
+  {
     id: 'mia-odyssey',
     title: 'Mia for The Odyssey',
     brand: 'Nina Park',
+    lookType: 'glam',
     durationMinutes: 15,
     hasContent: false,
     // Swapped from [miaImage1, miaImage2]: images[0] is ImagePair's right/
@@ -145,6 +248,7 @@ export const TUTORIALS: Tutorial[] = [
     id: 'autumn-hermes',
     title: 'Autumn by Hermès',
     brand: 'Gregoris Pyrpylis',
+    lookType: 'glam',
     durationMinutes: 15,
     hasContent: false,
     images: [autumnImage2, autumnImage1],
@@ -152,14 +256,26 @@ export const TUTORIALS: Tutorial[] = [
     productsUsedCount: 9,
   },
   {
-    id: 'everyday-mattes',
-    title: 'Everyday Mattes',
-    brand: 'Westman Gucci',
-    durationMinutes: 15,
+    id: 'red-carpet-ready',
+    title: 'Red Carpet Ready',
+    brand: 'Fenty Beauty',
+    lookType: 'glam',
+    durationMinutes: 35,
     hasContent: false,
-    images: [mattesImage2, mattesImage1],
-    level: 'easy',
-    productsUsedCount: 5,
+    images: [lookImage2, lookImage1],
+    level: 'experienced',
+    productsUsedCount: 11,
+  },
+  {
+    id: 'diamond-cut',
+    title: 'Diamond Cut',
+    brand: 'Huda Beauty',
+    lookType: 'glam',
+    durationMinutes: 28,
+    hasContent: false,
+    images: [mattesImage1, mattesImage2],
+    level: 'experienced',
+    productsUsedCount: 9,
   },
 ]
 
@@ -1039,14 +1155,15 @@ type TutorialStackProps = {
   tutorials: Tutorial[]
   /** Same handoff for every card regardless of which one is on top —
    *  only "Soft Smokey Eye" has a real tutorial behind it right now (see
-   *  this file's module comment), so all 4 route to it for the time
-   *  being rather than 3 of them silently doing nothing. */
+   *  this file's module comment), so every card routes to it for the time
+   *  being rather than the rest silently doing nothing. */
   onSelect?: () => void
   /** The selected Day/Night/Glam filter — see HomeScreen's own LookType.
-   *  Doesn't filter which tutorials show (see this file's module comment,
-   *  "until we add more cards"); only drives the ghost card's own color
-   *  for now, threaded straight through to every TutorialStackCard as
-   *  `lookType`. */
+   *  HomeScreen has already filtered `tutorials` down to this type's own
+   *  four cards before this component ever sees them (see Tutorial's own
+   *  `lookType` doc comment) — this prop itself still just drives the
+   *  ghost card's own color, threaded straight through to every
+   *  TutorialStackCard as `lookType`. */
   lookType: LookType
   /** Bookmark toggle state, lifted all the way up to App.tsx now (and from
    *  there persisted to localStorage) — no longer owned here. Moved once

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { EASE_OUT_QUART, TUTORIALS, toggleInSet } from './components/TutorialCard'
 import { HomeScreen } from './components/HomeScreen'
@@ -6,8 +6,7 @@ import { AccountScreen } from './components/AccountScreen'
 import { MyProductsScreen } from './components/MyProductsScreen'
 import { BookmarksScreen } from './components/BookmarksScreen'
 import { TutorialFlow } from './TutorialFlow'
-
-type Screen = 'home' | 'tutorial' | 'account' | 'my-products' | 'bookmarks'
+import { type Screen, parseRoute, pathForRoute } from './router'
 
 // localStorage-backed saved-tutorial ids — lifted here (not owned inside
 // TutorialCard.tsx's TutorialStack, where it used to live) for two reasons:
@@ -75,13 +74,101 @@ const screenVariants = {
 }
 
 function App() {
-  const [screen, setScreen] = useState<Screen>('home')
+  // Seeded from the URL the app was loaded with (see router.ts) — each
+  // lazy initializer runs once, on mount, so a direct load of e.g.
+  // /step5 or /profile lands straight on that screen instead of always
+  // starting at Home and needing a client-side redirect. Three separate
+  // `useState`s (not one RouteState struct) because `tutorialStep` and
+  // `aboutOpen` are each fed straight through as (mostly) ordinary props to
+  // TutorialFlow/HomeScreen — see their own comments — the same shape they
+  // already had before routing existed, just lifted one level.
+  const [screen, setScreen] = useState<Screen>(() => parseRoute(window.location.pathname).screen)
+  const [tutorialStep, setTutorialStep] = useState<number>(() => parseRoute(window.location.pathname).tutorialStep)
+  const [aboutOpen, setAboutOpen] = useState<boolean>(() => parseRoute(window.location.pathname).aboutOpen)
   // 1 = forward (Home → Tutorial), -1 = backward (Tutorial → Home) — set
-  // right alongside `screen` in the same two handlers, never read on its
-  // own, so there's no case where a stale direction could apply to the
-  // wrong transition.
+  // right alongside `screen` in the same handlers, never read on its own,
+  // so there's no case where a stale direction could apply to the wrong
+  // transition. (The popstate handler below is the one exception: it
+  // infers direction from the browser's own back/forward instead.)
   const [direction, setDirection] = useState<1 | -1>(1)
   const reduceMotion = useReducedMotion()
+
+  // --- URL <-> state sync -------------------------------------------------
+  //
+  // One direction (state -> URL) is a single effect below that watches
+  // {screen, tutorialStep, aboutOpen} and keeps `location.pathname` in
+  // step via pathForRoute — every forward navigation in this file (goTo*)
+  // just sets state as it always did; it doesn't need to know about the
+  // router at all, this effect is the only thing that ever calls
+  // `pushState`. The other direction (URL -> state, i.e. the browser's own
+  // Back/Forward buttons) is the `popstate` listener further down.
+  //
+  // `historyOrderRef` tags every entry *this app itself* pushes with an
+  // incrementing counter (stored in `history.state.order`), and tracks the
+  // current one — the only thing it's used for is telling forward from
+  // backward on a `popstate` (comparing the popped-to order against the
+  // last known one; plain string-diffing the paths can't do this, siblings
+  // like /profile and /bookmarks don't order themselves).
+  const historyOrderRef = useRef(0)
+  // Sets while a state update is *already* reflected in the URL — either
+  // the very first render (the URL we just parsed the initial state from)
+  // or a `popstate`-driven update (the browser already moved
+  // `location.pathname` before that event fires) — so the sync effect
+  // below can skip pushing a redundant/duplicate entry for it.
+  const skipNextPushRef = useRef(true)
+
+  useEffect(() => {
+    function handlePopState(event: PopStateEvent) {
+      const order = event.state && typeof event.state.order === 'number' ? event.state.order : 0
+      setDirection(order < historyOrderRef.current ? -1 : 1)
+      historyOrderRef.current = order
+      skipNextPushRef.current = true
+      const route = parseRoute(window.location.pathname)
+      setScreen(route.screen)
+      setTutorialStep(route.tutorialStep)
+      setAboutOpen(route.aboutOpen)
+    }
+    window.addEventListener('popstate', handlePopState)
+    // Tags the entry the app loaded on with order 0, so the very first
+    // popstate (if any) has something real to compare against.
+    window.history.replaceState({ order: 0 }, '', window.location.pathname)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  useEffect(() => {
+    if (skipNextPushRef.current) {
+      skipNextPushRef.current = false
+      return
+    }
+    const path = pathForRoute({ screen, tutorialStep, aboutOpen })
+    if (path === window.location.pathname) return
+    historyOrderRef.current += 1
+    window.history.pushState({ order: historyOrderRef.current }, '', path)
+  }, [screen, tutorialStep, aboutOpen])
+
+  // Every "leave this screen" action below (Account's close button,
+  // Tutorial's exit, etc.) sets `screen` directly and lets the sync effect
+  // above push a fresh URL for it — deliberately NOT `window.history.back()`,
+  // even though that reads like the more "correct" way to implement a close
+  // button. It isn't, here: this app doesn't reliably know it's exactly one
+  // real history entry back to where it should land. That's obviously true
+  // for the tutorial (Next/Back pushes one entry *per step*, so a Done tap
+  // from step 4 needs to leave the flow entirely, not pop back to step 3 —
+  // see exitTutorial below), but it was ALSO a real, confirmed bug for the
+  // "simple" one-hop screens: Bookmarks → tutorial → tap the header's Done
+  // icon pushes a fresh /bookmarks entry (since exitTutorial can't assume
+  // how many step-entries preceded it either), which means the *real*
+  // previous entry immediately behind that new /bookmarks in `history` is
+  // now the tutorial itself, not Account — so Bookmarks' own close button,
+  // if it called `history.back()`, would pop back into the tutorial instead
+  // of Account, and every retry after that looped the same way, with no
+  // path back to Home at all. Setting state directly and always pushing a
+  // fresh entry sidesteps the whole class of bug: every close/back button
+  // here lands on exactly the screen it names, regardless of how deep or
+  // unusual the path that got here was. The one real cost is that the
+  // browser's native Back button can retrace more steps than feels
+  // necessary to fully leave the app — an acceptable trade for actually
+  // working every time.
 
   // Lazy initializer (not a bare `new Set()`) so reading localStorage only
   // ever happens once, on mount — not on every re-render.
@@ -130,16 +217,26 @@ function App() {
     setTutorialOrigin(origin)
     setDirection(1)
     setScreen('tutorial')
+    // Always restart at step 1, even if a previous tutorial session (in the
+    // same page load) had advanced tutorialStep further — TutorialFlow used
+    // to get this for free by being fully unmounted/remounted on every
+    // screen switch; lifting `step` up to here (so it can double as the
+    // /stepN URL — see its own prop comment on TutorialFlow) means that
+    // reset no longer happens automatically and has to be explicit here.
+    setTutorialStep(1)
   }
   function exitTutorial() {
+    // Always lands on `tutorialOrigin` directly (see the comment above on
+    // why this isn't history.back()) regardless of which step the header's
+    // Done/X icon was tapped from, or how many step-entries piled up
+    // getting there.
     setDirection(-1)
     setScreen(tutorialOrigin)
   }
   // Account/My Products form their own fixed 3-deep chain off Home (Home →
-  // Account → My Products), not a generic screen stack — each pair below
-  // just mirrors goToTutorial/exitTutorial's own explicit direction-setting
-  // convention rather than introducing new machinery for what's only ever
-  // these two extra hops.
+  // Account → My Products), not a generic screen stack — every hop below,
+  // forward or backward, just sets `screen` (+ `direction`) directly and
+  // lets the sync effect push the URL for it (see that comment above).
   function goToAccount() {
     setDirection(1)
     setScreen('account')
@@ -229,9 +326,13 @@ function App() {
                 onOpenAccount={goToAccount}
                 savedTutorialIds={savedTutorialIds}
                 onToggleSavedTutorial={toggleSavedTutorial}
+                infoOpen={aboutOpen}
+                onInfoOpenChange={setAboutOpen}
               />
             )}
-            {screen === 'tutorial' && <TutorialFlow onExit={exitTutorial} />}
+            {screen === 'tutorial' && (
+              <TutorialFlow onExit={exitTutorial} step={tutorialStep} setStep={setTutorialStep} />
+            )}
             {screen === 'account' && (
               <AccountScreen
                 onClose={goToHomeFromAccount}
