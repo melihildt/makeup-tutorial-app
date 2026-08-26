@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { CloseIcon } from './InfoOverlay'
 import { Toast, useToast } from './Toast'
 import { ScrollEndFade, useAtScrollEnd } from './ScrollEndFade'
-import { BookmarkIcon, type Tutorial, type TutorialLevel } from './TutorialCard'
+import { BookmarkIcon, EASE_OUT_QUART, type Tutorial, type TutorialLevel } from './TutorialCard'
 
 type BookmarksScreenProps = {
   tutorials: Tutorial[]
@@ -65,7 +66,15 @@ function capitalizeLevel(level: TutorialLevel): string {
  *  left as-is for now (extracting a shared component means touching
  *  MyProductsScreen.tsx, already shipped and working, for a DRY-ness
  *  benefit with no functional need behind it yet); revisit if a third
- *  near-identical row shows up. */
+ *  near-identical row shows up.
+ *
+ *  Outer motion.div (layout + exit) is a separate element from the inner
+ *  role="button" div (animation review, 2026-08-26): Framer Motion writes
+ *  its own `transform` inline on whatever it's driving, which would
+ *  otherwise permanently win over the CSS `active:scale-[0.98]` class's
+ *  own `transform` — same reason TutorialLookCard/TutorialDetailCard
+ *  (TutorialCard.tsx) keep their own press-feedback div plain rather than
+ *  a motion.div, even where a Framer-Motion-driven ancestor exists. */
 function BookmarkRow({
   tutorial,
   onToggleSavedTutorial,
@@ -77,6 +86,8 @@ function BookmarkRow({
   onOpenTutorial: () => void
   onUnavailable: () => void
 }) {
+  const reduceMotion = useReducedMotion()
+
   // Factored out of onClick/onKeyDown (code review finding: the same
   // hasContent ternary was written out twice, once inline and once
   // expanded) — one branch, used by both activation paths.
@@ -86,84 +97,124 @@ function BookmarkRow({
   }
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={handleActivate}
-      onKeyDown={(e) => {
-        if (e.key !== 'Enter' && e.key !== ' ') return
-        e.preventDefault()
-        handleActivate()
-      }}
-      className="flex w-full cursor-pointer items-start gap-4 active:scale-[0.98]"
-      style={{ transition: 'transform var(--duration-instant) var(--ease-out-quart)' }}
+    // layout (skipped under reduced motion, same "movement removed, fade
+    // kept" call as App.tsx's own screen transition) lets the *remaining*
+    // rows smoothly slide up into a removed row's space — paired with
+    // AnimatePresence's mode="popLayout" below, which pulls the exiting
+    // row out of flow immediately so that reflow isn't blocked waiting for
+    // its own exit to finish. exit is opacity + scale, not height: an
+    // explicit height collapse would work too, but only via animating a
+    // layout property (banned — GPU-only rule); `layout`'s own FLIP-based
+    // reflow already gets the "others slide up" effect without touching
+    // height directly (animation review, 2026-08-26: un-saving used to
+    // remove a row with no exit at all — content the user just acted on
+    // vanishing instantly).
+    <motion.div
+      layout={!reduceMotion}
+      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: 'scale(0.96)' }}
+      transition={{ duration: reduceMotion ? 0.15 : 0.2, ease: EASE_OUT_QUART }}
     >
-      <div className="h-[90px] w-[80px] shrink-0 overflow-hidden rounded-[--radius-image] border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]">
-        <img src={tutorial.images[0]} alt="" className="size-full object-cover" />
-      </div>
-      <div className="flex h-[90px] flex-1 flex-col justify-between">
-        <div className="flex items-start gap-1">
-          <div className="flex flex-1 flex-col gap-[4px] text-[--color-text-product]">
-            <p
-              className="capitalize text-[14px] leading-[normal]"
-              style={{ fontWeight: 'var(--font-weight-semibold)' }}
-            >
-              {tutorial.title}
-            </p>
-            <p className="text-[12px] leading-[normal] tracking-[-0.12px]" style={{ fontWeight: 'var(--font-weight-medium)' }}>
-              {tutorial.brand}
-            </p>
-          </div>
-          {/* p-2 + a fixed icon box — MyProductRow's own kebab-button recipe
-              (MyProductsScreen.tsx), not the earlier -m-1/p-1 pair: that
-              combination canceled itself out in the row's layout (padding
-              added, then pulled back by an equal negative margin) but left
-              the actual hit target at 30×32px — the smallest tap target
-              in the app, on a control right next to a *different* action
-              (the row's own tap-to-open), where a mis-tap costs more than
-              usual. BookmarkIcon's own box is 24px (its taller dimension),
-              not MenuDotsIcon's 20px, so this uses size-[24px] to land on
-              the same 40×40 total MyProductRow's kebab gets. */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggleSavedTutorial(tutorial.id)
-            }}
-            // stopPropagation on keydown too, not just click (code review
-            // finding): without it, pressing Enter/Space while focused on
-            // this button doesn't un-save at all — the keydown bubbles to
-            // the row's own onKeyDown first, which matches Enter/Space and
-            // calls preventDefault() before this button's native keyboard
-            // activation (which fires after bubbling completes) can run,
-            // so the row's tap-to-open fires instead. Click never had this
-            // problem (the row has no separate click-activation step to
-            // race against), only the keyboard path did.
-            onKeyDown={(e) => e.stopPropagation()}
-            aria-label={`Remove ${tutorial.title} from bookmarks`}
-            className="header-icon-button flex shrink-0 items-center justify-center p-2"
-            style={{ color: 'var(--color-tutorial-card-text)' }}
-          >
-            <span className="flex size-[24px] items-center justify-center">
-              <BookmarkIcon filled />
-            </span>
-          </button>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleActivate}
+        onKeyDown={(e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return
+          e.preventDefault()
+          handleActivate()
+        }}
+        // has-[button:active]:scale-100 (animation review, 2026-08-26):
+        // without it, pressing the un-save button also matches *this* row's
+        // own :active (native CSS behavior — a nested button's :active
+        // state bubbles to ancestors regardless of the button's own
+        // stopPropagation, which only affects JS click/keydown handling,
+        // not CSS pseudo-class matching), compounding two independent
+        // scale transforms on one tap. TutorialDetailCard (TutorialCard.tsx)
+        // already solved this exact situation the same way; this row just
+        // hadn't copied that half of the pattern along with the rest of it.
+        className="flex w-full cursor-pointer items-start gap-4 active:scale-[0.98] has-[button:active]:scale-100"
+        style={{ transition: 'transform var(--duration-instant) var(--ease-out-quart)' }}
+      >
+        <div className="h-[90px] w-[80px] shrink-0 overflow-hidden rounded-[--radius-image] border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]">
+          <img src={tutorial.images[0]} alt="" className="size-full object-cover" />
         </div>
-        <p className="text-[12px] leading-[normal] tracking-[-0.12px] opacity-50" style={{ color: 'var(--color-tutorial-card-text)' }}>
-          {tutorial.durationMinutes} min · {capitalizeLevel(tutorial.level)}
-        </p>
+        <div className="flex h-[90px] flex-1 flex-col justify-between">
+          <div className="flex items-start gap-1">
+            <div className="flex flex-1 flex-col gap-[4px] text-[--color-text-product]">
+              <p
+                className="capitalize text-[14px] leading-[normal]"
+                style={{ fontWeight: 'var(--font-weight-semibold)' }}
+              >
+                {tutorial.title}
+              </p>
+              <p className="text-[12px] leading-[normal] tracking-[-0.12px]" style={{ fontWeight: 'var(--font-weight-medium)' }}>
+                {tutorial.brand}
+              </p>
+            </div>
+            {/* p-2 + a fixed icon box — MyProductRow's own kebab-button recipe
+                (MyProductsScreen.tsx), not the earlier -m-1/p-1 pair: that
+                combination canceled itself out in the row's layout (padding
+                added, then pulled back by an equal negative margin) but left
+                the actual hit target at 30×32px — the smallest tap target
+                in the app, on a control right next to a *different* action
+                (the row's own tap-to-open), where a mis-tap costs more than
+                usual. BookmarkIcon's own box is 24px (its taller dimension),
+                not MenuDotsIcon's 20px, so this uses size-[24px] to land on
+                the same 40×40 total MyProductRow's kebab gets. */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleSavedTutorial(tutorial.id)
+              }}
+              // stopPropagation on keydown too, not just click (code review
+              // finding): without it, pressing Enter/Space while focused on
+              // this button doesn't un-save at all — the keydown bubbles to
+              // the row's own onKeyDown first, which matches Enter/Space and
+              // calls preventDefault() before this button's native keyboard
+              // activation (which fires after bubbling completes) can run,
+              // so the row's tap-to-open fires instead. Click never had this
+              // problem (the row has no separate click-activation step to
+              // race against), only the keyboard path did.
+              onKeyDown={(e) => e.stopPropagation()}
+              aria-label={`Remove ${tutorial.title} from bookmarks`}
+              className="header-icon-button flex shrink-0 items-center justify-center p-2"
+              style={{ color: 'var(--color-tutorial-card-text)' }}
+            >
+              <span className="flex size-[24px] items-center justify-center">
+                <BookmarkIcon filled />
+              </span>
+            </button>
+          </div>
+          <p className="text-[12px] leading-[normal] tracking-[-0.12px] opacity-50" style={{ color: 'var(--color-tutorial-card-text)' }}>
+            {tutorial.durationMinutes} min · {capitalizeLevel(tutorial.level)}
+          </p>
+        </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
 /** No Figma design for this case — see this file's own module comment.
  *  Same "icon in a soft chip circle + heading + one line of body copy"
  *  shape as Toast.tsx's own content block, at a larger scale appropriate
- *  for filling the screen rather than a banner. */
+ *  for filling the screen rather than a banner.
+ *
+ *  Settle-in fade+scale on mount (animation review, 2026-08-26; this
+ *  screen previously had zero motion here) — same recipe as
+ *  ProductDetailOverlay's own hero image, since this is plausibly the
+ *  very first thing a new user sees on this screen, the kind of rare/
+ *  first-time moment the app's own frequency conventions treat as worth
+ *  a beat of polish rather than appearing flat. */
 function EmptyState() {
+  const reduceMotion = useReducedMotion()
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-10 text-center">
+    <motion.div
+      className="flex flex-1 flex-col items-center justify-center gap-3 px-10 text-center"
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: 'scale(0.97)' }}
+      animate={{ opacity: 1, transform: 'scale(1)' }}
+      transition={{ duration: reduceMotion ? 0.2 : 0.3, ease: EASE_OUT_QUART }}
+    >
       <span
         className="flex size-[64px] items-center justify-center rounded-full"
         style={{ background: 'var(--color-list-row-icon-bg)' }}
@@ -176,7 +227,7 @@ function EmptyState() {
       <p className="text-[14px]" style={{ color: 'var(--color-text-product)' }}>
         Tap the bookmark icon on a look you like to save it here.
       </p>
-    </div>
+    </motion.div>
   )
 }
 
@@ -269,15 +320,23 @@ export function BookmarksScreen({
             className="mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] bg-[--color-surface] px-[--space-sm] pb-10 pt-[--space-sm] shadow-[--shadow-card]"
             data-node-id="761:12030"
           >
-            {savedTutorials.map((tutorial) => (
-              <BookmarkRow
-                key={tutorial.id}
-                tutorial={tutorial}
-                onToggleSavedTutorial={onToggleSavedTutorial}
-                onOpenTutorial={onOpenTutorial}
-                onUnavailable={showToast}
-              />
-            ))}
+            {/* mode="popLayout" (animation review, 2026-08-26) — pulls an
+                exiting row out of document flow immediately instead of
+                waiting for its own exit animation to finish, so the
+                remaining rows' own `layout` transitions (BookmarkRow) start
+                sliding up into the vacated space right away rather than
+                looking frozen until the removed row disappears. */}
+            <AnimatePresence mode="popLayout">
+              {savedTutorials.map((tutorial) => (
+                <BookmarkRow
+                  key={tutorial.id}
+                  tutorial={tutorial}
+                  onToggleSavedTutorial={onToggleSavedTutorial}
+                  onOpenTutorial={onOpenTutorial}
+                  onUnavailable={showToast}
+                />
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
