@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { CloseIcon } from './InfoOverlay'
 import { Toast, useToast } from './Toast'
 import { ScrollEndFade, useAtScrollEnd } from './ScrollEndFade'
+import { ProductDetailOverlay } from './ProductDetailOverlay'
 import { getMyProducts, type Product } from '../data/stepContent'
 
 type MyProductsScreenProps = {
@@ -62,10 +64,36 @@ function MenuDotsIcon() {
  * tokens), but not that component itself: the trailing affordance here is
  * a non-functional menu button, not ProductCard's checkbox, which is a
  * genuinely different piece of behavior, not a restyle.
+ *
+ * The row itself opens ProductDetailOverlay on tap; the "⋮" is its own
+ * separate, non-functional control (see Toast.tsx) nested inside it. A
+ * `<button>` can't nest another `<button>` (invalid HTML, inconsistent
+ * browser/AT behavior), so the row is a `role="button"` div with its own
+ * keyboard handling instead — the "⋮" stays a real `<button>` and stops the
+ * tap from bubbling up to the row's own onClick.
  */
-function MyProductRow({ product, onMenuClick }: { product: Product; onMenuClick: () => void }) {
+function MyProductRow({
+  product,
+  onMenuClick,
+  onSelect,
+}: {
+  product: Product
+  onMenuClick: () => void
+  onSelect: () => void
+}) {
   return (
-    <div className="flex w-full items-start gap-4">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return
+        e.preventDefault()
+        onSelect()
+      }}
+      className="flex w-full cursor-pointer items-start gap-4 active:scale-[0.98]"
+      style={{ transition: 'transform var(--duration-instant) var(--ease-out-quart)' }}
+    >
       <div className="h-[--size-product-image-h] w-[--size-product-image-w] shrink-0 overflow-hidden rounded-[--radius-image] border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]">
         {product.image && <img src={product.image} alt="" className="size-full object-cover" />}
       </div>
@@ -91,7 +119,10 @@ function MyProductRow({ product, onMenuClick }: { product: Product; onMenuClick:
         </div>
         <button
           type="button"
-          onClick={onMenuClick}
+          onClick={(e) => {
+            e.stopPropagation()
+            onMenuClick()
+          }}
           aria-label={`More options for ${product.brand} ${product.name}`}
           className={`flex shrink-0 items-center justify-center p-2 ${product.shade ? 'self-start' : ''}`}
           style={{ color: 'var(--color-tutorial-card-text)' }}
@@ -114,11 +145,13 @@ function MyProductRow({ product, onMenuClick }: { product: Product; onMenuClick:
  * are non-functional this pass — all three share one `useToast()` (see
  * Toast.tsx) rather than each getting its own, since only one "coming
  * soon" message is ever showing at a time regardless of which control was
- * tapped. My Products itself (the list/navigation) is fully real.
+ * tapped. My Products itself (the list/navigation, and tapping a row to
+ * open ProductDetailOverlay) is fully real.
  */
 export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
   const [toastOpen, showToast, hideToast] = useToast()
   const { ref: scrollerRef, atEnd, onScroll } = useAtScrollEnd<HTMLDivElement>()
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const groups = getMyProducts()
 
   return (
@@ -191,6 +224,7 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
                   key={`${product.brand}|${product.name}`}
                   product={product}
                   onMenuClick={showToast}
+                  onSelect={() => setSelectedProduct(product)}
                 />
               ))}
             </div>
@@ -202,6 +236,7 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
           card's shape (--space-sm inset, --radius-card rounding), same as
           AllStepsView's use of it. */}
       <ScrollEndFade hidden={atEnd} />
+      <ProductDetailOverlay product={selectedProduct} onClose={() => setSelectedProduct(null)} />
     </div>
   )
 }
