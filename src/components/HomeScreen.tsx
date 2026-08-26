@@ -372,15 +372,20 @@ function LookSelectorChip({
  * moved up to sit directly under the header, replacing the old persistent
  * bottom sheet + close icon entirely (a real layout change, confirmed with
  * the user rather than assumed — the prior sheet was a deliberate product
- * decision, see git history). The Day/Night/Glam filters still don't
- * actually filter anything — there's only one real look — but the chip
- * selection still visually toggles, and now also toggles which chip shows
- * its icon (see LookSelectorChip above), plus (new) the tutorial stack's
- * own ghost card color (`selectedType` threaded down as `lookType` — see
- * TutorialStack's own prop and CardBehind/StartOverCard in TutorialCard.tsx)
- * — a deliberate first step toward the filters doing something, taken
- * before the actual per-look card sets exist, per the user's own framing
- * ("until we add more cards"). The info icon opens InfoOverlay.tsx's
+ * decision, see git history). The Day/Night/Glam filters now actually
+ * filter: `TUTORIALS` carries a `lookType` per entry (four per chip — see
+ * that field's own doc comment in TutorialCard.tsx for the current dummy-
+ * data set, real photography/copy pending separately), and `visibleTutorials`
+ * below narrows the full list down to the selected chip's four before
+ * handing them to TutorialStack. The chip selection still also toggles
+ * which chip shows its icon (see LookSelectorChip above) and the tutorial
+ * stack's own ghost card color (`selectedType` threaded down as `lookType`
+ * — see TutorialStack's own prop and CardBehind/StartOverCard in
+ * TutorialCard.tsx). TutorialStack is keyed on `selectedType` (below) so
+ * switching chips mounts a fresh stack — front card back to index 0, no
+ * stale drag/position state left over from the previous chip's deck —
+ * rather than trying to reconcile the old stack's internal index against a
+ * swapped-out `tutorials` array. The info icon opens InfoOverlay.tsx's
  * About/credits modal (Figma node 730:5706, see that file's own doc
  * comment); the user icon now opens AccountScreen.tsx (`onOpenAccount`,
  * an App.tsx `Screen`, not an in-place overlay like InfoOverlay — its own
@@ -395,6 +400,13 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const [selectedType, setSelectedType] = useState<LookType>('day')
   const [infoOpen, setInfoOpen] = useState(false)
+  // The filter's actual effect — see this component's own module comment.
+  // Not memoized: TUTORIALS is a module-level constant (never changes
+  // identity) and this only re-filters when selectedType itself changes,
+  // which is already the one thing that triggers this component's own
+  // re-render here — a useMemo would just be indirection over a filter
+  // that's cheap over a dozen-item array.
+  const visibleTutorials = TUTORIALS.filter((tutorial) => tutorial.lookType === selectedType)
 
   return (
     // md:py-6, not py-6: this inset only exists to keep the rounded-2xl
@@ -519,8 +531,16 @@ export function HomeScreen({
             gracefully (collapses toward the filter row, no extra gap) on a
             short viewport where header + card barely fit together. */}
         <div className="flex flex-1 items-center justify-center">
+          {/* key={selectedType}: forces a fresh TutorialStack instance per
+              chip instead of the same instance re-rendering with a swapped
+              `tutorials` array — see this component's own module comment
+              for why (activeCardIndex, the drag motion values, etc. are all
+              internal to TutorialStack and keyed to array position, not
+              tutorial identity; remounting is what resets them cleanly to
+              the new deck's own front card). */}
           <TutorialStack
-            tutorials={TUTORIALS}
+            key={selectedType}
+            tutorials={visibleTutorials}
             onSelect={onSelectLook}
             lookType={selectedType}
             savedIds={savedTutorialIds}
