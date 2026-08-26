@@ -6,7 +6,7 @@ import { AccountScreen } from './components/AccountScreen'
 import { MyProductsScreen } from './components/MyProductsScreen'
 import { BookmarksScreen } from './components/BookmarksScreen'
 import { TutorialFlow } from './TutorialFlow'
-import { type RouteState, type Screen, parseRoute, pathForRoute } from './router'
+import { type Screen, parseRoute, pathForRoute } from './router'
 
 // localStorage-backed saved-tutorial ids — lifted here (not owned inside
 // TutorialCard.tsx's TutorialStack, where it used to live) for two reasons:
@@ -88,8 +88,8 @@ function App() {
   // 1 = forward (Home → Tutorial), -1 = backward (Tutorial → Home) — set
   // right alongside `screen` in the same handlers, never read on its own,
   // so there's no case where a stale direction could apply to the wrong
-  // transition. (navigateBack below is the one exception: it's inferred
-  // from the browser's own popstate instead, see its own comment.)
+  // transition. (The popstate handler below is the one exception: it
+  // infers direction from the browser's own back/forward instead.)
   const [direction, setDirection] = useState<1 | -1>(1)
   const reduceMotion = useReducedMotion()
 
@@ -105,15 +105,10 @@ function App() {
   //
   // `historyOrderRef` tags every entry *this app itself* pushes with an
   // incrementing counter (stored in `history.state.order`), and tracks the
-  // current one. It exists for two things: telling forward from backward
-  // on a `popstate` (comparing the popped-to order against the last known
-  // one — plain string-diffing the paths can't do this, siblings like
-  // /profile and /bookmarks don't order themselves), and letting
-  // `navigateBack` (below) tell whether calling `history.back()` would
-  // actually land somewhere inside this app (order > 0, i.e. we've pushed
-  // at least once this session) versus off the front of it entirely (a
-  // page freshly loaded on e.g. /profile with no prior in-app entry to pop
-  // back into).
+  // current one — the only thing it's used for is telling forward from
+  // backward on a `popstate` (comparing the popped-to order against the
+  // last known one; plain string-diffing the paths can't do this, siblings
+  // like /profile and /bookmarks don't order themselves).
   const historyOrderRef = useRef(0)
   // Sets while a state update is *already* reflected in the URL — either
   // the very first render (the URL we just parsed the initial state from)
@@ -151,29 +146,29 @@ function App() {
     window.history.pushState({ order: historyOrderRef.current }, '', path)
   }, [screen, tutorialStep, aboutOpen])
 
-  // Used by every "leave this screen the way you came" action (Account's
-  // close button, Tutorial's exit, etc. — see each call site below)
-  // instead of setting `screen` directly. Prefers a real `history.back()`
-  // (order > 0: this app has pushed at least one entry, so there's a real
-  // browser-history entry to pop back into — the one the matching forward
-  // navigation pushed) over reconstructing the destination by hand, so the
-  // URL genuinely goes back rather than forward-to-something-that-looks-
-  // like-back (which would leave a redundant entry in `history` and make
-  // the *next* real Back press do nothing visible). Falls back to setting
-  // `fallback` directly only when there's no such entry to pop — i.e. the
-  // page was loaded directly on a deep link (e.g. /profile with no prior
-  // in-app navigation), where `history.back()` would leave the app
-  // entirely instead of landing on Home.
-  function navigateBack(fallback: RouteState) {
-    if (historyOrderRef.current > 0) {
-      window.history.back()
-      return
-    }
-    setDirection(-1)
-    setScreen(fallback.screen)
-    setTutorialStep(fallback.tutorialStep)
-    setAboutOpen(fallback.aboutOpen)
-  }
+  // Every "leave this screen" action below (Account's close button,
+  // Tutorial's exit, etc.) sets `screen` directly and lets the sync effect
+  // above push a fresh URL for it — deliberately NOT `window.history.back()`,
+  // even though that reads like the more "correct" way to implement a close
+  // button. It isn't, here: this app doesn't reliably know it's exactly one
+  // real history entry back to where it should land. That's obviously true
+  // for the tutorial (Next/Back pushes one entry *per step*, so a Done tap
+  // from step 4 needs to leave the flow entirely, not pop back to step 3 —
+  // see exitTutorial below), but it was ALSO a real, confirmed bug for the
+  // "simple" one-hop screens: Bookmarks → tutorial → tap the header's Done
+  // icon pushes a fresh /bookmarks entry (since exitTutorial can't assume
+  // how many step-entries preceded it either), which means the *real*
+  // previous entry immediately behind that new /bookmarks in `history` is
+  // now the tutorial itself, not Account — so Bookmarks' own close button,
+  // if it called `history.back()`, would pop back into the tutorial instead
+  // of Account, and every retry after that looped the same way, with no
+  // path back to Home at all. Setting state directly and always pushing a
+  // fresh entry sidesteps the whole class of bug: every close/back button
+  // here lands on exactly the screen it names, regardless of how deep or
+  // unusual the path that got here was. The one real cost is that the
+  // browser's native Back button can retrace more steps than feels
+  // necessary to fully leave the app — an acceptable trade for actually
+  // working every time.
 
   // Lazy initializer (not a bare `new Set()`) so reading localStorage only
   // ever happens once, on mount — not on every re-render.
@@ -231,23 +226,17 @@ function App() {
     setTutorialStep(1)
   }
   function exitTutorial() {
-    // Deliberately NOT navigateBack/history.back(): unlike Account/My
-    // Products/Bookmarks (each always exactly one pushed entry away from
-    // where they came from), the tutorial pushes one entry *per step*
-    // visited (see the sync effect above) — a user who paged through
-    // steps 1-4 and then tapped the header's Done/X icon needs to leave
-    // the flow entirely from step 4, not pop back to step 3. A direct
-    // `setScreen` (same as the forward navigations below) always lands on
-    // `tutorialOrigin` regardless of how many step-entries piled up.
+    // Always lands on `tutorialOrigin` directly (see the comment above on
+    // why this isn't history.back()) regardless of which step the header's
+    // Done/X icon was tapped from, or how many step-entries piled up
+    // getting there.
     setDirection(-1)
     setScreen(tutorialOrigin)
   }
   // Account/My Products form their own fixed 3-deep chain off Home (Home →
-  // Account → My Products), not a generic screen stack — each forward hop
-  // below just mirrors goToTutorial's own explicit direction-setting
-  // convention rather than introducing new machinery for what's only ever
-  // these two extra hops; each backward hop goes through navigateBack (see
-  // its own comment) the same way exitTutorial does.
+  // Account → My Products), not a generic screen stack — every hop below,
+  // forward or backward, just sets `screen` (+ `direction`) directly and
+  // lets the sync effect push the URL for it (see that comment above).
   function goToAccount() {
     setDirection(1)
     setScreen('account')
@@ -257,17 +246,20 @@ function App() {
     setScreen('my-products')
   }
   function goToAccountFromProducts() {
-    navigateBack({ screen: 'account', tutorialStep: 1, aboutOpen: false })
+    setDirection(-1)
+    setScreen('account')
   }
   function goToHomeFromAccount() {
-    navigateBack({ screen: 'home', tutorialStep: 1, aboutOpen: false })
+    setDirection(-1)
+    setScreen('home')
   }
   function goToBookmarks() {
     setDirection(1)
     setScreen('bookmarks')
   }
   function goToAccountFromBookmarks() {
-    navigateBack({ screen: 'account', tutorialStep: 1, aboutOpen: false })
+    setDirection(-1)
+    setScreen('account')
   }
 
   return (
