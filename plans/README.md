@@ -21,9 +21,65 @@ just the About/Info overlay (`src/components/InfoOverlay.tsx`, opened from
 three audits), against commit `9f1aa24` — small enough in scope (one file
 plus its two-line trigger) that it was audited directly rather than via
 subagent fan-out. All three of that audit's findings were selected to
-become plans, and all three are now executed too. Full findings
+become plans, and all three are now executed too. **025-026** are from a
+fifth audit, against commit `75a7936` — scoped to the newer surface area
+the first four audits never covered: `AccountScreen.tsx` +
+`MyProductsScreen.tsx` (came back clean, no findings), the "coming soon"
+feature in `TutorialCard.tsx` (`ProductsPreview`'s coming-soon branch,
+`ComingSoonButton`), and a whole-app cohesion/accessibility pass. Three
+findings were confirmed; the user selected two (025, 026) to become
+plans — the third (`ComingSoonButton`'s complete lack of tap feedback,
+`TutorialCard.tsx:786-804`) was presented but not selected, and isn't
+written up as a plan. Full findings
 tables live in the conversations that produced each; this index tracks
-execution. **For the
+execution. **025 and 026 both executed in the same session they were
+written, directly in the working tree** (same reasoning as every prior
+batch — the repo had uncommitted changes at execution time). Both
+re-verified against current file content immediately before editing; no
+drift found from the commit `75a7936` citations.
+
+- **025 executed exactly as planned** — `Toast.tsx`'s `transition`
+  `duration` changed from the untraceable `0.3` to `0.35` (`--duration-layout`),
+  with the plan's own comment added immediately above it. Verified:
+  `npx tsc -b` clean; `grep -n "duration:" src/components/Toast.tsx` shows
+  exactly `reduceMotion ? 0.15 : 0.35`. Live-checked by triggering the
+  toast from `MyProductsScreen`'s "Add product" button — it rendered,
+  animated in and back out on its normal auto-dismiss timer, and produced
+  no console or dev-server errors; this environment's browser tooling
+  couldn't reliably catch the WAAPI animation itself mid-flight (the
+  entrance/exit are fast relative to the async round-trip needed to query
+  `getAnimations()`, and several `computer`-tool clicks timed out this
+  session for reasons unrelated to this change — worked around via
+  `element.click()` dispatched through `javascript_tool` throughout, same
+  category of environment limitation as 009/018/022's own notes above), so
+  the exact `0.35` duration is confirmed via source + `tsc`, not a live
+  WAAPI timing readout.
+- **026 executed exactly as planned** — `product-preview-fade-in` added to
+  `index.css` immediately after `product-preview-pop-in`; `popStyle` in
+  `TutorialCard.tsx`'s `ProductsPreview` gained an `animationName`
+  parameter, `popAnimationName` added (`tutorial.hasContent` branch), all
+  three call sites updated. Verified: `npx tsc -b` clean; `grep -n
+  "popStyle("` shows all three call sites now passing two arguments.
+  Live-verified via `document.getAnimations()` on both branches after
+  flipping each card to its detail face (dispatched via `.click()`,
+  same tooling workaround as 025's note): the coming-soon tutorial
+  ("Everyday Mattes", Day filter) ran `product-preview-fade-in` on all
+  three thumbnail wrappers with keyframes confirmed as opacity-only (no
+  `transform`) via `effect.getKeyframes()`; the one real-content tutorial
+  ("Soft Smokey Eye", Night filter) still ran the original
+  `product-preview-pop-in` with its full `translateY(24px) scale(0.7)` →
+  rest keyframes, confirming the real-photo branch is pixel-for-pixel
+  unchanged. Screenshots of both confirm the visual result matches: the
+  coming-soon detail face's blurred/tinted thumbnails at rest with no pop
+  artifacts, the real-photo detail face's product images unchanged. The
+  reduced-motion gate (`justRevealed && !reduceMotion`) is untouched code
+  by this plan, so it wasn't re-verified from scratch — already correct
+  going in, per the plan's own Boundaries.
+
+Mechanical check across both: `npx tsc -b` clean, no console or
+dev-server errors during editing or the live verification passes above.
+
+**For the
 fuller current picture of this whole feature area** (Start Over's
 redesign, the ghost-card recolor, the swipe-hint nudge, the tutorial
 detail flip, and pending items that are bug fixes rather than audit
@@ -56,6 +112,8 @@ handoff, this README only tracks plan execution.
 | 022 | [Add press feedback to InfoOverlay's Portfolio/Email link rows](022-infooverlay-link-press-feedback.md) | MEDIUM | Physicality & origin | About/Info overlay | DONE |
 | 023 | [Stagger InfoOverlay's card entrance behind its backdrop](023-infooverlay-card-entrance-stagger.md) | LOW | Cohesion & tokens | About/Info overlay | DONE (one correction — see note below) |
 | 024 | [Give CopyEmailButton's "Couldn't copy" failure state its own motion cue](024-copy-email-failure-shake.md) | LOW | Missed opportunity | About/Info overlay | DONE |
+| 025 | [Fix Toast's entrance/exit duration to match a real token](025-toast-duration-token.md) | LOW | Cohesion & tokens | Toast (Account, My Products) | DONE |
+| 026 | [Give coming-soon thumbnails their own calmer entrance](026-coming-soon-thumbnail-calm-entrance.md) | MEDIUM | Purpose & frequency | Home (tutorial card detail face) | DONE |
 
 **002's specific fix (`isFlipping` local state) no longer exists in the
 code** — it was removed during the Start Over two-face-flip redesign
@@ -509,6 +567,13 @@ plans existed).
    rather than trusting the original line numbers, per each plan's own
    Boundaries. 023 is fully independent of both — different element,
    different prop, safe fully parallel with either.
+8. **025 and 026 are both new, both TODO, and fully independent of each
+   other and of everything else in this queue** — 025 touches only
+   `Toast.tsx` (a one-line duration value); 026 touches `index.css` (one
+   new keyframe) and `TutorialCard.tsx`'s `ProductsPreview` (a different
+   function from every other `TutorialCard.tsx` plan above — 015/018
+   touch `StartOverCard`/the card-family `className`s, not
+   `ProductsPreview`). Any order, including fully parallel.
 
 001-005 touch only `src/components/TutorialCard.tsx` and were
 written against commit `628b8b7` — **now well behind current** (see
