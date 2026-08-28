@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { EASE_OUT_QUART } from './TutorialCard'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
-import { CloseIcon } from './InfoOverlay'
+import { CloseIcon } from './icons'
 import type { Product } from '../data/stepContent'
 
 type ProductDetailOverlayProps = {
@@ -124,7 +124,12 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
                   className="relative size-[238px] shrink-0 overflow-hidden rounded-[24px] border border-solid"
                   style={{
                     borderColor: 'var(--color-border-hairline)',
-                    boxShadow: '0px 0px 8px rgba(14, 11, 6, 0.03)',
+                    // --shadow-filter-chip's own exact value (code review
+                    // finding), hand-copied as a raw literal instead of
+                    // referencing the token — same value HomeScreen.tsx's
+                    // filter chips and InfoOverlay's own card already
+                    // reference by name.
+                    boxShadow: 'var(--shadow-filter-chip)',
                     background: 'var(--color-image-placeholder)',
                   }}
                   initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: 'scale(0.96)' }}

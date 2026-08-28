@@ -12,7 +12,7 @@ type AllStepsViewProps = {
   checkedOverrides: Record<string, boolean>
   /** See StepScreen's copy of this prop — same TutorialFlow-owned state,
    *  shared so a toggle made in either view only animates in that one. */
-  justToggledKey: string | null
+  justToggledKeys: Set<string>
   /** See StepScreen's copy of this prop for what the third arg is for —
    *  same reasoning, it's what lets TutorialFlow send you back to the
    *  right step when you leave this view via onSelectStepView below. */
@@ -38,7 +38,7 @@ type AllStepsViewProps = {
  */
 export function AllStepsView({
   checkedOverrides,
-  justToggledKey,
+  justToggledKeys,
   onToggleChecked,
   onBack,
   onDone,
@@ -404,7 +404,7 @@ export function AllStepsView({
                           name={product.name}
                           shade={product.shade}
                           checked={checked}
-                          animate={key === justToggledKey}
+                          animate={justToggledKeys.has(key)}
                           onToggleChecked={() => onToggleChecked(key, product.checked, step)}
                         />
                       )

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { EASE_OUT_QUART } from './TutorialCard'
-import { CloseIcon } from './InfoOverlay'
+import { CloseIcon } from './icons'
 
 const TOAST_DURATION_MS = 4000
 

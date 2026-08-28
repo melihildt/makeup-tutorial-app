@@ -36,6 +36,8 @@ import previewConcealerBrushImg from '../assets/product-images/Product_Concealer
 import previewEyelinerImg from '../assets/product-images/Product_Eyeliner.png'
 import previewMeritBrushImg from '../assets/product-images/Product_Merit-Brush.png'
 import type { LookType } from './HomeScreen'
+import { getRoleButtonProps } from './rowActivation'
+import { BookmarkIcon, LevelIcon, LockIcon, RotateRightIcon } from './icons'
 
 /** The numeric (JS array) form of tokens.css's --ease-out-quart
  *  (cubic-bezier(0.25, 1, 0.5, 1)) — Framer Motion's animate()/transition
@@ -289,117 +291,10 @@ export const TUTORIALS: Tutorial[] = [
   },
 ]
 
-/** Bookmark toggle icon — replaces the old decorative HeartIcon.
- *  `filled=false` is node 663:5946 ("Name=Bookmark, State=Normal", from
- *  the BigCard reference node 648:2): the hollow-ribbon outline,
- *  fill-opacity 0.5. `filled=true` is the real node 663:6184
- *  ("State=Selected") — user supplied the direct link after the tools
- *  available here couldn't surface it themselves (no Code Connect access
- *  on this file's plan, and a design-system search came back empty; ask
- *  next time instead of guessing). Turns out to be the *same* outline
- *  path's outer boundary (the ribbon silhouette, notch included) with its
- *  inner hole-cutout subpath dropped — i.e. the identical shape, just
- *  solid instead of hollow — painted at full opacity (Figma's "Dark/100%",
- *  no dimming), not the hand-approximated curve this had before. */
-// Exported: BookmarksScreen.tsx reuses this exact icon (filled=true for
-// every row there — everything shown is, definitionally, already saved —
-// and unfilled for its own empty state) rather than re-authoring the same
-// path data a second time.
-export function BookmarkIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg
-      width={22}
-      height={24}
-      viewBox="0 0 22.0003 24.0035"
-      fill="none"
-      className={filled ? undefined : 'opacity-50'}
-      aria-hidden="true"
-    >
-      {filled ? (
-        <path
-          d="M19.1371 24C18.7672 23.999 18.4011 23.9247 18.0601 23.7814C17.719 23.638 17.4097 23.4285 17.1501 23.165L11.0001 17.051L4.85012 23.169C4.45515 23.5697 3.94861 23.8422 3.39654 23.9508C2.84447 24.0594 2.27247 23.9992 1.75512 23.778C1.23264 23.5678 0.785669 23.205 0.472582 22.7369C0.159494 22.2688 -0.00515925 21.7171 0.000123236 21.154V5C0.000123236 3.67392 0.526908 2.40215 1.46459 1.46447C2.40227 0.526784 3.67404 0 5.00012 0L17.0001 0C17.6567 0 18.3069 0.129329 18.9135 0.380602C19.5202 0.631876 20.0714 1.00017 20.5357 1.46447C21 1.92876 21.3683 2.47996 21.6195 3.08658C21.8708 3.69321 22.0001 4.34339 22.0001 5V21.154C22.0057 21.7167 21.8417 22.268 21.5293 22.7361C21.217 23.2041 20.7709 23.5672 20.2491 23.778C19.8969 23.9253 19.5189 24.0008 19.1371 24Z"
-          fill="var(--color-tutorial-card-text)"
-        />
-      ) : (
-        <path
-          d="M19.1371 24C18.7672 23.999 18.4011 23.9247 18.0601 23.7814C17.719 23.638 17.4097 23.4285 17.1501 23.165L11.0001 17.051L4.85012 23.169C4.45515 23.5697 3.94861 23.8422 3.39654 23.9508C2.84447 24.0594 2.27247 23.9992 1.75512 23.778C1.23264 23.5678 0.785669 23.205 0.472582 22.7369C0.159494 22.2688 -0.00515925 21.7171 0.000123236 21.154V5C0.000123236 3.67392 0.526908 2.40215 1.46459 1.46447C2.40227 0.526784 3.67404 0 5.00012 0L17.0001 0C17.6567 0 18.3069 0.129329 18.9135 0.380602C19.5202 0.631876 20.0714 1.00017 20.5357 1.46447C21 1.92876 21.3683 2.47996 21.6195 3.08658C21.8708 3.69321 22.0001 4.34339 22.0001 5V21.154C22.0057 21.7167 21.8417 22.268 21.5293 22.7361C21.217 23.2041 20.7709 23.5672 20.2491 23.778C19.8969 23.9253 19.5189 24.0008 19.1371 24ZM5.00012 2C4.20447 2 3.44141 2.31607 2.8788 2.87868C2.31619 3.44129 2.00012 4.20435 2.00012 5V21.154C1.99976 21.3206 2.04879 21.4836 2.14102 21.6224C2.23325 21.7612 2.36455 21.8695 2.51831 21.9337C2.67208 21.9979 2.84143 22.0151 3.00496 21.9831C3.1685 21.9512 3.31888 21.8714 3.43712 21.754V21.754L10.3001 14.933C10.4875 14.7468 10.7409 14.6422 11.0051 14.6422C11.2693 14.6422 11.5228 14.7468 11.7101 14.933L18.5651 21.752C18.6834 21.8694 18.8338 21.9492 18.9973 21.9811C19.1608 22.0131 19.3302 21.9959 19.4839 21.9317C19.6377 21.8675 19.769 21.7592 19.8612 21.6204C19.9535 21.4816 20.0025 21.3186 20.0021 21.152V5C20.0021 4.20435 19.6861 3.44129 19.1234 2.87868C18.5608 2.31607 17.7978 2 17.0021 2H5.00012Z"
-          fill="var(--color-tutorial-card-text)"
-        />
-      )}
-    </svg>
-  )
-}
-
-/** Restart icon for the Start Over card (below) — node 666:2684
- *  ("fi-rr-rotate-right", Tech-Experimentation), real path data pulled via
- *  download_assets, not hand-approximated (same standard as BookmarkIcon
- *  above). Source export had its fill hardcoded to the literal hex
- *  #2C2926 — swapped for `var(--color-tutorial-card-text)` since that's
- *  the exact same color as a token already, matching how every other icon
- *  in this file is themed. */
-function RotateRightIcon() {
-  return (
-    <svg width={48} height={48} viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path
-        d="M43.9241 25.75C43.5385 30.3097 41.6055 34.6004 38.4459 37.9104C35.2864 41.2204 31.0901 43.3507 26.5533 43.9479C22.0165 44.545 17.4119 43.5731 13.5034 41.1934C9.59492 38.8137 6.61751 35.1693 5.06513 30.8647C3.51276 26.5602 3.47873 21.8542 4.9687 17.5277C6.45867 13.2011 9.38307 9.51398 13.2567 7.07802C17.1304 4.64206 21.7205 3.60368 26.2654 4.13516C30.8104 4.66664 35.037 6.73603 38.2441 10H32.0001C31.4697 10 30.961 10.2107 30.5859 10.5858C30.2109 10.9609 30.0001 11.4696 30.0001 12C30.0001 12.5304 30.2109 13.0391 30.5859 13.4142C30.961 13.7893 31.4697 14 32.0001 14H40.2861C41.271 13.9995 42.2154 13.608 42.9118 12.9116C43.6081 12.2152 43.9996 11.2709 44.0001 10.286V2C44.0001 1.46957 43.7894 0.960859 43.4144 0.585787C43.0393 0.210714 42.5306 0 42.0001 0V0C41.4697 0 40.961 0.210714 40.5859 0.585787C40.2109 0.960859 40.0001 1.46957 40.0001 2V6.156C35.9775 2.56146 30.8599 0.428968 25.4751 0.103423C20.0903 -0.222122 14.753 1.27831 10.3266 4.36206C5.90026 7.44581 2.64352 11.9326 1.08317 17.0966C-0.477194 22.2607 -0.249938 27.8002 1.72818 32.8191C3.7063 37.838 7.31961 42.0429 11.9837 44.7537C16.6478 47.4645 22.09 48.5227 27.4301 47.7572C32.7702 46.9916 37.6959 44.4471 41.4106 40.5351C45.1252 36.6232 47.4117 31.5725 47.9001 26.2C47.926 25.9215 47.8935 25.6406 47.8048 25.3754C47.7161 25.1101 47.5731 24.8662 47.385 24.6592C47.1968 24.4523 46.9676 24.2868 46.712 24.1733C46.4563 24.0598 46.1799 24.0008 45.9001 24C45.4122 23.9941 44.9396 24.1701 44.5743 24.4936C44.2091 24.8171 43.9773 25.265 43.9241 25.75V25.75Z"
-        fill="var(--color-tutorial-card-text)"
-        fillOpacity={0.8}
-      />
-    </svg>
-  )
-}
-
-/** 3-bar "signal strength" level icon, node 674:3974 ("Icons") — real path
- *  data pulled via download_assets (5 distinct bar/state SVGs: two heights
- *  each have a solid-filled and a hollow-outline version, the shortest bar
- *  only ever has a filled version), not hand-approximated. Ascending bars
- *  (short/medium/tall) light up left-to-right with level: 'easy' fills
- *  only the shortest, 'medium' adds the middle one, 'experienced' fills
- *  all three — the shortest bar is *always* filled regardless of level,
- *  same as a real signal-strength icon never shows zero bars lit. Every
- *  bar (filled or not) shares the exact same color/opacity
- *  (#2C2926 @ 50%) — "filled" vs "not reached yet" is purely a solid-vs-
- *  hollow capsule shape, not a color or opacity change, so there's no
- *  separate "dim" fill value to theme here. */
-function LevelIcon({ level }: { level: TutorialLevel }) {
-  const mediumFilled = level === 'medium' || level === 'experienced'
-  const tallFilled = level === 'experienced'
-  return (
-    <svg width={14} height={14} viewBox="0 0 14 14" fill="none" aria-hidden="true">
-      {/* Shortest bar (h7) — always filled, every level. */}
-      <path
-        transform="translate(0, 7)"
-        d="M1.75 0C1.28587 0 0.840752 0.184374 0.512563 0.512563C0.184374 0.840752 0 1.28587 0 1.75L0 5.25C0 5.71413 0.184374 6.15925 0.512563 6.48744C0.840752 6.81563 1.28587 7 1.75 7C2.21413 7 2.65925 6.81563 2.98744 6.48744C3.31563 6.15925 3.5 5.71413 3.5 5.25V1.75C3.5 1.28587 3.31563 0.840752 2.98744 0.512563C2.65925 0.184374 2.21413 0 1.75 0Z"
-        fill="#2C2926"
-        fillOpacity={0.5}
-      />
-      {/* Middle bar (h10.5) — filled from 'medium' up; hollow outline for
-          'easy'. */}
-      <path
-        transform="translate(5.25, 3.5)"
-        d={
-          mediumFilled
-            ? 'M1.75 0C1.28587 0 0.840752 0.184375 0.512563 0.512563C0.184374 0.840752 0 1.28587 0 1.75V8.75C0 9.21413 0.184374 9.65925 0.512563 9.98744C0.840752 10.3156 1.28587 10.5 1.75 10.5C2.21413 10.5 2.65925 10.3156 2.98744 9.98744C3.31563 9.65925 3.5 9.21413 3.5 8.75V1.75C3.5 1.28587 3.31563 0.840752 2.98744 0.512563C2.65925 0.184375 2.21413 0 1.75 0Z'
-            : 'M1.75 0C1.28587 0 0.840752 0.184375 0.512563 0.512563C0.184374 0.840752 0 1.28587 0 1.75V8.75C0 9.21413 0.184374 9.65925 0.512563 9.98744C0.840752 10.3156 1.28587 10.5 1.75 10.5C2.21413 10.5 2.65925 10.3156 2.98744 9.98744C3.31563 9.65925 3.5 9.21413 3.5 8.75V1.75C3.5 1.28587 3.31563 0.840752 2.98744 0.512563C2.65925 0.184375 2.21413 0 1.75 0ZM2.33333 8.75C2.33333 8.90471 2.27188 9.05308 2.16248 9.16248C2.05308 9.27188 1.90471 9.33333 1.75 9.33333C1.59529 9.33333 1.44692 9.27188 1.33752 9.16248C1.22813 9.05308 1.16667 8.90471 1.16667 8.75V1.75C1.16667 1.59529 1.22813 1.44692 1.33752 1.33752C1.44692 1.22813 1.59529 1.16667 1.75 1.16667C1.90471 1.16667 2.05308 1.22813 2.16248 1.33752C2.27188 1.44692 2.33333 1.59529 2.33333 1.75V8.75Z'
-        }
-        fill="#2C2926"
-        fillOpacity={0.5}
-      />
-      {/* Tallest bar (h14) — filled only at 'experienced'; hollow outline
-          otherwise. */}
-      <path
-        transform="translate(10.5, 0)"
-        d={
-          tallFilled
-            ? 'M1.75 0C1.28587 0 0.840752 0.184374 0.512563 0.512563C0.184374 0.840752 0 1.28587 0 1.75V12.25C0 12.7141 0.184374 13.1592 0.512563 13.4874C0.840752 13.8156 1.28587 14 1.75 14C2.21413 14 2.65925 13.8156 2.98744 13.4874C3.31563 13.1592 3.5 12.7141 3.5 12.25V1.75C3.5 1.28587 3.31563 0.840752 2.98744 0.512563C2.65925 0.184374 2.21413 0 1.75 0V0Z'
-            : 'M1.75 0C1.28587 0 0.840752 0.184374 0.512563 0.512563C0.184374 0.840752 0 1.28587 0 1.75V12.25C0 12.7141 0.184374 13.1592 0.512563 13.4874C0.840752 13.8156 1.28587 14 1.75 14C2.21413 14 2.65925 13.8156 2.98744 13.4874C3.31563 13.1592 3.5 12.7141 3.5 12.25V1.75C3.5 1.28587 3.31563 0.840752 2.98744 0.512563C2.65925 0.184374 2.21413 0 1.75 0V0ZM2.33333 12.25C2.33333 12.4047 2.27188 12.5531 2.16248 12.6625C2.05308 12.7719 1.90471 12.8333 1.75 12.8333C1.59529 12.8333 1.44692 12.7719 1.33752 12.6625C1.22812 12.5531 1.16667 12.4047 1.16667 12.25V1.75C1.16667 1.59529 1.22812 1.44692 1.33752 1.33752C1.44692 1.22812 1.59529 1.16667 1.75 1.16667C1.90471 1.16667 2.05308 1.22812 2.16248 1.33752C2.27188 1.44692 2.33333 1.59529 2.33333 1.75V12.25Z'
-        }
-        fill="#2C2926"
-        fillOpacity={0.5}
-      />
-    </svg>
-  )
-}
+// BookmarkIcon/RotateRightIcon/LevelIcon moved to icons.tsx along with
+// every other icon in the app — see that file's own module comment for the
+// consolidation. BookmarksScreen.tsx now imports BookmarkIcon from there
+// directly rather than from this file.
 
 /** Top-right timer pill — rounded-tr matches the card's own outer radius so
  *  the two curves read as one continuous corner (node 635:5048/5018/etc). */
@@ -501,30 +396,14 @@ type TutorialLookCardProps = {
  *  parsing raw HTML would, but it's broken for keyboard/screen-reader
  *  navigation (two activatable controls collapsed into one stop) and for
  *  click bubbling (the inner tap would also fire the outer one without
- *  careful stopPropagation everywhere). A div with role="button" +
- *  explicit tabIndex/onKeyDown reproduces exactly what the native button
- *  gave up (Enter/Space activation, tab order, disabled state), while
- *  leaving room for one real nested `<button>` for the bookmark. */
+ *  careful stopPropagation everywhere). getRoleButtonProps (rowActivation.ts)
+ *  reproduces exactly what the native button gave up (Enter/Space
+ *  activation, tab order, disabled state), while leaving room for one real
+ *  nested `<button>` for the bookmark. */
 export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity, saved, onToggleSave }: TutorialLookCardProps) {
   return (
     <div
-      role="button"
-      aria-disabled={disabled || undefined}
-      tabIndex={disabled ? -1 : 0}
-      onClick={disabled ? undefined : onSelect}
-      onKeyDown={
-        disabled
-          ? undefined
-          : (e) => {
-              // Space also scrolls the page on a native button unless the
-              // default is prevented — replicating that here since this
-              // is a div now, not a real button.
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                onSelect?.()
-              }
-            }
-      }
+      {...getRoleButtonProps(onSelect, disabled)}
       // active:scale-[0.97] (motion audit, Home screen only): a plain tap
       // used to get zero acknowledgment before the screen changed — only a
       // drag got feedback, via gripScale on the wrapping motion.div in
@@ -736,26 +615,37 @@ function ProductsPreview({ tutorial, justRevealed = false }: { tutorial: Tutoria
   const reduceMotion = useReducedMotion()
   const shadow = '0px 2px 8px 0px rgba(67, 48, 35, 0.1)'
   const remaining = Math.max(0, tutorial.productsUsedCount - PRODUCTS_PREVIEW_COUNT)
-  // Base delay (~260ms) estimates when CardBack actually becomes visible,
-  // not when this row mounts: cardBackFlipOpacity (TutorialStackCard)
-  // only starts rising once the flip's flipRotateY crosses 105 of its
-  // 180deg travel (58% of the way through), and the tap-flip spring's own
-  // nominal duration is 450ms (handleCardTap) — 0.58 × 450 ≈ 260. Without
-  // it, the pop-in (mount-triggered) would run and finish while CardBack
-  // is still at opacity 0, invisible, so by the time the flip actually
-  // reveals it the photos would already be sitting at rest with nothing
-  // left to see. +60ms stagger on top of that (skill's 30-80ms band) for
-  // "pop from the middle": center first, the two outer photos a beat
-  // behind, reading as bursting outward rather than all three at once.
-  // Approximated from the spring's nominal numbers, not measured frame-
-  // by-frame — worth a feel-check on a real device against the actual
-  // flip if the pop ever reads late/early relative to the reveal.
-  const POP_BASE_DELAY_MS = 260
+  // Base delay estimates when CardBack actually becomes visible, not when
+  // this row mounts: cardBackFlipOpacity (TutorialStackCard) only starts
+  // rising once the flip's flipRotateY crosses 105 of its 180deg travel —
+  // FLIP_VISIBLE_FRACTION below. Derived from
+  // DEFAULT_MOTION_TUNING.tapFlipDuration (code review finding: this used
+  // to be a hardcoded `260`, linked to handleCardTap's own spring duration
+  // only by a comment doing the "0.58 × 450 ≈ 260" arithmetic by hand — a
+  // future retune of tapFlipDuration there would silently desync it).
+  // Without this delay, the pop-in (mount-triggered) would run and finish
+  // while CardBack is still at opacity 0, invisible, so by the time the
+  // flip actually reveals it the photos would already be sitting at rest
+  // with nothing left to see. +60ms stagger on top of that (skill's
+  // 30-80ms band) for "pop from the middle": center first, the two outer
+  // photos a beat behind, reading as bursting outward rather than all
+  // three at once. FLIP_VISIBLE_FRACTION itself is still approximated from
+  // the spring's nominal numbers, not measured frame-by-frame — worth a
+  // feel-check on a real device against the actual flip if the pop ever
+  // reads late/early relative to the reveal.
+  const FLIP_VISIBLE_FRACTION = 0.58
+  const POP_BASE_DELAY_MS = Math.round(DEFAULT_MOTION_TUNING.tapFlipDuration * 1000 * FLIP_VISIBLE_FRACTION)
   const POP_STAGGER_MS = 60
-  const popStyle = (delayMs: number): CSSProperties | undefined =>
+  const popStyle = (delayMs: number, animationName: string): CSSProperties | undefined =>
     justRevealed && !reduceMotion
-      ? { animation: 'product-preview-pop-in var(--duration-base) var(--ease-out-quart) both', animationDelay: `${delayMs}ms` }
+      ? { animation: `${animationName} var(--duration-base) var(--ease-out-quart) both`, animationDelay: `${delayMs}ms` }
       : undefined
+  // Real photos get the celebratory pop; coming-soon placeholders get a
+  // plain fade — see product-preview-fade-in's own comment (index.css) for
+  // why. Resolved once per row rather than per thumbnail: all three
+  // thumbnails in a given ProductsPreview are always the same branch
+  // (tutorial.hasContent doesn't vary within one row).
+  const popAnimationName = tutorial.hasContent ? 'product-preview-pop-in' : 'product-preview-fade-in'
   const thumbnail = (rotateDeg: number, image?: string) => (
     <div
       className="h-[108px] w-[96px] shrink-0 overflow-hidden rounded-[18px] border-[3px] border-solid border-white"
@@ -822,16 +712,16 @@ function ProductsPreview({ tutorial, justRevealed = false }: { tutorial: Tutoria
       <div key={String(justRevealed)} className="flex items-center justify-center">
         <div
           className="mr-[-16px] flex h-[119px] w-[108px] shrink-0 items-center justify-center"
-          style={popStyle(POP_BASE_DELAY_MS + POP_STAGGER_MS)}
+          style={popStyle(POP_BASE_DELAY_MS + POP_STAGGER_MS, popAnimationName)}
         >
           {tutorial.hasContent ? thumbnail(-7, imageA) : comingSoonThumbnail(-7, placeholderImageA, tintA)}
         </div>
-        <div className="mr-[-16px]" style={popStyle(POP_BASE_DELAY_MS)}>
+        <div className="mr-[-16px]" style={popStyle(POP_BASE_DELAY_MS, popAnimationName)}>
           {tutorial.hasContent ? thumbnail(0, imageB) : comingSoonThumbnail(0, placeholderImageB, tintB)}
         </div>
         <div
           className="flex h-[119px] w-[108px] shrink-0 items-center justify-center"
-          style={popStyle(POP_BASE_DELAY_MS + POP_STAGGER_MS)}
+          style={popStyle(POP_BASE_DELAY_MS + POP_STAGGER_MS, popAnimationName)}
         >
           {tutorial.hasContent ? thumbnail(7, imageC) : comingSoonThumbnail(7, placeholderImageC, tintC)}
         </div>
@@ -885,30 +775,8 @@ function StartTutorialButton({ onStart, disabled }: { onStart?: () => void; disa
   )
 }
 
-/** Lock icon for ComingSoonButton (below) — node 754:11046 ("fi-br-lock",
- *  Tech-Experimentation's "Coming Soon" reference mock), real path data
- *  pulled via get_design_context, not hand-approximated (same standard as
- *  BookmarkIcon/RotateRightIcon/LevelIcon above). Source export had both
- *  paths' fill hardcoded to the literal hex #2C2926 at 80% opacity — swapped
- *  for `var(--color-tutorial-card-text)` + fillOpacity since that's the
- *  exact same color as this file's shared ink token already, matching how
- *  every other icon here is themed. */
-function LockIcon() {
-  return (
-    <svg width={14} height={14} viewBox="0 0 11.7405 14" fill="none" aria-hidden="true">
-      <path
-        d="M9.97946 4.9639V4.1092C9.97946 1.83975 8.13971 0 5.87026 0C3.6008 0 1.76108 1.83975 1.76108 4.10918V4.96388C0.681428 5.51485 0.00132081 6.62408 0 7.8362V10.7713C0.0019537 12.5537 1.44631 13.998 3.22864 14H8.51187C10.2942 13.998 11.7386 12.5537 11.7405 10.7713V7.83622C11.7392 6.62411 11.0591 5.51485 9.97946 4.9639ZM5.87026 1.76108C7.16707 1.76108 8.21835 2.81236 8.21835 4.10918V4.60756H3.52216V4.10918C3.52216 2.81236 4.57344 1.76108 5.87026 1.76108ZM9.97946 10.7713C9.97946 11.5818 9.32241 12.2389 8.5119 12.2389H3.22866C2.41815 12.2389 1.76111 11.5818 1.76111 10.7713V7.83622C1.76111 7.02572 2.41815 6.36867 3.22866 6.36867H8.5119C9.32241 6.36867 9.97946 7.02572 9.97946 7.83622V10.7713V10.7713Z"
-        fill="var(--color-tutorial-card-text)"
-        fillOpacity={0.8}
-      />
-      <path
-        d="M5.57678 8.12972H6.16379C6.6501 8.12972 7.04433 8.52395 7.04433 9.01026C7.04433 9.49656 6.6501 9.89079 6.16379 9.89079H5.57678C5.09047 9.89079 4.69624 9.49656 4.69624 9.01026C4.69624 8.52395 5.09047 8.12972 5.57678 8.12972Z"
-        fill="var(--color-tutorial-card-text)"
-        fillOpacity={0.8}
-      />
-    </svg>
-  )
-}
+// LockIcon moved to icons.tsx along with every other icon in the app — see
+// that file's own module comment for the consolidation.
 
 /** "Coming soon" CTA — replaces StartTutorialButton for a tutorial with no
  *  real content yet (`!tutorial.hasContent`, see that field's own doc
@@ -971,7 +839,11 @@ function ComingSoonButton() {
  *  white-over-near-white doesn't, regardless of alpha) — same rgba this
  *  card's own CTA button already uses (StartTutorialButton's borderColor),
  *  reused here rather than inventing a second value. */
-function TutorialDetailCard({
+// Exported (Storybook) so its own states — hasContent true/false, each
+// TutorialLevel — can be reviewed in isolation without driving
+// TutorialStack's drag/flip gesture to reach them; still module-private to
+// every other consumer (only TutorialStackCard renders it in the real app).
+export function TutorialDetailCard({
   tutorial,
   onFlipBack,
   onStart,
@@ -988,20 +860,7 @@ function TutorialDetailCard({
 }) {
   return (
     <div
-      role="button"
-      aria-disabled={disabled || undefined}
-      tabIndex={disabled ? -1 : 0}
-      onClick={disabled ? undefined : onFlipBack}
-      onKeyDown={
-        disabled
-          ? undefined
-          : (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                onFlipBack?.()
-              }
-            }
-      }
+      {...getRoleButtonProps(onFlipBack, disabled)}
       className={`relative flex h-full w-[338px] flex-col items-center gap-1 overflow-hidden border-[0.5px] border-solid pb-6 text-left active:scale-[0.97] has-[button:active]:scale-100 ${disabled ? '' : 'cursor-pointer'}`}
       style={{
         background: 'var(--color-surface)',
@@ -1079,101 +938,32 @@ const GHOST_TEXTURES: Record<LookType, string> = {
  *  every card except the first tutorial slot mid-restart-flip (see
  *  TutorialStackCard's flipRotateY) — this layer's *inherited* rotation
  *  only ever turns it away from the viewer when its *parent* does, which
- *  happens nowhere else; its *own* rotation (below) never approaches 90°,
- *  so backface culling is irrelevant to that part.
+ *  happens nowhere else.
  *
- *  `parentRotate` + the filter-swap effect below: `lookType` changing
- *  (Day/Night/Glam) plays a "duck behind the front card, swap, swing back
- *  out" gesture instead of the old flat pop-in — the user's own read that
- *  a plain crossfade didn't lean into this card's actual spatial role
- *  (it's a *tilted card sitting behind the front one*, not a static
- *  swatch). Verified against the real pose math before building this:
- *  the peek card has *zero* position offset from the front card
- *  (useCardMotion/TutorialStackCard's transform — only rotation and
- *  z-index/opacity differ), so this card's own rotation reaching exactly
- *  0° *relative to the front card* really does mean pixel-for-pixel
- *  alignment, not an approximation. `behindRotate` is this card's own
- *  *additional* rotation, composed on top of whatever the parent
- *  TutorialStackCard's own transform is already contributing (ordinary
- *  nested-transform composition, not a Framer trick) — animating it to
- *  `-parentRotate.get()` cancels the parent's current tilt out exactly,
- *  landing the combined rotation at 0 regardless of which card (front,
- *  ±7° peek, or anywhere mid-drag) happens to be calling this at the
- *  time. Reads `parentRotate.get()` once, at the moment the swap starts —
- *  not a live subscription — so a filter tap mid-drag (this card's own
- *  tilt actively changing that same instant) would target a value that's
- *  already stale by the time the duck settles; deliberately not solved,
- *  a real edge case but a rare one for a two-tap, discrete filter-chip
- *  action, not worth the extra live-tracking complexity it'd take to
- *  close. Scope: only this component gets the treatment — StartOverCard
- *  keeps its own separate, plain fade+pop swap (its own literal `<img
- *  key={lookType}>` + check-ring-in, not a CardBehind reuse) even while
- *  it's peeking, per the user's own explicit call not to extend this
- *  there too. */
+ *  Renders `lookType`'s texture directly, no transition on a filter change
+ *  (code review finding, removed): this used to animate a "duck behind the
+ *  front card, swap, swing back out" gesture on `lookType` changing, keyed
+ *  off a `useEffect(() => {...}, [lookType])`. That effect could never
+ *  actually fire as a transition — HomeScreen keys `TutorialStack` on
+ *  `selectedType` (see its own module comment), so every filter tap fully
+ *  unmounts and remounts the whole stack rather than changing this
+ *  component's `lookType` prop on an already-mounted instance; the effect's
+ *  own `isFirstRender` guard silently swallowed the one invocation it ever
+ *  got, on mount, with the *new* value already baked in. ~90 lines of
+ *  motion/state for an animation that could never run — removed rather
+ *  than reworked (the fix that would actually make it fire means not
+ *  remounting the stack on filter change at all, real surgery on
+ *  TutorialStackCard's own ~20 interacting motion values, out of scope for
+ *  a correctness pass — the user's own call between the two). */
 export function CardBehind({
   opacity,
   lookType,
-  parentRotate,
   className,
 }: {
   opacity?: MotionValue<number>
   lookType: LookType
-  /** This card's own TutorialStackCard's composed rotation (totalRotate)
-   *  — read once per swap to cancel out, see this component's own comment
-   *  above. */
-  parentRotate: MotionValue<number>
   className?: string
 }) {
-  const behindRotate = useMotionValue(0)
-  const imgOpacity = useMotionValue(1)
-  // The texture actually rendered — deliberately NOT just `lookType`
-  // directly: swapping this happens at the *ducked* midpoint (see the
-  // effect below), not the instant the filter chip is tapped, so the
-  // visible content change lands while this card is aligned with (hidden
-  // behind) the front card, same as the rotation reaching 0 is timed to.
-  const [displayedLookType, setDisplayedLookType] = useState(lookType)
-  // Skips the very first render — this plays on *changing* filters, not
-  // on initial mount (every card mounts already "at" its starting
-  // lookType, nothing to duck-and-reveal there).
-  const isFirstRender = useRef(true)
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-    // Guards the .then() below against a newer effect run superseding
-    // this one before it resolves (rapid filter switching: tap Night,
-    // then Glam before Night's own duck-and-reveal finishes) — without
-    // this, a stale run's callback could fire after a newer one already
-    // landed the correct color, reverting the ghost card to the wrong
-    // texture and starting a second swing-back animation on top of the
-    // current one. Set true by the cleanup function, which React calls
-    // right before the *next* run of this same effect (or on unmount) —
-    // never during this run itself.
-    let cancelled = false
-    // Duck: cancel the parent's current tilt (see this component's own
-    // doc comment for why `-parentRotate.get()` lands the *combined*
-    // rotation at exactly 0) while fading the outgoing texture out, in
-    // parallel — both finish together, not staggered.
-    const duck = animateValue(behindRotate, -parentRotate.get(), {
-      duration: 0.2,
-      ease: EASE_OUT_QUART,
-    })
-    animateValue(imgOpacity, 0, { duration: 0.2, ease: EASE_OUT_QUART })
-    duck.then(() => {
-      if (cancelled) return
-      setDisplayedLookType(lookType)
-      // Swing back out: this card's own contribution returns to 0 (i.e.
-      // back to just the parent's own tilt, its ordinary peek pose),
-      // fading the new texture in over the same window.
-      animateValue(behindRotate, 0, { duration: 0.2, ease: EASE_OUT_QUART })
-      animateValue(imgOpacity, 1, { duration: 0.2, ease: EASE_OUT_QUART })
-    })
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on lookType alone: parentRotate/behindRotate/imgOpacity are read/written here, not reacted to.
-  }, [lookType])
   return (
     <motion.div
       aria-hidden="true"
@@ -1182,16 +972,10 @@ export function CardBehind({
         borderRadius: 'var(--radius-tutorial-card)',
         boxShadow: 'var(--shadow-tutorial-card)',
         opacity,
-        rotate: behindRotate,
         backfaceVisibility: 'hidden',
       }}
     >
-      <motion.img
-        alt=""
-        src={GHOST_TEXTURES[displayedLookType]}
-        className="size-full object-cover"
-        style={{ opacity: imgOpacity }}
-      />
+      <img alt="" src={GHOST_TEXTURES[lookType]} className="size-full object-cover" />
     </motion.div>
   )
 }
@@ -1225,52 +1009,9 @@ function StartOverCard({
   detailsOpacity?: MotionValue<number>
   lookType: LookType
 }) {
-  // Interruptible crossfade, replacing the old key={lookType} +
-  // check-ring-in keyframe swap below — same pattern as CardBehind's own
-  // imgOpacity dance (this file, above), minus the duck/rotate part
-  // (StartOverCard has no spatial "behind the front card" gesture, it's a
-  // plain crossfade). A JS-driven animateValue retargets smoothly from
-  // wherever it currently is if lookType changes again mid-fade, unlike a
-  // CSS keyframe forced to restart from 0 by the remount below.
-  const imgOpacity = useMotionValue(1)
-  const [displayedLookType, setDisplayedLookType] = useState(lookType)
-  const isFirstRender = useRef(true)
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-    // Guards against a newer effect run's callback superseding this one
-    // — same reasoning as CardBehind's own `cancelled` flag (this file,
-    // above): without it, rapid filter switching could let a stale run's
-    // callback fire after a newer one already landed the correct color.
-    let cancelled = false
-    animateValue(imgOpacity, 0, { duration: 0.2, ease: EASE_OUT_QUART }).then(() => {
-      if (cancelled) return
-      setDisplayedLookType(lookType)
-      animateValue(imgOpacity, 1, { duration: 0.2, ease: EASE_OUT_QUART })
-    })
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on lookType alone, same as CardBehind's own equivalent effect.
-  }, [lookType])
   return (
     <div
-      role="button"
-      aria-disabled={disabled || undefined}
-      tabIndex={disabled ? -1 : 0}
-      onClick={disabled ? undefined : onSelect}
-      onKeyDown={
-        disabled
-          ? undefined
-          : (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                onSelect?.()
-              }
-            }
-      }
+      {...getRoleButtonProps(onSelect, disabled)}
       className={`relative flex h-full w-[338px] items-center justify-center overflow-hidden text-left active:scale-[0.97] ${disabled ? '' : 'cursor-pointer'}`}
       style={{
         borderRadius: 'var(--radius-tutorial-card)',
@@ -1278,17 +1019,19 @@ function StartOverCard({
         transition: 'transform var(--duration-instant) var(--ease-out-quart)',
       }}
     >
-      {/* Interruptible crossfade — see this component's own imgOpacity/
-          displayedLookType state above for why this isn't a bare
-          key={lookType} remount any more (that restarted a CSS keyframe
-          from zero on every rapid filter tap; see AUDIT.md's
-          Interruptibility category). */}
-      <motion.img
-        alt=""
-        src={GHOST_TEXTURES[displayedLookType]}
-        className="absolute inset-0 size-full object-cover"
-        style={{ opacity: imgOpacity }}
-      />
+      {/* Renders `lookType`'s texture directly, no transition on a filter
+          change (code review finding, removed) — this used to be an
+          interruptible JS crossfade (an imgOpacity motion value + a
+          displayedLookType state, swapped via useEffect(..., [lookType])),
+          replacing an even older key={lookType} remount that restarted a
+          CSS keyframe from zero on every rapid filter tap. Turns out that
+          whole effect could never fire as a transition either, same root
+          cause as CardBehind's own (removed) duck/swap/swing-back gesture
+          above: HomeScreen keys TutorialStack itself on selectedType, so
+          this component is fully unmounted and remounted on every filter
+          tap with the new lookType already baked in — the effect's
+          isFirstRender guard swallowed the only invocation it ever got. */}
+      <img alt="" src={GHOST_TEXTURES[lookType]} className="absolute inset-0 size-full object-cover" />
       {/* Icon + label fade in on the same detailsOpacity band the front
           card's own title/byline use elsewhere — a card entering the peek
           slot behind the actual front card is already just this same
@@ -1327,8 +1070,12 @@ function StartOverCard({
  *  need, and `overflow-hidden` on the button ate the difference instead
  *  of erroring. Measured directly (byline bottom → card bottom) rather
  *  than guessed. */
-const CARD_HEIGHT = 359
-const CARD_WIDTH = 338
+// Exported (Storybook) so TutorialLookCard/TutorialDetailCard stories can
+// size their own container to exactly what TutorialStackCard gives these
+// cards in the real app (both have `h-full`/`w-[338px]` internally — with
+// no ancestor height, `h-full` alone collapses to 0).
+export const CARD_HEIGHT = 359
+export const CARD_WIDTH = 338
 
 type TutorialStackProps = {
   tutorials: Tutorial[]
@@ -1514,6 +1261,17 @@ export type MotionTuning = {
   /** Restart flip's spring bounce (0 = no overshoot) — same considerations
    *  as flyOffBounce. */
   flipBounce: number
+  /** Tap-to-flip-a-tutorial-card spring duration (seconds) — see
+   *  handleCardTap. Deliberately its own field, not a reuse of flipDuration:
+   *  this is the shorter/snappier everyday "browse a card's details" flip,
+   *  handleStartOverTap's is the rare once-a-cycle restart gesture (see
+   *  handleCardTap's own comment for why they diverge). Also read by
+   *  ProductsPreview's POP_BASE_DELAY_MS (code review finding: that value
+   *  used to be a hand-computed literal linked to this only by a comment,
+   *  not by code — a future retune here would silently desync it). */
+  tapFlipDuration: number
+  /** Tap-to-flip spring bounce (0 = no overshoot) — see tapFlipDuration. */
+  tapFlipBounce: number
   /** Fraction of flyOffDuration the disappear-faster fade/shrink/z-dive
    *  actually takes (see flyOff's FLIGHT_FADE_DURATION) — smaller means the
    *  card visually vanishes sooner relative to how long the physical
@@ -1536,6 +1294,8 @@ export const DEFAULT_MOTION_TUNING: MotionTuning = {
   gripScale: 0.96, // settled on by feel (unchanged from the first guess)
   flipDuration: 0.7, // settled on by feel
   flipBounce: 0.15, // settled on by feel
+  tapFlipDuration: 0.45, // settled on by feel
+  tapFlipBounce: 0.15, // settled on by feel
   flightFadeFraction: 0.45, // settled on by feel
   startOverRubberBandCoefficient: 0.55,
 }
@@ -2054,7 +1814,7 @@ function TutorialStackCard({
     // for handleDragStart, so flipping a card to browse its details didn't
     // count as "found it" and the nudge could still fire mid-browse.
     onInteraction()
-    animateValue(flipRotateY, isFlipped ? 0 : 180, { type: 'spring', bounce: 0.15, duration: 0.45 })
+    animateValue(flipRotateY, isFlipped ? 0 : 180, { type: 'spring', bounce: tuning.tapFlipBounce, duration: tuning.tapFlipDuration })
     setIsFlipped(!isFlipped)
   }
 
@@ -2190,7 +1950,7 @@ function TutorialStackCard({
       onDrag={isInteractive ? handleDrag : undefined}
       onDragEnd={isInteractive ? handleDragEnd : undefined}
     >
-      <CardBehind opacity={ghostOpacity} lookType={lookType} parentRotate={totalRotate} />
+      <CardBehind opacity={ghostOpacity} lookType={lookType} />
       {/* No rotation of its own — this is the "front face" in the
           reference implementation's terms (`.thefront`, no extra
           transform), always facing the viewer at flipRotateY===0 and
