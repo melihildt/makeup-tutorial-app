@@ -1,0 +1,11 @@
+<!--
+  Storybook renders each story in its own preview iframe, a separate HTML
+  document from the real app's index.html — so index.html's own <head>
+  (this exact font link, see its own comment there) never reaches here on
+  its own. Without this, every story using --font-family-serif-card
+  (tutorial card titles, the home title) would silently fall back to
+  Georgia/Times, not the real Cactus Classical Serif.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cactus+Classical+Serif&display=swap" rel="stylesheet" />

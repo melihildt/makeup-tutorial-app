@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { EASE_OUT_QUART } from './TutorialCard'
-import { CloseIcon } from './InfoOverlay'
+import { CloseIcon } from './icons'
 
 const TOAST_DURATION_MS = 4000
 
@@ -73,7 +73,13 @@ export function Toast({ open, onClose }: ToastProps) {
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -16 }}
-            transition={{ duration: reduceMotion ? 0.15 : 0.3, ease: EASE_OUT_QUART }}
+            // 0.35 = --duration-layout (tokens.css) — this banner is a "larger
+            // layout/content change" surface, the same category ProductDetailOverlay
+            // uses --duration-layout for on its own sheet entrance/exit
+            // (ProductDetailOverlay.tsx:144/403). The reduced-motion branch's 0.15
+            // already matches --duration-instant exactly; this was the one duration
+            // in the app that didn't trace to a real token.
+            transition={{ duration: reduceMotion ? 0.15 : 0.35, ease: EASE_OUT_QUART }}
           >
             <span
               aria-hidden="true"

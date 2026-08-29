@@ -249,6 +249,17 @@ body {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* Coming-soon thumbnails' own entrance (TutorialCard.tsx's
+   ProductsPreview) — a plain fade, not product-preview-pop-in's
+   scale-and-rise "burst" reveal. A blurred/tinted placeholder is
+   deliberately-withheld content (see comingSoonThumbnail's own doc
+   comment), not a finished photo snapping into view — the celebratory
+   pop reads as the wrong gesture for it. */
+@keyframes product-preview-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* AllStepsView's own mount fade — see its root element's comment for why
    this lives only there and not on StepScreen too. */
 @keyframes view-fade-in {

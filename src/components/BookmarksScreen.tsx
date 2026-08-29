@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
-import { CloseIcon } from './InfoOverlay'
+import { BookmarkIcon, CloseIcon } from './icons'
 import { Toast, useToast } from './Toast'
 import { ScrollEndFade, useAtScrollEnd } from './ScrollEndFade'
-import { BookmarkIcon, EASE_OUT_QUART, type Tutorial, type TutorialLevel } from './TutorialCard'
+import { EASE_OUT_QUART, type Tutorial, type TutorialLevel } from './TutorialCard'
+import { getRoleButtonProps } from './rowActivation'
 
 type BookmarksScreenProps = {
   tutorials: Tutorial[]
@@ -61,12 +62,19 @@ function capitalizeLevel(level: TutorialLevel): string {
  *  not 57×64: Figma's own row here, not a reuse of that component) and a
  *  different trailing action (un-save, not a non-functional menu).
  *
- *  Code review (2026-08-26): this near-duplicates MyProductRow's own
- *  role="button"-row + nested-button structure rather than sharing it —
- *  left as-is for now (extracting a shared component means touching
- *  MyProductsScreen.tsx, already shipped and working, for a DRY-ness
- *  benefit with no functional need behind it yet); revisit if a third
- *  near-identical row shows up.
+ *  Code review (2026-08-26): this near-duplicated MyProductRow's own
+ *  role="button"-row + nested-button structure — left as-is at first
+ *  (extracting a shared piece meant touching MyProductsScreen.tsx, already
+ *  shipped and working, for a DRY-ness benefit with no functional need
+ *  behind it yet), noted to revisit if a third near-identical row showed
+ *  up. A follow-up pass found five (three more in TutorialCard.tsx:
+ *  TutorialLookCard/TutorialDetailCard/StartOverCard), past that
+ *  threshold — the activation-props half of this row (role/tabIndex/
+ *  onClick/onKeyDown) now comes from getRoleButtonProps
+ *  (rowActivation.ts), shared by all five. The rest of this row (the
+ *  differently-shaped image, the un-save button, the motion.div wrapper)
+ *  still isn't shared with MyProductRow — only the one piece that was
+ *  ever byte-for-byte identical across all five call sites got extracted.
  *
  *  Outer motion.div (layout + exit) is a separate element from the inner
  *  role="button" div (animation review, 2026-08-26): Framer Motion writes
@@ -115,14 +123,7 @@ function BookmarkRow({
       transition={{ duration: reduceMotion ? 0.15 : 0.2, ease: EASE_OUT_QUART }}
     >
       <div
-        role="button"
-        tabIndex={0}
-        onClick={handleActivate}
-        onKeyDown={(e) => {
-          if (e.key !== 'Enter' && e.key !== ' ') return
-          e.preventDefault()
-          handleActivate()
-        }}
+        {...getRoleButtonProps(handleActivate)}
         // has-[button:active]:scale-100 (animation review, 2026-08-26):
         // without it, pressing the un-save button also matches *this* row's
         // own :active (native CSS behavior — a nested button's :active

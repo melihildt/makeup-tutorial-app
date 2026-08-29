@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { EASE_OUT_QUART } from './TutorialCard'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
+import { AtIcon, CloseIcon, LinkIcon } from './icons'
 import infoCardTexture from '../assets/home/InfoCard.png'
 
 // Local mirror of tokens.css's --ease-in-out, same "CSS var + JS-array
@@ -57,58 +58,6 @@ type InfoOverlayProps = {
 // re-authoring the identical path data a third/fourth time (this app
 // already treats that kind of duplication as a code-review finding worth
 // fixing — see HEADER_CHIP_STYLE's own history, ScreenHeader.tsx).
-export function CloseIcon() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path
-        fill="currentColor"
-        fillOpacity={0.8}
-        d="M11.7676 9.99981L15.0001 6.76398C15.2099 6.52544 15.3211 6.21594 15.311 5.89839C15.3008 5.58083 15.1701 5.27905 14.9455 5.05439C14.7208 4.82973 14.419 4.69905 14.1015 4.68891C13.7839 4.67878 13.4744 4.78994 13.2359 4.99981L10.0001 8.23231L6.75839 4.98981C6.64228 4.8737 6.50443 4.7816 6.35273 4.71876C6.20102 4.65592 6.03843 4.62358 5.87422 4.62358C5.71002 4.62358 5.54742 4.65592 5.39571 4.71876C5.24401 4.7816 5.10616 4.8737 4.99005 4.98981C4.87394 5.10592 4.78184 5.24377 4.719 5.39547C4.65616 5.54718 4.62382 5.70977 4.62382 5.87398C4.62382 6.03818 4.65616 6.20078 4.719 6.35249C4.78184 6.50419 4.87394 6.64203 4.99005 6.75814L8.23255 9.99981L5.00005 13.2348C4.87328 13.3481 4.77096 13.4861 4.69936 13.6404C4.62775 13.7946 4.58837 13.9618 4.58361 14.1318C4.57885 14.3017 4.60882 14.4709 4.67169 14.6289C4.73456 14.7869 4.829 14.9304 4.94924 15.0506C5.06947 15.1709 5.21298 15.2653 5.37097 15.3282C5.52896 15.391 5.69812 15.421 5.86809 15.4163C6.03806 15.4115 6.20528 15.3721 6.35951 15.3005C6.51373 15.2289 6.65173 15.1266 6.76505 14.9998L10.0001 11.7673L13.2317 14.9998C13.4662 15.2343 13.7843 15.366 14.1159 15.366C14.4475 15.366 14.7656 15.2343 15.0001 14.9998C15.2346 14.7653 15.3663 14.4473 15.3663 14.1156C15.3663 13.784 15.2346 13.466 15.0001 13.2315L11.7676 9.99981Z"
-      />
-    </svg>
-  )
-}
-
-// fi-br-link — unlike every other icon in this file/app (currentColor tied
-// to --color-tutorial-card-text), this one's baked gold (#E3B345) in the
-// source asset, same gold as --color-look-card-... family's Day tint
-// elsewhere in tokens.css. Kept as a literal fill rather than swapped to an
-// ink token: it's a real, intentional accent color in the design (matching
-// the About card's own gold texture, InfoCard.png), not an oversight.
-function LinkIcon() {
-  return (
-    <svg width={20} height={19.9581} viewBox="0 0 20 19.9581" fill="none" aria-hidden="true">
-      <path
-        fill="#E3B345"
-        d="M8.67446 16.3012C7.35108 17.6735 5.19591 17.8001 3.72103 16.5921C2.84266 15.8316 2.39398 14.6881 2.5208 13.5332C2.63063 12.6817 3.02859 11.8934 3.64852 11.2994L6.04564 8.90065C6.5337 8.41244 6.5337 7.62104 6.04564 7.13282C5.55743 6.64476 4.76603 6.64476 4.27781 7.13282L1.93155 9.47994C0.862056 10.5113 0.187593 11.8846 0.0253363 13.3615C-0.277728 16.6878 2.17308 19.63 5.49941 19.9331C7.28572 20.0958 9.05214 19.4572 10.3214 18.1899L12.8286 15.6836C13.3166 15.1953 13.3166 14.404 12.8286 13.9157C12.3403 13.4277 11.5489 13.4277 11.0607 13.9157L8.67446 16.3012Z"
-      />
-      <path
-        fill="#E3B345"
-        d="M17.6345 1.20131C15.1455 -0.627395 11.6892 -0.3407 9.53551 1.87311L7.17589 4.23356C6.68783 4.72177 6.68783 5.51317 7.17589 6.00139C7.66411 6.48945 8.4555 6.48945 8.94372 6.00139L11.3409 3.60676C12.6353 2.26795 14.7297 2.11714 16.2026 3.25669C17.7186 4.49982 17.9399 6.73652 16.6967 8.25255C16.624 8.34128 16.547 8.42641 16.466 8.50768L13.9588 11.0148C13.4707 11.503 13.4707 12.2944 13.9588 12.7827C14.447 13.2707 15.2384 13.2707 15.7266 12.7827L18.2338 10.2755C20.5941 7.90764 20.588 4.0747 18.2201 1.71437C18.0362 1.53098 17.8405 1.35962 17.6345 1.20131Z"
-      />
-      <path
-        fill="#E3B345"
-        d="M7.17582 11.0168L11.0603 7.13228C11.5486 6.64403 12.3402 6.64403 12.8284 7.13228C13.3167 7.62054 13.3167 8.41213 12.8284 8.90039L8.94392 12.7849C8.45567 13.2732 7.66407 13.2732 7.17582 12.7849C6.68756 12.2967 6.68756 11.5051 7.17582 11.0168Z"
-      />
-    </svg>
-  )
-}
-
-// fi-br-at — same baked-gold convention as LinkIcon above. The source SVG
-// wraps this in a clipPath, but the clip rect (0,0,20,20) exactly matches
-// the viewBox, so it never actually crops anything — dropped rather than
-// carried over as dead markup.
-function AtIcon() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path
-        fill="#E3B345"
-        d="M10 -6.35783e-06C7.34871 0.00286121 4.80684 1.05735 2.9321 2.93209C1.05736 4.80684 0.00286709 7.34871 -4.75577e-07 9.99999C-0.104167 17.9783 9.29917 22.8575 15.75 18.1808C15.8852 18.0867 16.0005 17.9668 16.0892 17.828C16.1779 17.6893 16.2383 17.5343 16.2669 17.3721C16.2955 17.2099 16.2918 17.0436 16.256 16.8828C16.2201 16.7221 16.1529 16.57 16.058 16.4353C15.9632 16.3006 15.8427 16.186 15.7034 16.098C15.5642 16.01 15.4089 15.9505 15.2465 15.9227C15.0841 15.895 14.9179 15.8996 14.7573 15.9363C14.5967 15.973 14.445 16.0411 14.3108 16.1367C9.51667 19.6517 2.38583 15.955 2.5 9.99999C2.89333 0.0583267 17.1075 0.0599933 17.5 9.99999V11.25C17.5 11.5815 17.3683 11.8995 17.1339 12.1339C16.8995 12.3683 16.5815 12.5 16.25 12.5C15.9185 12.5 15.6005 12.3683 15.3661 12.1339C15.1317 11.8995 15 11.5815 15 11.25V9.99999C14.79 3.39249 5.20917 3.39333 5 9.99999C5.00832 10.969 5.29726 11.9149 5.83186 12.7231C6.36646 13.5314 7.12381 14.1674 8.0123 14.5542C8.90079 14.9411 9.88234 15.0622 10.8382 14.9029C11.7941 14.7436 12.6833 14.3107 13.3983 13.6567C13.8947 14.238 14.5569 14.6537 15.2961 14.8481C16.0353 15.0426 16.8163 15.0065 17.5345 14.7447C18.2527 14.4829 18.8737 14.0079 19.3143 13.3833C19.7549 12.7587 19.9942 12.0144 20 11.25V9.99999C19.9971 7.34871 18.9426 4.80684 17.0679 2.93209C15.1932 1.05735 12.6513 0.00286121 10 -6.35783e-06V-6.35783e-06ZM10 12.5C9.33696 12.5 8.70107 12.2366 8.23223 11.7678C7.76339 11.2989 7.5 10.663 7.5 9.99999C7.5 9.33695 7.76339 8.70107 8.23223 8.23223C8.70107 7.76339 9.33696 7.49999 10 7.49999C10.663 7.49999 11.2989 7.76339 11.7678 8.23223C12.2366 8.70107 12.5 9.33695 12.5 9.99999C12.5 10.663 12.2366 11.2989 11.7678 11.7678C11.2989 12.2366 10.663 12.5 10 12.5Z"
-      />
-    </svg>
-  )
-}
-
 const EMAIL = 'melhildt@gmail.com'
 
 type CopyStatus = 'idle' | 'copied' | 'failed'
@@ -419,7 +368,13 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
           <div className="flex flex-1 flex-col items-center justify-center gap-8 overflow-y-auto px-6 py-6">
             <motion.div
               className="relative flex w-full max-w-[282px] flex-col items-start gap-4 overflow-hidden rounded-[24px] border border-solid px-10 py-12"
-              style={{ borderColor: 'rgba(44, 41, 38, 0.1)', boxShadow: '0px 0px 8px rgba(14, 11, 6, 0.03)' }}
+              // borderColor/boxShadow (code review finding): these are
+              // --color-filter-chip-border/--shadow-filter-chip's own exact
+              // values, hand-copied as raw literals instead of referencing
+              // the tokens themselves — HomeScreen.tsx's filter chips
+              // already use the same two tokens for this same "unselected
+              // chip/card" look.
+              style={{ borderColor: 'var(--color-filter-chip-border)', boxShadow: 'var(--shadow-filter-chip)' }}
               // transition is embedded per-target (animate/exit) rather than
               // passed once as a shared prop: Framer Motion applies a
               // component-level `transition` prop to *both* the entrance

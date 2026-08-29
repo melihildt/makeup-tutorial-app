@@ -1,10 +1,16 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { flushSync } from 'react-dom'
 import { StepScreen } from './components/StepScreen'
 import { AllStepsView } from './components/AllStepsView'
+import { TOTAL_STEPS } from './data/stepContent'
 
-const LAST_MAKEUP_STEP = 7
-const DONE_STEP = 8 // terminal "You're done!" screen — see docs/figma-v2-redesign.md
+// Derived from TOTAL_STEPS (code review finding, was a second, independent
+// `= 7`/`= 8` pair here) — stepContent.ts's own TOTAL_STEPS is the one
+// place "how many makeup steps this tutorial has" is meant to live;
+// StepScreen.tsx and router.ts now derive their own equivalents the same
+// way, instead of each re-declaring the number by hand.
+const LAST_MAKEUP_STEP = TOTAL_STEPS
+const DONE_STEP = TOTAL_STEPS + 1 // terminal "You're done!" screen — see docs/figma-v2-redesign.md
 
 type View = 'step' | 'list'
 
@@ -82,30 +88,51 @@ export function TutorialFlow({ onExit, step, setStep }: TutorialFlowProps) {
   // checked in the other too.
   const [checkedOverrides, setCheckedOverrides] = useState<Record<string, boolean>>({})
 
-  // Which product key was *just* toggled by an actual click, as opposed to
-  // merely being re-rendered — e.g. every ProductCard remounts wholesale
+  // Which product keys were *just* toggled by an actual click, as opposed
+  // to merely being re-rendered — e.g. every ProductCard remounts wholesale
   // when switching step/list view (TutorialFlow renders StepScreen and
   // AllStepsView as two separate trees), which would otherwise replay
   // CheckIndicator's mount-triggered draw-in/pop animation on every
   // already-checked item, not just the one that changed. Owned here
   // (rather than inside StepScreen/AllStepsView) because it has to survive
   // that same remount to mean anything — state local to either view would
-  // just reset to nothing on every swap. Cleared automatically after the
-  // animation's own duration so a later, unrelated remount (switching
-  // views well after the click) never replays it.
-  const [justToggledKey, setJustToggledKey] = useState<string | null>(null)
+  // just reset to nothing on every swap.
+  //
+  // A Set, not a single key (code review finding): a single shared key
+  // meant tapping product B while product A's own 260ms animation was
+  // still playing immediately cleared A's `animate` flag on its still-
+  // mounted CheckIndicator (A's `checked` didn't change, so its `key`
+  // stayed the same and it re-rendered in place rather than remounting),
+  // cutting A's in-flight CSS animation off mid-play instead of letting it
+  // finish. Each key now clears itself independently — see
+  // pendingClearTimeouts below — so toggling a second product can't
+  // interrupt the first's still-playing animation.
+  const [justToggledKeys, setJustToggledKeys] = useState<Set<string>>(() => new Set())
 
+  // Per-key timeout ids backing the Set above's self-clearing — a ref, not
+  // state, since these are an implementation detail of *when* a key leaves
+  // the set, not something that should itself trigger a render. Cleared on
+  // unmount so a stray timeout never calls setState after TutorialFlow is
+  // gone; cleared per-key on a fresh re-tap of the same product (below) so
+  // an old timeout can't clear a flag a newer tap just set.
+  const pendingClearTimeouts = useRef(new Map<string, ReturnType<typeof setTimeout>>())
   useEffect(() => {
-    if (justToggledKey === null) return
-    // 260ms: covers --duration-base's 200ms (tokens.css) plus a small
-    // buffer, so the timeout can't race ahead of the animation and clear
-    // the flag mid-play — that would mean nothing since the animation's
-    // own end-state and the resting look are identical (see
-    // CheckIndicator.tsx), but it also wouldn't show as motion at all,
-    // which defeats the point.
-    const id = setTimeout(() => setJustToggledKey(null), 260)
-    return () => clearTimeout(id)
-  }, [justToggledKey])
+    const timeouts = pendingClearTimeouts.current
+    return () => {
+      timeouts.forEach((id) => clearTimeout(id))
+      timeouts.clear()
+    }
+  }, [])
+
+  // Clears every pending "just toggled" flag (and cancels their timeouts)
+  // synchronously — used at the two view-switch call sites below, same
+  // "don't replay on the view you're switching to" reasoning the old
+  // single-key version had, just extended to a Set.
+  function clearAllJustToggled() {
+    pendingClearTimeouts.current.forEach((id) => clearTimeout(id))
+    pendingClearTimeouts.current.clear()
+    setJustToggledKeys(new Set())
+  }
 
   // The step of the most recent product toggled *while in list view* —
   // consumed (jumped to, then cleared) the next time the user switches
@@ -127,7 +154,34 @@ export function TutorialFlow({ onExit, step, setStep }: TutorialFlowProps) {
       ...prev,
       [key]: !(prev[key] ?? defaultChecked),
     }))
-    setJustToggledKey(key)
+    setJustToggledKeys((prev) => {
+      const next = new Set(prev)
+      next.add(key)
+      return next
+    })
+    // Cancel this same key's own previous pending clear, if any (a rapid
+    // re-tap of the same product before its last animation finished) —
+    // otherwise that older timeout would fire on schedule and clear the
+    // flag this newer tap just set, cutting the new animation off instead
+    // of the one it was actually meant to end.
+    const existingTimeout = pendingClearTimeouts.current.get(key)
+    if (existingTimeout) clearTimeout(existingTimeout)
+    // 260ms: covers --duration-base's 200ms (tokens.css) plus a small
+    // buffer, so the timeout can't race ahead of the animation and clear
+    // the flag mid-play — that would mean nothing since the animation's
+    // own end-state and the resting look are identical (see
+    // CheckIndicator.tsx), but it also wouldn't show as motion at all,
+    // which defeats the point.
+    const timeoutId = setTimeout(() => {
+      pendingClearTimeouts.current.delete(key)
+      setJustToggledKeys((prev) => {
+        if (!prev.has(key)) return prev
+        const next = new Set(prev)
+        next.delete(key)
+        return next
+      })
+    }, 260)
+    pendingClearTimeouts.current.set(key, timeoutId)
     if (view === 'list') {
       setLastToggledStep(toggledStep)
     }
@@ -144,12 +198,12 @@ export function TutorialFlow({ onExit, step, setStep }: TutorialFlowProps) {
         setStep(lastToggledStep)
         setLastToggledStep(null)
       }
-      // Clear synchronously, not just after the 260ms timeout above — a
+      // Clear synchronously, not just after the 260ms timeouts above — a
       // view switch is itself a full remount of every ProductCard (see
-      // justToggledKey's own comment), so without this, switching views
+      // justToggledKeys' own comment), so without this, switching views
       // within that 260ms window replays the animation on a row in the
       // *new* view that the user never actually touched there.
-      setJustToggledKey(null)
+      clearAllJustToggled()
       setView('step')
     })
   }
@@ -179,7 +233,7 @@ export function TutorialFlow({ onExit, step, setStep }: TutorialFlowProps) {
     return (
       <AllStepsView
         checkedOverrides={checkedOverrides}
-        justToggledKey={justToggledKey}
+        justToggledKeys={justToggledKeys}
         onToggleChecked={toggleProduct}
         onBack={handleBack}
         onDone={onExit}
@@ -193,7 +247,7 @@ export function TutorialFlow({ onExit, step, setStep }: TutorialFlowProps) {
     <StepScreen
       step={step}
       checkedOverrides={checkedOverrides}
-      justToggledKey={justToggledKey}
+      justToggledKeys={justToggledKeys}
       onToggleChecked={toggleProduct}
       onNextStep={handleNextStep}
       onFinish={handleFinish}
@@ -203,7 +257,7 @@ export function TutorialFlow({ onExit, step, setStep }: TutorialFlowProps) {
         // See handleSelectStepView's own comment (same reasoning,
         // opposite direction).
         switchViewWithTransition(() => {
-          setJustToggledKey(null)
+          clearAllJustToggled()
           setView('list')
         })
       }}

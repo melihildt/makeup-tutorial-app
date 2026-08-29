@@ -6,7 +6,7 @@ import { AccountScreen } from './components/AccountScreen'
 import { MyProductsScreen } from './components/MyProductsScreen'
 import { BookmarksScreen } from './components/BookmarksScreen'
 import { TutorialFlow } from './TutorialFlow'
-import { type Screen, parseRoute, pathForRoute } from './router'
+import { type Screen, type TutorialOrigin, parseRoute, pathForRoute } from './router'
 
 // localStorage-backed saved-tutorial ids — lifted here (not owned inside
 // TutorialCard.tsx's TutorialStack, where it used to live) for two reasons:
@@ -82,9 +82,32 @@ function App() {
   // `aboutOpen` are each fed straight through as (mostly) ordinary props to
   // TutorialFlow/HomeScreen — see their own comments — the same shape they
   // already had before routing existed, just lifted one level.
-  const [screen, setScreen] = useState<Screen>(() => parseRoute(window.location.pathname).screen)
-  const [tutorialStep, setTutorialStep] = useState<number>(() => parseRoute(window.location.pathname).tutorialStep)
-  const [aboutOpen, setAboutOpen] = useState<boolean>(() => parseRoute(window.location.pathname).aboutOpen)
+  const [screen, setScreen] = useState<Screen>(() => parseRoute(window.location.pathname + window.location.search).screen)
+  const [tutorialStep, setTutorialStep] = useState<number>(
+    () => parseRoute(window.location.pathname + window.location.search).tutorialStep,
+  )
+  const [aboutOpen, setAboutOpen] = useState<boolean>(
+    () => parseRoute(window.location.pathname + window.location.search).aboutOpen,
+  )
+  // Where exiting the tutorial should land — 'home' for the common case
+  // (opened from HomeScreen's own card stack), 'bookmarks' when it was
+  // opened by tapping a saved look on BookmarksScreen instead (per the
+  // user's own ask: exiting there should return to Bookmarks, not always
+  // Home). Not a generic back-stack — this app doesn't have one anywhere
+  // else either (Account/My Products/Bookmarks below are each a fixed hop,
+  // not a push/pop stack) — just enough state for this one specific
+  // "same destination, two possible origins" case. Set by whichever
+  // goToTutorial* function is actually called, read once by exitTutorial.
+  //
+  // Seeded from the URL like the other three (code review finding): this
+  // used to be a bare `useState('home')` with no URL round-trip at all, so
+  // a page reload taken mid-tutorial had no way to recover which origin was
+  // in play and silently reset to 'home' — reloading a `/step3` reached
+  // from Bookmarks, then tapping Exit, landed on Home instead of back on
+  // Bookmarks. See router.ts's TutorialOrigin/`?from=` for the URL side.
+  const [tutorialOrigin, setTutorialOrigin] = useState<TutorialOrigin>(
+    () => parseRoute(window.location.pathname + window.location.search).tutorialOrigin,
+  )
   // 1 = forward (Home → Tutorial), -1 = backward (Tutorial → Home) — set
   // right alongside `screen` in the same handlers, never read on its own,
   // so there's no case where a stale direction could apply to the wrong
@@ -96,7 +119,8 @@ function App() {
   // --- URL <-> state sync -------------------------------------------------
   //
   // One direction (state -> URL) is a single effect below that watches
-  // {screen, tutorialStep, aboutOpen} and keeps `location.pathname` in
+  // {screen, tutorialStep, tutorialOrigin, aboutOpen} and keeps
+  // `location.pathname` (+ search, for tutorialOrigin's `?from=`) in
   // step via pathForRoute — every forward navigation in this file (goTo*)
   // just sets state as it always did; it doesn't need to know about the
   // router at all, this effect is the only thing that ever calls
@@ -123,15 +147,16 @@ function App() {
       setDirection(order < historyOrderRef.current ? -1 : 1)
       historyOrderRef.current = order
       skipNextPushRef.current = true
-      const route = parseRoute(window.location.pathname)
+      const route = parseRoute(window.location.pathname + window.location.search)
       setScreen(route.screen)
       setTutorialStep(route.tutorialStep)
+      setTutorialOrigin(route.tutorialOrigin)
       setAboutOpen(route.aboutOpen)
     }
     window.addEventListener('popstate', handlePopState)
     // Tags the entry the app loaded on with order 0, so the very first
     // popstate (if any) has something real to compare against.
-    window.history.replaceState({ order: 0 }, '', window.location.pathname)
+    window.history.replaceState({ order: 0 }, '', window.location.pathname + window.location.search)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
@@ -140,11 +165,11 @@ function App() {
       skipNextPushRef.current = false
       return
     }
-    const path = pathForRoute({ screen, tutorialStep, aboutOpen })
-    if (path === window.location.pathname) return
+    const path = pathForRoute({ screen, tutorialStep, tutorialOrigin, aboutOpen })
+    if (path === window.location.pathname + window.location.search) return
     historyOrderRef.current += 1
     window.history.pushState({ order: historyOrderRef.current }, '', path)
-  }, [screen, tutorialStep, aboutOpen])
+  }, [screen, tutorialStep, tutorialOrigin, aboutOpen])
 
   // Every "leave this screen" action below (Account's close button,
   // Tutorial's exit, etc.) sets `screen` directly and lets the sync effect
@@ -196,24 +221,13 @@ function App() {
     setSavedTutorialIds((prev) => toggleInSet(prev, id))
   }
 
-  // Where exiting the tutorial should land — 'home' for the common case
-  // (opened from HomeScreen's own card stack), 'bookmarks' when it was
-  // opened by tapping a saved look on BookmarksScreen instead (per the
-  // user's own ask: exiting there should return to Bookmarks, not always
-  // Home). Not a generic back-stack — this app doesn't have one anywhere
-  // else either (Account/My Products/Bookmarks below are each a fixed hop,
-  // not a push/pop stack) — just enough state for this one specific
-  // "same destination, two possible origins" case. Set by whichever
-  // goToTutorial* function is actually called, read once by exitTutorial.
-  const [tutorialOrigin, setTutorialOrigin] = useState<'home' | 'bookmarks'>('home')
-
   // Default param (not two near-identical functions, code review finding)
   // — `origin` defaults to 'home' so this still works as a bare no-arg
   // callback everywhere it's passed as one (HomeScreen's onSelectLook is
   // invoked as `onSelect?.()`, no arguments); BookmarksScreen's own
   // onOpenTutorial wraps this in `() => goToTutorial('bookmarks')` instead
   // since it needs to pass the one non-default value.
-  function goToTutorial(origin: 'home' | 'bookmarks' = 'home') {
+  function goToTutorial(origin: TutorialOrigin = 'home') {
     setTutorialOrigin(origin)
     setDirection(1)
     setScreen('tutorial')

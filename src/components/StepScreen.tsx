@@ -80,11 +80,14 @@ type StepScreenProps = {
    *  `${step}-${brand}-${name}` — owned by TutorialFlow and shared with
    *  AllStepsView so both views stay in sync. */
   checkedOverrides: Record<string, boolean>
-  /** The product key most recently toggled by an actual click — see
+  /** Product keys most recently toggled by an actual click — see
    *  TutorialFlow's own comment on this state for why it has to live
-   *  there. Only that key's ProductCard should play its check animation;
-   *  every other card is just being re-rendered/remounted, not toggled. */
-  justToggledKey: string | null
+   *  there (a Set, not a single key: two products toggled within the same
+   *  ~260ms window must each finish their own animation independently).
+   *  Only a key in this set should have its ProductCard play the check
+   *  animation; every other card is just being re-rendered/remounted, not
+   *  toggled. */
+  justToggledKeys: Set<string>
   /** Third arg is which step the toggled product belongs to — lets
    *  TutorialFlow remember "the step of the last item touched" so
    *  switching back from AllStepsView can return there. See
@@ -110,7 +113,7 @@ type StepScreenProps = {
 export function StepScreen({
   step,
   checkedOverrides,
-  justToggledKey,
+  justToggledKeys,
   onToggleChecked,
   onNextStep,
   onFinish,
@@ -119,8 +122,13 @@ export function StepScreen({
   onSelectListView,
 }: StepScreenProps) {
   const content = STEP_CONTENT[step]
-  const isFinalStep = step === 7
-  const isDoneScreen = step === 8
+  // Derived from TOTAL_STEPS (code review finding, was a raw `=== 7`/`=== 8`
+  // pair here, independent of the TOTAL_STEPS this same file already
+  // imports for display two lines up) — see TutorialFlow.tsx's own
+  // LAST_MAKEUP_STEP/DONE_STEP for the sibling constants derived the same
+  // way.
+  const isFinalStep = step === TOTAL_STEPS
+  const isDoneScreen = step === TOTAL_STEPS + 1
 
   // Whether `step` just increased or decreased, so the title/description
   // entrance below can slide in from the direction of travel (right on
@@ -800,7 +808,7 @@ export function StepScreen({
                         name={product.name}
                         shade={product.shade}
                         checked={checked}
-                        animate={key === justToggledKey}
+                        animate={justToggledKeys.has(key)}
                         onToggleChecked={() => onToggleChecked(key, product.checked, step)}
                       />
                     )

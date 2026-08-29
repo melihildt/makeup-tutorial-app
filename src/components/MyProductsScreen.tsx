@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
-import { CloseIcon } from './InfoOverlay'
+import { CloseIcon, MenuDotsIcon, PlusIcon } from './icons'
 import { Toast, useToast } from './Toast'
 import { ScrollEndFade, useAtScrollEnd } from './ScrollEndFade'
 import { ProductDetailOverlay } from './ProductDetailOverlay'
+import { getRoleButtonProps } from './rowActivation'
 import { getMyProducts, type Product } from '../data/stepContent'
 
 type MyProductsScreenProps = {
@@ -11,11 +12,9 @@ type MyProductsScreenProps = {
 }
 
 // Figma: node 734:7550 ("Home/Profile-MyProducts") — opened from
-// AccountScreen's "My Products" row. Icons are hand-authored inline SVGs
-// with real path data pulled from that node's exported assets
-// (fi-br-plus-small, fi-br-menu-dots-vertical), same convention as every
-// other icon in this app — see AccountScreen.tsx's own module comment for
-// why (not a raw `<img src>` of the remote, ~7-day-expiring asset).
+// AccountScreen's "My Products" row. This screen's own icons (Plus,
+// MenuDots) moved to icons.tsx along with every other icon in the app —
+// see that file's own module comment for the consolidation.
 //
 // The Figma frame also has a dark "Finish" button pinned under the product
 // list (node 734:7691) — byte-for-byte the tutorial flow's own Finish
@@ -23,40 +22,6 @@ type MyProductsScreenProps = {
 // Omitted here: it doesn't have an obvious action on a product list and
 // reads as a leftover copy/paste artifact from duplicating that screen,
 // not something designed for this one.
-
-function PlusIcon() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path
-        fill="currentColor"
-        fillOpacity={0.8}
-        d="M13.75 8.75H11.25V6.25C11.25 5.91848 11.1183 5.60054 10.8839 5.36612C10.6495 5.1317 10.3315 5 10 5C9.66848 5 9.35054 5.1317 9.11612 5.36612C8.8817 5.60054 8.75 5.91848 8.75 6.25V8.75H6.25C5.91848 8.75 5.60054 8.8817 5.36612 9.11612C5.1317 9.35054 5 9.66848 5 10C5 10.3315 5.1317 10.6495 5.36612 10.8839C5.60054 11.1183 5.91848 11.25 6.25 11.25H8.75V13.75C8.75 14.0815 8.8817 14.3995 9.11612 14.6339C9.35054 14.8683 9.66848 15 10 15C10.3315 15 10.6495 14.8683 10.8839 14.6339C11.1183 14.3995 11.25 14.0815 11.25 13.75V11.25H13.75C14.0815 11.25 14.3995 11.1183 14.6339 10.8839C14.8683 10.6495 15 10.3315 15 10C15 9.66848 14.8683 9.35054 14.6339 9.11612C14.3995 8.8817 14.0815 8.75 13.75 8.75Z"
-      />
-    </svg>
-  )
-}
-
-function MenuDotsIcon() {
-  return (
-    <svg width={4.16663} height={20} viewBox="0 0 4.16663 20" fill="none" aria-hidden="true">
-      <path
-        fill="currentColor"
-        fillOpacity={0.5}
-        d="M2.08331 4.16664C3.2339 4.16664 4.16663 3.23391 4.16663 2.08332C4.16663 0.932734 3.2339 0 2.08331 0C0.932731 0 0 0.932734 0 2.08332C0 3.23391 0.932731 4.16664 2.08331 4.16664Z"
-      />
-      <path
-        fill="currentColor"
-        fillOpacity={0.5}
-        d="M2.08331 12.0833C3.2339 12.0833 4.16663 11.1506 4.16663 10C4.16663 8.84942 3.2339 7.91669 2.08331 7.91669C0.932731 7.91669 0 8.84942 0 10C0 11.1506 0.932731 12.0833 2.08331 12.0833Z"
-      />
-      <path
-        fill="currentColor"
-        fillOpacity={0.5}
-        d="M2.08331 20C3.2339 20 4.16663 19.0673 4.16663 17.9167C4.16663 16.7661 3.2339 15.8334 2.08331 15.8334C0.932731 15.8334 0 16.7661 0 17.9167C0 19.0673 0.932731 20 2.08331 20Z"
-      />
-    </svg>
-  )
-}
 
 /**
  * One product row — image, brand/name (+ optional shade), "⋮" menu. Same
@@ -83,15 +48,17 @@ function MyProductRow({
 }) {
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key !== 'Enter' && e.key !== ' ') return
-        e.preventDefault()
-        onSelect()
-      }}
-      className="flex w-full cursor-pointer items-start gap-4 active:scale-[0.98]"
+      {...getRoleButtonProps(onSelect)}
+      // has-[button:active]:scale-100 (code review finding): without it,
+      // pressing the "⋮" button below also matches this row's own :active
+      // (native CSS behavior — a nested button's :active state bubbles to
+      // ancestors regardless of the button's own stopPropagation, which
+      // only affects JS click/keydown handling, not CSS pseudo-class
+      // matching), compounding two independent scale transforms on one
+      // tap. BookmarkRow (BookmarksScreen.tsx) already carries this fix
+      // for the identical row shape; this row just hadn't copied that half
+      // of the pattern along with the rest of it.
+      className="flex w-full cursor-pointer items-start gap-4 active:scale-[0.98] has-[button:active]:scale-100"
       style={{ transition: 'transform var(--duration-instant) var(--ease-out-quart)' }}
     >
       <div className="h-[--size-product-image-h] w-[--size-product-image-w] shrink-0 overflow-hidden rounded-[--radius-image] border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]">
@@ -123,6 +90,14 @@ function MyProductRow({
             e.stopPropagation()
             onMenuClick()
           }}
+          // stopPropagation on keydown too (code review finding), not just
+          // click: without it, an Enter/Space keydown here still bubbles to
+          // the row's own onKeyDown above, which preventDefaults and fires
+          // onSelect() before this button's native keyboard-activation
+          // click can fire — making this button unreachable by keyboard.
+          // BookmarkRow's un-save button (BookmarksScreen.tsx) already
+          // carries this same fix.
+          onKeyDown={(e) => e.stopPropagation()}
           aria-label={`More options for ${product.brand} ${product.name}`}
           // header-icon-button (index.css) — reused here purely for its
           // shared hover/press feedback on a descendant <svg>
