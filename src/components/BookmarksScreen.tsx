@@ -136,19 +136,32 @@ function BookmarkRow({
         className="flex w-full cursor-pointer items-start gap-4 active:scale-[0.98] has-[button:active]:scale-100"
         style={{ transition: 'transform var(--duration-instant) var(--ease-out-quart)' }}
       >
-        <div className="h-[90px] w-[80px] shrink-0 overflow-hidden rounded-[--radius-image] border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]">
+        {/* --radius-image-list (12px), not --radius-image (8px) — a fresh
+            pull of this row's own Image node (896:10571) shows 12px, the
+            same list-context radius AllStepsView/MyProducts already use;
+            this row just hadn't been checked against it before. */}
+        <div className="h-[90px] w-[80px] shrink-0 overflow-hidden rounded-[--radius-image-list] border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]">
           <img src={tutorial.images[0]} alt="" className="size-full object-cover" />
         </div>
         <div className="flex h-[90px] flex-1 flex-col justify-between">
           <div className="flex items-start gap-1">
-            <div className="flex flex-1 flex-col gap-[4px] text-[--color-text-product]">
+            {/* Title and brand carry two genuinely different flat colors in
+                the fresh pull (896:10575/896:10576) — flat ink
+                (--color-tutorial-card-text, #21201f) for the title, flat
+                --color-info-overlay-heading (#656462) for the brand line —
+                not one shared alpha-derived --color-text-product like this
+                block previously applied to both via the wrapping div. */}
+            <div className="flex flex-1 flex-col gap-[4px]">
               <p
                 className="capitalize text-[14px] leading-[normal]"
-                style={{ fontWeight: 'var(--font-weight-semibold)' }}
+                style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-tutorial-card-text)' }}
               >
                 {tutorial.title}
               </p>
-              <p className="text-[12px] leading-[normal] tracking-[-0.12px]" style={{ fontWeight: 'var(--font-weight-medium)' }}>
+              <p
+                className="text-[12px] leading-[normal] tracking-[-0.12px]"
+                style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-info-overlay-heading)' }}
+              >
                 {tutorial.brand}
               </p>
             </div>
@@ -187,7 +200,12 @@ function BookmarkRow({
               </span>
             </button>
           </div>
-          <p className="text-[12px] leading-[normal] tracking-[-0.12px] opacity-50" style={{ color: 'var(--color-tutorial-card-text)' }}>
+          {/* --color-text-muted-list (flat #848281), not opacity-50 on ink
+              — a fresh pull of this line (896:10579) shows the same flat
+              "Chips Text (Solid)/2" swatch AllStepsView's own group
+              description and ProductCard's list-context shade line already
+              use, not an alpha derivation. */}
+          <p className="text-[12px] leading-[normal] tracking-[-0.12px] text-[--color-text-muted-list]">
             {tutorial.durationMinutes} min · {capitalizeLevel(tutorial.level)}
           </p>
         </div>
@@ -291,13 +309,20 @@ export function BookmarksScreen({
         className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-[--space-sm] pb-2 pt-[--space-2xs]"
       >
         <div className="flex items-start justify-between">
+          {/* --font-weight-regular, not --font-weight-medium — a fresh pull
+              of this title (896:10562) shows 'EB_Garamond:Regular'/
+              font-normal, unlike Account's and My Products' own titles
+              (each independently confirmed Medium via their own pulls) —
+              a genuine per-instance difference in the current file, not
+              repointed here since it's a local inline style, not a shared
+              token/component. */}
           <p
             style={{
               fontFamily: 'var(--font-family-serif-card)',
               fontSize: 'var(--font-size-title-serif)',
               letterSpacing: 'var(--letter-spacing-title-serif)',
               color: 'var(--color-info-overlay-heading)',
-              fontWeight: 'var(--font-weight-medium)',
+              fontWeight: 'var(--font-weight-regular)',
             }}
           >
             Bookmarks
@@ -325,7 +350,16 @@ export function BookmarksScreen({
             // verbatim (code review finding) — same "not worth touching an
             // already-shipped screen for DRY-ness alone" call as the root
             // shell above.
-            className="mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] bg-[--color-surface] px-[--space-sm] pb-10 pt-[--space-sm] shadow-[--shadow-card]"
+            //
+            // border-[--color-container-border] + shadow-card-elevated (was
+            // shadow-card, the smaller pre-V6 value) — a fresh pull of this
+            // Container node (896:10567) confirms the same 0.5px #f1efee
+            // hairline and the bigger "Shadow_2" blur/spread every other
+            // --shadow-card-elevated sheet in the app already carries; this
+            // screen was apparently built before that pass and never
+            // brought in line with it.
+            className="mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] border-[0.5px] border-solid border-[--color-container-border] bg-[--color-surface] px-[--space-sm] pb-10 pt-[--space-sm]"
+            style={{ boxShadow: 'var(--shadow-card-elevated)' }}
             data-node-id="761:12030"
           >
             {/* mode="popLayout" (animation review, 2026-08-26) — pulls an
