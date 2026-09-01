@@ -61,7 +61,7 @@ function MyProductRow({
       className="flex w-full cursor-pointer items-start gap-4 active:scale-[0.98] has-[button:active]:scale-100"
       style={{ transition: 'transform var(--duration-instant) var(--ease-out-quart)' }}
     >
-      <div className="h-[--size-product-image-h] w-[--size-product-image-w] shrink-0 overflow-hidden rounded-[--radius-image] border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]">
+      <div className="h-[--size-product-image-h] w-[--size-product-image-w] shrink-0 overflow-hidden rounded-[--radius-image-list] border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]">
         {product.image && <img src={product.image} alt="" className="size-full object-cover" />}
       </div>
       <div className={`flex flex-1 gap-[3px] ${product.shade ? 'h-[--size-product-image-h] items-start' : 'items-center'}`}>
@@ -151,8 +151,13 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
       >
         <div className="flex items-start justify-between">
           <p
-            className="text-[20px] tracking-[-0.4px]"
-            style={{ color: 'var(--color-info-overlay-heading)', fontWeight: 'var(--font-weight-medium)' }}
+            style={{
+              fontFamily: 'var(--font-family-serif-card)',
+              fontSize: 'var(--font-size-title-serif)',
+              letterSpacing: 'var(--letter-spacing-title-serif)',
+              color: 'var(--color-info-overlay-heading)',
+              fontWeight: 'var(--font-weight-medium)',
+            }}
           >
             My Products
           </p>
@@ -184,7 +189,8 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
           // height covers, so the fade blends into real card background
           // instead of washing over the last product row (same reasoning
           // as AllStepsView's own card padding — see ScrollEndFade.tsx).
-          className="mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] bg-[--color-surface] px-[--space-sm] pb-10 pt-[--space-sm] shadow-[--shadow-card]"
+          className="mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] bg-[--color-surface] px-[--space-sm] pb-10 pt-[--space-sm]"
+          style={{ boxShadow: 'var(--shadow-card-elevated)' }}
           data-node-id="734:7560"
         >
           {groups.map((group) => (

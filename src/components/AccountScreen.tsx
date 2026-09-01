@@ -111,8 +111,13 @@ export function AccountScreen({ onClose, onOpenMyProducts, onOpenBookmarks }: Ac
       <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-[--space-sm] pb-2 pt-[--space-2xs]">
         <div className="flex items-start justify-between">
           <p
-            className="text-[20px] tracking-[-0.4px]"
-            style={{ color: 'var(--color-info-overlay-heading)', fontWeight: 'var(--font-weight-medium)' }}
+            style={{
+              fontFamily: 'var(--font-family-serif-card)',
+              fontSize: 'var(--font-size-title-serif)',
+              letterSpacing: 'var(--letter-spacing-title-serif)',
+              color: 'var(--color-info-overlay-heading)',
+              fontWeight: 'var(--font-weight-medium)',
+            }}
           >
             Account
           </p>
@@ -129,6 +134,7 @@ export function AccountScreen({ onClose, onOpenMyProducts, onOpenBookmarks }: Ac
 
         <div
           className="mt-6 flex w-full flex-col items-stretch rounded-[--radius-account-card] bg-white px-[--space-sm] py-[--space-2xs]"
+          style={{ boxShadow: 'var(--shadow-card-elevated)' }}
           data-node-id="749:10542"
         >
           <AccountRow icon={<BoxIcon />} label="My Products" onClick={onOpenMyProducts} />

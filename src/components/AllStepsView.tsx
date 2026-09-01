@@ -294,7 +294,7 @@ export function AllStepsView({
             className="flex flex-col rounded-[--radius-card] p-4 pb-10"
             style={{
               background: 'var(--color-surface)',
-              boxShadow: 'var(--shadow-card)',
+              boxShadow: 'var(--shadow-card-elevated)',
               animation: 'view-fade-in var(--duration-layout) var(--ease-out-quart)',
             }}
           >
@@ -405,6 +405,7 @@ export function AllStepsView({
                           shade={product.shade}
                           checked={checked}
                           animate={justToggledKeys.has(key)}
+                          imageRadius="list"
                           onToggleChecked={() => onToggleChecked(key, product.checked, step)}
                         />
                       )

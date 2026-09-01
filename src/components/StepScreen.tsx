@@ -781,7 +781,7 @@ export function StepScreen({
                 // px-[16px] pb-[16px] (was uniform p-4) — top grows 4px,
                 // sides/bottom unchanged.
                 className="flex flex-col rounded-t-[32px] px-4 pb-4 pt-5"
-                style={{ background: 'var(--color-surface)', boxShadow: 'var(--shadow-card)', transformOrigin: 'bottom center' }}
+                style={{ background: 'var(--color-surface)', boxShadow: 'var(--shadow-card-elevated)', transformOrigin: 'bottom center' }}
                 // Rises up from below into place (translateY 16px → 0), not
                 // down from above — the card is fixed to the bottom of the
                 // screen, so entering from below reads as "arriving where it

@@ -73,6 +73,7 @@
   --radius-pill: 38px;    /* Done button circle (still round in V2, just no bg/text) */
   --radius-card: 20px;    /* product card container */
   --radius-image: 8px;   /* V5 (was 12px) — product thumbnail, confirmed on Step 1 and Step 7's pulls; only used by ProductCard.tsx */
+  --radius-image-list: 12px; /* V6 — AllStepsView's per-step-group product image and My Products' own product image both confirmed at 12px this pass (node 896:9851, 896:10211), distinct from StepScreen's 8px on the exact same shared ProductCard component. See plans/031-product-image-radius-split.md. */
   --radius-button: 12px;  /* V2: bottom action button (was pill-shaped, full-width) */
   --radius-badge: 4px;    /* V2: "N/7" progress badge */
 
@@ -104,6 +105,7 @@
 
   /* ---------- Shadow ---------- */
   --shadow-card: 0px 0px 8px 2px rgba(14, 11, 6, 0.03); /* V5 (was 0px 0px 16px 4px, before that 0px 0px 16px 0px rgba(0,0,0,0.05)) — blur/spread shrink, color unchanged (confirmed on both Step 1 and Step 7's pulls, not a fluke). Now identical to --shadow-tutorial-card below — same value, kept as a separate token since AllStepsView's own card shape hasn't been re-verified against this pass yet (see docs/figma-step-screen-restyle.md). */
+  --shadow-card-elevated: 0px 0px 24px 6px rgba(14, 11, 6, 0.03); /* V6 — Figma's "New" section (node 906:12628), "BeautyNotes/Shadow_2". Same color as --shadow-card, bigger blur/spread. Confirmed on the "Container" element of Step 7, All Steps, My Products, and Account's own options card (896:9740/896:9838/896:10202/896:10380) — scoped to this sheet/list-container pattern only. --shadow-tutorial-card is unaffected; BigCard's own shadow is confirmed still the smaller Shadow_1 value. See plans/029-sheet-container-elevated-shadow.md. */
 
   /* ---------- Motion ----------
      Shared easing/duration tokens for phase-5 motion work (see
@@ -151,8 +153,10 @@
      --space-* etc. from the tutorial tokens above where the design matches;
      these are the values genuinely new to this screen. */
   --font-family-serif: 'Goudy Bookletter 1911', Georgia, 'Times New Roman', serif; /* deprecated: V4 switched the home title to --font-family-serif-card (Cactus Classical Serif) below, matching node 635:4792's actual font — Goudy Bookletter is no longer used anywhere, kept for reference rather than deleted */
-  --font-size-home-title: 32px; /* V4 (was 24px) — node 635:4792, "LookSelector" redesign */
-  --letter-spacing-home-title: -0.64px; /* V4 (was -0.24px, briefly -1.28px) — corrected against the exact CSS the user copied from Figma Dev Mode for the "BeautyNotes/H1" style (node 648:2); the -1.28px value derived from get_design_context's own inline `tracking-` class was wrong */
+  --font-size-home-title: 24px; /* V6 (was 32px) — see --font-size-title-serif below; kept as its own token since HomeScreen is still its only direct consumer, but now the same number (plans/030-serif-title-eb-garamond.md) */
+  --letter-spacing-home-title: -0.24px; /* V6 (was -0.64px) — pairs with --font-size-home-title's V6 update above (plans/030-serif-title-eb-garamond.md) */
+  --font-size-title-serif: 24px; /* V6 — shared serif-title size: BigCard's own title (TutorialCard.tsx) and Account/My Products/Bookmarks/About's header title. Same number as --font-size-home-title above by design (same Figma title style, "BeautyNotes/H2-titleLook") — kept as a separate token since those are semantically different elements (app title vs. card title vs. nav-header label), matching this file's own one-token-per-meaning convention. See plans/030-serif-title-eb-garamond.md. */
+  --letter-spacing-title-serif: -0.24px; /* V6, pairs with --font-size-title-serif above */
   --font-size-home-description: 12px; /* deprecated: V4 dropped the header description line entirely — the "which type of look" filter question now sits directly under the title/icon row, see node 635:4792 */
   --color-look-card-bg: rgba(75, 116, 209, 0.08); /* deprecated: V3's BigCard is flat white (--color-surface), see below */
   --color-look-card-text: #133991; /* deprecated: V3's BigCard text is warm near-black (--color-tutorial-card-text), see below */
@@ -164,7 +168,7 @@
   --shadow-filter-chip: 0px 0px 8px rgba(14, 11, 6, 0.03); /* unselected chip shadow — also used on the look card, see node 615:2884 */
   --shadow-filter-chip-selected: 0 0 0 1.5px rgba(14, 11, 6, 0.25), 0px 0px 8px rgba(14, 11, 6, 0.03); /* deprecated: a shadow-ring selection state was tried against an isolated pull (572:3875) that turned out to omit the sheet's real border/bg — node 615:2884 (fuller context) confirmed selection is still --color-filter-chip-border-selected. V4 superseded this again: selection now reads via border weight + a per-type colored glow (LOOK_TYPES.glow in HomeScreen.tsx), not a shadow ring. */
   --color-header-icon-bg: rgba(255, 255, 255, 0.6); /* V4: info/profile icon boxes, node 635:4792 */
-  --color-header-icon-border: rgba(44, 41, 38, 0.2); /* V4: 0.5px hairline on those same boxes */
+  --color-header-icon-border: #dad8d7; /* V6 (was rgba(44,41,38,0.2)) — Figma's "New" section (node 906:12628) defines this as a flat named swatch, "BeNoApp/Borders and Separators/1", not an alpha derivation of the ink color. Visually near-identical to the old value over this app's white/cream surfaces — a cohesion correction, not a visible redesign. See plans/032-header-icon-border-flat-swatch.md. */
 
   /* V4 background — node 635:4792 ("Updated UI" / LookSelector redesign).
      Home-screen-only. Deliberately NOT folded into --gradient-bg-screen
@@ -177,7 +181,7 @@
      see --gradient-bg-list below for why AllStepsView, despite sharing
      these same two hex values, needed its own token rather than reusing
      this one as-is. */
-  --gradient-bg-home: linear-gradient(180deg, #f7e9ca 0%, #f9f3eb 7.179%);
+  --gradient-bg-home: linear-gradient(180deg, #faf1de 0%, #faf9f6 13%); /* V6 (was #f7e9ca 0%, #f9f3eb 7.179%) — Figma's "New" section (node 906:12628); confirmed identical across 5 of 6 screens pulled in that section (Step 7, All Steps, My Products, Account, both Home/DaySelected duplicates checked). See plans/028-home-gradient-stop-correction.md. */
 
   /* docs/figma-allsteps-restyle.md — AllStepsView's own background (node
      702:2694), same two hex values as --gradient-bg-home above but a fixed
@@ -198,7 +202,7 @@
      from the top regardless of how tall the element it's painted on is,
      which is exactly "the same transition point as StepTutorial, just on a
      background that had to be made taller" per the user's own framing. */
-  --gradient-bg-list: linear-gradient(180deg, #f7e9ca 0%, #f9f3eb 53px);
+  --gradient-bg-list: linear-gradient(180deg, #faf1de 0%, #faf9f6 53px); /* V6: hex stops updated to match --gradient-bg-home above (plans/028-home-gradient-stop-correction.md); the 53px stop itself is UNCHANGED — this round only pulled AllStepsView's single-viewport frame, not the tall scrollable export the px value was originally derived from, so re-deriving it here would be a guess. Still a flagged gap, not a fixed one. */
 
   /* ---------- Tutorial stack card (V3) ----------
      "BigCard" component, node 642:5092 (Tech-Experimentation) — replaces
@@ -208,8 +212,8 @@
      --color-surface, --shadow-page-frame-style shadows, --space-* etc.
      from the tokens above where the design matches; these are the values
      genuinely new to this card. */
-  --font-family-serif-card: 'Cactus Classical Serif', Georgia, 'Times New Roman', serif; /* V4: also the home title's font now (node 635:4792/648:2 both use Cactus Classical Serif, not a separate home serif) — loaded via Google Fonts, see index.html */
-  --color-tutorial-card-text: #2c2926; /* V4: also reused as the home header/title/filter-chip ink color (node 635:4792 uses this same #2c2926, not --color-text-primary) — one warm-ink token shared by both surfaces now */
+  --font-family-serif-card: 'EB Garamond', Georgia, 'Times New Roman', serif; /* V6 (was 'Cactus Classical Serif') — Figma's "New" section (node 906:12628) moved every serif title in the app onto EB Garamond: Home screen's own title, BigCard's flipped-face title, and Account/My Products/Bookmarks/About's shared header title all confirmed on this exact family. See plans/030-serif-title-eb-garamond.md. */
+  --color-tutorial-card-text: #21201f; /* V6 (was #2c2926) — Figma's "New" section (node 906:12628) replaced the alpha-derived ink family with real named variables ("BeNoApp/Chips Text Accessible/2"); confirmed as a global migration, not a Home-screen-specific split, via the newest Home/DaySelected duplicate (906:12631) showing BigCard's own title moved off #2c2926 too — see plans/027-ink-color-flat-migration.md. */
   --color-timer-badge-bg: rgba(44, 41, 38, 0.05);
   --color-card-behind-tint: #e3b345; /* deprecated: CardBehind (TutorialCard.tsx) now uses the real card-ghost-texture.jpg photo asset directly instead of this flat swatch + blend-mode tint */
   --color-product-placeholder: #e5e5e7; /* ProductsPreview (TutorialCard.tsx) — the flipped card's product-photo thumbnails, before real product photography exists. Not an invented color: this is Figma's own placeholder-gray fill for the same not-yet-real image slots in the source design. */
@@ -271,7 +275,7 @@
      opacity from the base token at each call site (see
      --color-border-hairline, --color-badge-bg, --color-text-product for
      the same pattern elsewhere in this file). */
-  --color-info-overlay-heading: rgba(44, 41, 38, 0.5); /* "About" header label */
+  --color-info-overlay-heading: #656462; /* V6 (was rgba(44,41,38,0.5)) — same migration as --color-tutorial-card-text above; "BeNoApp/Chips Text Accessible/1" in Figma's current file. Now a flat token, not an alpha derivation of #2c2926/#21201f — do not compute this from the other ink token. */
   --color-info-overlay-body-secondary: rgba(44, 41, 38, 0.8); /* credits card's second paragraph */
 
   /* ---------- Account / My Products ----------

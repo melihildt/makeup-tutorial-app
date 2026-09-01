@@ -337,8 +337,13 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
               fix now closes that gap instead of leaving it latent. */}
           <div className="flex shrink-0 items-start justify-between px-[--space-sm] pt-[--space-2xs]">
             <p
-              className="text-[20px] tracking-[-0.4px]"
-              style={{ color: 'var(--color-info-overlay-heading)', fontWeight: 'var(--font-weight-medium)' }}
+              style={{
+                fontFamily: 'var(--font-family-serif-card)',
+                fontSize: 'var(--font-size-title-serif)',
+                letterSpacing: 'var(--letter-spacing-title-serif)',
+                color: 'var(--color-info-overlay-heading)',
+                fontWeight: 'var(--font-weight-medium)',
+              }}
             >
               About
             </p>

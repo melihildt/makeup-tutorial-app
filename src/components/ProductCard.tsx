@@ -15,6 +15,12 @@ type ProductCardProps = {
    *  from. Defaults true so any future caller that doesn't pass it still
    *  gets the animation rather than silently losing it. */
   animate?: boolean
+  /** Image corner radius variant. 'default' (--radius-image, 8px) is
+   *  StepScreen's own per-step product row. 'list' (--radius-image-list,
+   *  12px) is AllStepsView's per-step-group list — a real, confirmed
+   *  difference in the current Figma file even though both call this same
+   *  shared component, not a rounding of one value into the other. */
+  imageRadius?: 'default' | 'list'
   onToggleChecked?: () => void
 }
 
@@ -28,10 +34,14 @@ type ProductCardProps = {
  * brand/name pinned to the top and shade to the bottom (matching Figma);
  * without one, the row is simply vertically centered.
  */
-export function ProductCard({ image, brand, name, shade, checked, animate = true, onToggleChecked }: ProductCardProps) {
+export function ProductCard({ image, brand, name, shade, checked, animate = true, imageRadius = 'default', onToggleChecked }: ProductCardProps) {
+  const radiusVar = imageRadius === 'list' ? '--radius-image-list' : '--radius-image'
   return (
     <div className="flex w-full items-start gap-4">
-      <div className="h-[--size-product-image-h] w-[--size-product-image-w] shrink-0 overflow-hidden rounded-[--radius-image] border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]">
+      <div
+        className="h-[--size-product-image-h] w-[--size-product-image-w] shrink-0 overflow-hidden border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]"
+        style={{ borderRadius: `var(${radiusVar})` }}
+      >
         {image && <img src={image} alt="" className="size-full object-cover" />}
       </div>
       <div

@@ -292,8 +292,13 @@ export function BookmarksScreen({
       >
         <div className="flex items-start justify-between">
           <p
-            className="text-[20px] tracking-[-0.4px]"
-            style={{ color: 'var(--color-info-overlay-heading)', fontWeight: 'var(--font-weight-medium)' }}
+            style={{
+              fontFamily: 'var(--font-family-serif-card)',
+              fontSize: 'var(--font-size-title-serif)',
+              letterSpacing: 'var(--letter-spacing-title-serif)',
+              color: 'var(--color-info-overlay-heading)',
+              fontWeight: 'var(--font-weight-medium)',
+            }}
           >
             Bookmarks
           </p>

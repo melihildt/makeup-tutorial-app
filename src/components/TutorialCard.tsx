@@ -433,7 +433,8 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity,
             <p
               style={{
                 fontFamily: 'var(--font-family-serif-card)',
-                fontSize: '24px',
+                fontSize: 'var(--font-size-title-serif)',
+                letterSpacing: 'var(--letter-spacing-title-serif)',
                 color: 'var(--color-tutorial-card-text)',
               }}
             >
