@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { BookmarkIcon, CloseIcon } from './icons'
@@ -285,8 +285,24 @@ export function BookmarksScreen({
   // a plain object carrying the real scroller node — all `check()` reads
   // off it internally — rather than duplicating useAtScrollEnd's own
   // scrollHeight/scrollTop/clientHeight formula a second time here.
-  useEffect(() => {
-    if (scrollerRef.current) onScroll({ currentTarget: scrollerRef.current } as React.UIEvent<HTMLDivElement>)
+  //
+  // hasOverflow (user-reported): the card's own pb-10 exists purely so
+  // ScrollEndFade has clean surface to fade against instead of washing
+  // over the last row — but that class was unconditional, so a short list
+  // (e.g. 1-2 bookmarks, comfortably under one viewport) still reserved
+  // 40px of dead space below the last row even though the list never
+  // scrolls and the fade is already hidden (atEnd) in that case. Figma's
+  // own pull (896:10567) shows a plain, uniform 16px on every side, with no
+  // such reserve — this only needs to widen past that when the list
+  // actually overflows. useLayoutEffect, not useEffect, so this resolves
+  // before paint rather than flashing 40px→16px (or the reverse) on mount
+  // or after a save/un-save.
+  const [hasOverflow, setHasOverflow] = useState(false)
+  useLayoutEffect(() => {
+    const el = scrollerRef.current
+    if (!el) return
+    onScroll({ currentTarget: el } as React.UIEvent<HTMLDivElement>)
+    setHasOverflow(el.scrollHeight > el.clientHeight)
   }, [savedTutorials.length, scrollerRef, onScroll])
 
   return (
@@ -344,12 +360,16 @@ export function BookmarksScreen({
           <EmptyState />
         ) : (
           <div
-            // pb-10 — same ScrollEndFade breathing-room reasoning as
-            // MyProductsScreen's own card (see ScrollEndFade.tsx). The rest
-            // of this className also duplicates that card's own classes
-            // verbatim (code review finding) — same "not worth touching an
-            // already-shipped screen for DRY-ness alone" call as the root
-            // shell above.
+            // pb-10 only while hasOverflow — same ScrollEndFade
+            // breathing-room reasoning as MyProductsScreen's own card (see
+            // ScrollEndFade.tsx), but conditional now (see hasOverflow's
+            // own comment above): a short list gets Figma's plain pb-4
+            // (16px, matching pt-[--space-sm]/px-[--space-sm] on every
+            // other side) instead of always paying the 40px reserve a
+            // non-scrolling list never needs. The rest of this className
+            // also duplicates that card's own classes verbatim (code review
+            // finding) — same "not worth touching an already-shipped
+            // screen for DRY-ness alone" call as the root shell above.
             //
             // border-[--color-container-border] + shadow-card-elevated (was
             // shadow-card, the smaller pre-V6 value) — a fresh pull of this
@@ -358,7 +378,9 @@ export function BookmarksScreen({
             // --shadow-card-elevated sheet in the app already carries; this
             // screen was apparently built before that pass and never
             // brought in line with it.
-            className="mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] border-[0.5px] border-solid border-[--color-container-border] bg-[--color-surface] px-[--space-sm] pb-10 pt-[--space-sm]"
+            className={`mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] border-[0.5px] border-solid border-[--color-container-border] bg-[--color-surface] px-[--space-sm] pt-[--space-sm] ${
+              hasOverflow ? 'pb-10' : 'pb-4'
+            }`}
             style={{ boxShadow: 'var(--shadow-card-elevated)' }}
             data-node-id="761:12030"
           >
