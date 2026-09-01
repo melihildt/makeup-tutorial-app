@@ -525,15 +525,25 @@ export function StepScreen({
             className={`flex items-center gap-1 ${isDoneScreen ? 'invisible' : ''}`}
             style={{ animation: 'step-fade-in var(--duration-step-content) var(--ease-out-quart)' }}
           >
+            {/* Verify pass (2026-09-01): both spans used to be
+                --color-text-primary + opacity-50, composited to a darker,
+                warmer gray than Figma's own badge — a fresh pull of this
+                exact badge (node 896:9731-9733, Step 7) shows a flat
+                #f1efee bg / #848281 text pair instead, plus tracking
+                (-0.12px) neither span had at all. Reuses --letter-spacing-
+                shade rather than a new token — same shared "BeautyNotes/
+                p-12" tracking AllStepsView's own badge already reuses it
+                for (see that token's own comment); this was the one
+                sibling badge left out of that convention. */}
             <span
-              className="rounded-[--radius-badge] bg-[--color-badge-bg] px-1 py-[3px] text-[length:var(--font-size-badge)] opacity-50"
-              style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--font-weight-medium)' }}
+              className="rounded-[--radius-badge] bg-[--color-badge-bg] px-1 py-[3px] text-[length:var(--font-size-badge)] tracking-[--letter-spacing-shade]"
+              style={{ color: 'var(--color-badge-text)', fontWeight: 'var(--font-weight-medium)' }}
             >
               {step}/{TOTAL_STEPS}
             </span>
             <span
-              className="text-[length:var(--font-size-badge)] opacity-50"
-              style={{ color: 'var(--color-text-primary)' }}
+              className="text-[length:var(--font-size-badge)] tracking-[--letter-spacing-shade]"
+              style={{ color: 'var(--color-badge-text)', fontWeight: 'var(--font-weight-medium)' }}
             >
               steps
             </span>
@@ -606,15 +616,23 @@ export function StepScreen({
                 opacity-80. Confirmed identically across Step 1/2/3/5/6/7's
                 pulls, not just Step 1. */}
             <p
-              className="text-[length:var(--font-size-step-title)]"
+              className="text-[length:var(--font-size-step-title)] tracking-[--letter-spacing-step-title]"
               style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--font-weight-medium)' }}
             >
               {content.title}
             </p>
+            {/* Verify pass (2026-09-01): color was --color-text-primary +
+                opacity-80 (composites to a darker ink than Figma's own
+                flat swatch) and had no tracking set — a fresh pull of this
+                exact paragraph (node 896:9738, Step 7) shows a flat
+                #656462 fill (--color-info-overlay-heading, the same
+                "BeNoApp/Chips Text Accessible/1" swatch used elsewhere in
+                this app) plus -0.12px tracking (--letter-spacing-shade,
+                same reasoning as the badge above). */}
             <p
-              className="text-balance text-[length:var(--font-size-step-description)] opacity-80"
+              className="text-balance text-[length:var(--font-size-step-description)] tracking-[--letter-spacing-shade]"
               style={{
-                color: 'var(--color-text-primary)',
+                color: 'var(--color-info-overlay-heading)',
                 // V5: was --font-weight-regular (400) — Figma's title +
                 // description share one Inter Medium (500) wrapper, the
                 // description was never actually Regular weight.
@@ -770,22 +788,29 @@ export function StepScreen({
             >
               <motion.div
                 key={step}
-                // V5 (docs/figma-step-screen-restyle.md): top-corners-only
-                // 32px radius (was --radius-card, 20px on all 4 corners) —
-                // the card's bottom edge is now flush with the screen's own
-                // bottom edge (see the pb-4 removal above), so square bottom
-                // corners read correctly; kept as an inline arbitrary value
-                // rather than promoted to a token since AllStepsView still
-                // legitimately uses --radius-card as-is (deferred, not
-                // re-verified against this pass). Padding: pt-[20px]
-                // px-[16px] pb-[16px] (was uniform p-4) — top grows 4px,
-                // sides/bottom unchanged.
-                // border-[--color-container-border] — this sheet's own
-                // 0.5px #F1EFEE stroke, confirmed on this node (896:9740)
-                // alongside the other three --shadow-card-elevated
-                // containers (see that token's own tokens.css comment) and
-                // missing everywhere until this pass.
-                className="flex flex-col rounded-t-[32px] border-[0.5px] border-solid border-[--color-container-border] px-4 pb-4 pt-5"
+                // V5 (docs/figma-step-screen-restyle.md) claimed top-
+                // corners-only 32px radius here — a verify pass (2026-09-01,
+                // fresh get_design_context on this exact node, 896:9740)
+                // reads a literal rounded-tl-[20px] rounded-tr-[20px] in
+                // Figma's own output instead, i.e. --radius-card's usual
+                // 20px, just top-corners-only rather than all four (the
+                // bottom-flush-with-screen reasoning below is still
+                // correct, only the radius number was wrong). Treated as
+                // the design having moved on since that V5 pull rather than
+                // re-litigating a settled call: this is a second,
+                // independent, node-specific pull directly contradicting
+                // the first, not ambiguity within one pull. Padding:
+                // pt-[20px] px-[16px] pb-[16px] (was uniform p-4) — top
+                // grows 4px, sides/bottom unchanged, still correct.
+                // border: Figma only strokes the top/left/right edges of
+                // this container (border-l/border-r/border-t, no
+                // border-b) — the bottom edge is flush with the screen's
+                // own bottom edge, nothing to separate it from. Was
+                // border on all four sides, which drew a stray hairline
+                // right at the viewport's bottom edge. Color itself
+                // (--color-container-border, 0.5px #F1EFEE) still
+                // confirmed on this same node, unchanged.
+                className="flex flex-col rounded-t-[20px] border-x-[0.5px] border-t-[0.5px] border-solid border-[--color-container-border] px-4 pb-4 pt-5"
                 style={{ background: 'var(--color-surface)', boxShadow: 'var(--shadow-card-elevated)', transformOrigin: 'bottom center' }}
                 // Rises up from below into place (translateY 16px → 0), not
                 // down from above — the card is fixed to the bottom of the

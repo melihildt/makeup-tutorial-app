@@ -37,15 +37,18 @@ type ProductCardProps = {
 export function ProductCard({ image, brand, name, shade, checked, animate = true, imageRadius = 'default', onToggleChecked }: ProductCardProps) {
   const isList = imageRadius === 'list'
   const radiusVar = isList ? '--radius-image-list' : '--radius-image'
-  // AllStepsView's own fresh pull (node 896:9852/896:9892) shows flat ink
-  // (--color-tutorial-card-text) for brand/name and a flat muted swatch
-  // (--color-text-muted-list, no opacity utility) for the shade line —
-  // both genuinely different from StepScreen's own context, which stays on
-  // the pre-V6 alpha-derived --color-text-product / opacity-50 pair
-  // (confirmed correct there in the V5 pass, not re-pulled since). Same
-  // imageRadius="list" flag AllStepsView already passes to pick the list
-  // image radius, reused here rather than a second prop.
-  const nameColorVar = isList ? '--color-tutorial-card-text' : '--color-text-product'
+  // Verify pass (2026-09-01): brand/name color used to branch on isList —
+  // AllStepsView's context got the correct flat --color-tutorial-card-text
+  // (confirmed earlier), while StepScreen's own (imageRadius="default")
+  // stayed on the pre-V6 alpha-derived --color-text-product, on the theory
+  // that node hadn't been re-pulled since. A fresh, direct pull of Step 7's
+  // own product rows (node 896:9746-9748, 896:9756-9758) shows the exact
+  // same flat #21201f swatch there too — not a different value after all,
+  // just the same flat-swatch migration StepScreen's own product rows had
+  // never actually been re-checked against. Collapsed to one unconditional
+  // value; the isList flag still exists for the shade-line color below,
+  // which genuinely does differ.
+  const nameColorVar = '--color-tutorial-card-text'
   return (
     <div className="flex w-full items-start gap-4">
       <div

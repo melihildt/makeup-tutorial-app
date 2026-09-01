@@ -263,6 +263,7 @@ Shade row correctly appears/disappears rather than rendering blank).
 | 037 | [Add the Shade/Category/Purchase-on info rows to ProductDetailOverlay](037-product-detail-info-rows.md) | MEDIUM-HIGH | Missing feature / design-source sync | Product Detail overlay | DONE |
 | 037 | [Product Detail overlay: product-name headline + Shade/Category/Purchase-on rows](037-product-detail-info-rows.md) | MEDIUM-HIGH | Missed content / cohesion & tokens | Product Detail overlay | DONE |
 | 038 | [My Products screen: icon/text color bugs + missing sheet-container border](038-my-products-token-fixes.md) | MEDIUM | Cohesion & tokens | My Products (+ Account/All Steps/Step screen containers) | DONE |
+| 039 | [Step screen: header/badge/title/description/sheet color+typography+radius fixes](039-step-screen-verify-pass.md) | MEDIUM | Cohesion & tokens | Tutorial step screens (all 7) | DONE |
 
 **002's specific fix (`isFlipping` local state) no longer exists in the
 code** — it was removed during the Start Over two-face-flip redesign
