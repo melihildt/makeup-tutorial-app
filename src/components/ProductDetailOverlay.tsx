@@ -79,7 +79,10 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
           className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-2xl md:py-6"
           style={{
             background:
-              'linear-gradient(0deg, var(--color-info-overlay-tint-top) 25.235%, var(--color-info-overlay-tint-bottom) 84.117%)',
+              // 180deg, not 0deg — same reversed-direction bug as
+              // InfoOverlay.tsx's own copy of this line (fixed alongside
+              // this one); see that file's comment for the full reasoning.
+              'linear-gradient(180deg, var(--color-info-overlay-tint-top) 25.235%, var(--color-info-overlay-tint-bottom) 84.117%)',
             backdropFilter: 'blur(var(--blur-info-overlay-backdrop))',
             WebkitBackdropFilter: 'blur(var(--blur-info-overlay-backdrop))',
           }}

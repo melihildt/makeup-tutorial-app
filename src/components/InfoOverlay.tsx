@@ -305,7 +305,14 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
           className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-2xl md:py-6"
           style={{
             background:
-              'linear-gradient(0deg, var(--color-info-overlay-tint-top) 25.235%, var(--color-info-overlay-tint-bottom) 84.117%)',
+              // 180deg, not 0deg — 0deg ("to top") puts the *first*-listed
+              // color at the bottom and the *last* at the top, which had
+              // tint-top/tint-bottom backwards from both their own names
+              // and Figma's "Background-blur" layer (gold at the bottom,
+              // fading to white by mid-screen). Verified in-browser: a
+              // plain `linear-gradient(0deg, red, blue)` renders blue on
+              // top. Same colors/stops, just the corrected direction.
+              'linear-gradient(180deg, var(--color-info-overlay-tint-top) 25.235%, var(--color-info-overlay-tint-bottom) 84.117%)',
             backdropFilter: 'blur(var(--blur-info-overlay-backdrop))',
             WebkitBackdropFilter: 'blur(var(--blur-info-overlay-backdrop))',
           }}
