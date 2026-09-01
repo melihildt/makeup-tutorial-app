@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { CloseIcon, MenuDotsIcon, PlusIcon } from './icons'
 import { Toast, useToast } from './Toast'
@@ -86,7 +86,14 @@ function MyProductRow({
             </p>
           </div>
           {product.shade && (
-            <p className="text-[length:var(--font-size-product-sub)] font-[--font-weight-medium] leading-[18px] tracking-[--letter-spacing-shade] text-[--color-text-primary] opacity-50">
+            // text-[--color-shade-text-list], not --color-text-primary +
+            // opacity-50 (verify pass, 2026-09-01) — a fresh pull of this
+            // screen's own shade line (896:10243, "79 - Spices") shows a
+            // flat #656462 fill, not an alpha-derived ink color; the old
+            // pair composited to a visibly lighter/cooler gray. See that
+            // token's own tokens.css comment for why it's distinct from
+            // ProductCard's --color-text-muted-list.
+            <p className="text-[length:var(--font-size-product-sub)] font-[--font-weight-medium] leading-[18px] tracking-[--letter-spacing-shade] text-[--color-shade-text-list]">
               {product.shade}
             </p>
           )}
@@ -147,6 +154,23 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const groups = getMyProducts()
 
+  // hasOverflow (user-reported): the card's own pb-10 exists purely so
+  // ScrollEndFade has clean surface to fade against instead of washing over
+  // the last row (ScrollEndFade.tsx) — but that class was unconditional, so
+  // a short list still reserved 40px of dead space below the last row even
+  // though the list never scrolls. Same fix, same reasoning as
+  // BookmarksScreen's own hasOverflow (see its comment there) — this screen
+  // just hadn't gotten it yet. Simpler than that one, though: this screen's
+  // list never shrinks in place (no delete here, unlike un-saving a
+  // bookmark), so a plain mount-time check is enough — no need for
+  // Bookmarks' extra re-check tied to the list's own length changing.
+  const [hasOverflow, setHasOverflow] = useState(false)
+  useLayoutEffect(() => {
+    const el = scrollerRef.current
+    if (!el) return
+    setHasOverflow(el.scrollHeight > el.clientHeight)
+  }, [scrollerRef])
+
   return (
     <div
       className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl md:py-6"
@@ -198,11 +222,21 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
         </div>
 
         <div
-          // pb-10 (not p-[--space-sm] all around) — reserves the same 40px
-          // of clean surface below the last row that ScrollEndFade's own
-          // height covers, so the fade blends into real card background
-          // instead of washing over the last product row (same reasoning
-          // as AllStepsView's own card padding — see ScrollEndFade.tsx).
+          // pb-10 only while hasOverflow (verify pass, 2026-09-01, was
+          // unconditional) — reserves the same 40px of clean surface below
+          // the last row that ScrollEndFade's own height covers, so the
+          // fade blends into real card background instead of washing over
+          // the last product row (same reasoning as AllStepsView's own card
+          // padding — see ScrollEndFade.tsx), but only paid when the list
+          // actually overflows. A short list instead gets pb-[--space-2xs]
+          // — the same 8px this card's own pt already uses, matching
+          // Figma's plain, symmetric py-[8px] (node 896:10202) — instead of
+          // always reserving 40px of dead space a non-scrolling list never
+          // needs. Same bug, same fix as BookmarksScreen's own hasOverflow
+          // (see its comment there and hasOverflow's own comment above);
+          // this screen's own no-overflow value is 8px, not Bookmarks' 16px,
+          // since the two screens' Container nodes use different padding in
+          // Figma to begin with.
           // pt-[--space-2xs] (8px), not --space-sm (16px) — a fresh pull of
           // this screen's own Container node (896:10202) shows py-[8px],
           // matching AccountScreen's own options card (already on
@@ -211,7 +245,9 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
           // #F1EFEE stroke, confirmed on all four --shadow-card-elevated
           // screens (see that token's own comment) and missing everywhere
           // until now.
-          className="mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] border-[0.5px] border-solid border-[--color-container-border] bg-[--color-surface] px-[--space-sm] pb-10 pt-[--space-2xs]"
+          className={`mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] border-[0.5px] border-solid border-[--color-container-border] bg-[--color-surface] px-[--space-sm] pt-[--space-2xs] ${
+            hasOverflow ? 'pb-10' : 'pb-[--space-2xs]'
+          }`}
           style={{ boxShadow: 'var(--shadow-card-elevated)' }}
           data-node-id="734:7560"
         >
