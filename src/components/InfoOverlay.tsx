@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { EASE_OUT_QUART } from './TutorialCard'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { AtIcon, CloseIcon, LinkIcon } from './icons'
-import infoCardTexture from '../assets/home/InfoCard.png'
+import infoCardTexture from '../assets/home/about-image@2x.png'
 
 // Local mirror of tokens.css's --ease-in-out, same "CSS var + JS-array
 // mirror" pattern EASE_OUT_QUART (imported above) uses for its own
@@ -384,13 +384,17 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
           <div className="flex flex-1 flex-col items-center justify-center gap-8 overflow-y-auto px-6 py-6">
             <motion.div
               className="relative flex w-full max-w-[282px] flex-col items-start gap-4 overflow-hidden rounded-[24px] border border-solid px-10 py-12"
-              // borderColor/boxShadow (code review finding): these are
-              // --color-filter-chip-border/--shadow-filter-chip's own exact
-              // values, hand-copied as raw literals instead of referencing
-              // the tokens themselves — HomeScreen.tsx's filter chips
-              // already use the same two tokens for this same "unselected
-              // chip/card" look.
-              style={{ borderColor: 'var(--color-filter-chip-border)', boxShadow: 'var(--shadow-filter-chip)' }}
+              // borderColor: --color-filter-chip-border's own exact value —
+              // HomeScreen.tsx's filter chips already use this token for the
+              // same "unselected chip/card" look, still confirmed correct
+              // on this card's own node (896:10013) in a fresh pull.
+              //
+              // boxShadow: verify pass (2026-09-01) — was --shadow-filter-
+              // chip (0px 0px 8px, no spread), which undersold this card's
+              // real effect. A fresh pull of 896:10013 names it
+              // "BeautyNotes/Shadow_1" (blur 8, spread 2), i.e. bit-for-bit
+              // --shadow-card below, not --shadow-filter-chip.
+              style={{ borderColor: 'var(--color-filter-chip-border)', boxShadow: 'var(--shadow-card)' }}
               // transition is embedded per-target (animate/exit) rather than
               // passed once as a shared prop: Framer Motion applies a
               // component-level `transition` prop to *both* the entrance
@@ -426,14 +430,44 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
                   CardBehind in TutorialCard.tsx never does) let the two
                   antialiased corners land a hair apart, reading as a
                   cropped/double edge right at the rounding — not a source
-                  image problem, and InfoCard.png is still the right asset. */}
+                  image problem.
+
+                  InfoCard.png replaced (verify pass, 2026-09-01) — the prior
+                  asset (a solid gold/mustard photo) didn't match this
+                  "New"-section pull at all; the real texture is the faint
+                  sepia illustration at node 911:12808 ("about-image").
+                  Figma's flat PNG-fill export for that node comes back
+                  fully transparent (0 alpha every pixel — a broken export
+                  on Figma's end, confirmed on both this node and the
+                  card's own 896:10013) — a first pass here worked around
+                  that with get_screenshot's rendered capture instead, but
+                  the user then exported real about-image@2x.png/@3x.png
+                  directly from Figma (same src/assets/home/ folder as
+                  every other image import in this app), which is what's
+                  used now — full-strength/full-detail, not get_screenshot's
+                  faint, already-composited-at-~30%-opacity capture. @2x
+                  (564×474) is the one actually imported, matching this
+                  app's existing single-flat-import convention (no
+                  <img srcSet> anywhere else in src/); @3x is only a bit
+                  crisper on a 3x device for a background texture already
+                  sitting at 30% opacity, not worth the ~2x extra bytes
+                  size-for-size, but it's in the same folder if that
+                  changes. `opacity-30` IS applied below now (unlike the
+                  get_screenshot-based version briefly used in between) —
+                  this source is unfaded, so the fade has to happen here
+                  instead of being baked into the asset. `object-bottom`
+                  matches Figma's own markup for this node. */}
               <img
                 src={infoCardTexture}
                 alt=""
-                className="pointer-events-none absolute inset-0 size-full object-cover"
+                className="pointer-events-none absolute inset-0 size-full object-bottom opacity-30"
               />
               <p className="relative text-[15px] tracking-[-0.15px]" style={{ color: 'var(--color-tutorial-card-text)' }}>
-                <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>Beauty Notes</span> is a small app
+                {/* fontWeight was --font-weight-semibold (600) — a fresh
+                    pull of this span (896:10014) shows "Inter 18pt:Bold",
+                    distinct from the paragraph's own Medium base weight;
+                    see --font-weight-bold's own tokens.css comment. */}
+                <span style={{ fontWeight: 'var(--font-weight-bold)' }}>Beauty Notes</span> is a small app
                 designed and built by Melisa Hildt using Figma and Claude Code and optimized for a mobile
                 experience.
               </p>
