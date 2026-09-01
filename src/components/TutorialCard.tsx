@@ -37,7 +37,7 @@ import previewEyelinerImg from '../assets/product-images/Product_Eyeliner.png'
 import previewMeritBrushImg from '../assets/product-images/Product_Merit-Brush.png'
 import type { LookType } from './HomeScreen'
 import { getRoleButtonProps } from './rowActivation'
-import { BookmarkIcon, LevelIcon, LockIcon, RotateRightIcon } from './icons'
+import { BookmarkIcon, BookmarkOutlineIcon, LevelIcon, LockIcon, RotateRightIcon } from './icons'
 
 /** The numeric (JS array) form of tokens.css's --ease-out-quart
  *  (cubic-bezier(0.25, 1, 0.5, 1)) — Framer Motion's animate()/transition
@@ -297,7 +297,13 @@ export const TUTORIALS: Tutorial[] = [
 // directly rather than from this file.
 
 /** Top-right timer pill — rounded-tr matches the card's own outer radius so
- *  the two curves read as one continuous corner (node 635:5048/5018/etc). */
+ *  the two curves read as one continuous corner (node 635:5048/5018/etc).
+ *  Verify pass (2026-09-01, Home redesign, node 932:15424/932:15425): text
+ *  color moved off --color-tutorial-card-text+opacity-80 (composited to a
+ *  darker, warmer gray than the design) onto --color-tutorial-card-byline,
+ *  the same flat #656462 swatch BigCard's own byline row uses — see that
+ *  token's own tokens.css comment. opacity-80 class dropped since the flat
+ *  color is already the exact match, no further dimming baked in. */
 function TimerBadge({ minutes }: { minutes: number }) {
   return (
     <div className="flex w-full flex-col items-end">
@@ -306,8 +312,8 @@ function TimerBadge({ minutes }: { minutes: number }) {
         style={{ background: 'var(--color-timer-badge-bg)' }}
       >
         <p
-          className="whitespace-nowrap text-[12px] uppercase opacity-80"
-          style={{ color: 'var(--color-tutorial-card-text)', fontWeight: 'var(--font-weight-semibold)' }}
+          className="whitespace-nowrap text-[12px] uppercase"
+          style={{ color: 'var(--color-tutorial-card-byline)', fontWeight: 'var(--font-weight-semibold)' }}
         >
           {minutes} min
         </p>
@@ -324,7 +330,14 @@ function TimerBadge({ minutes }: { minutes: number }) {
  *  numbers slightly per variant, but matching each variant's exact
  *  sub-pixel layout individually isn't worth chasing. */
 function ImagePair({ tutorial }: { tutorial: Tutorial }) {
-  const shadow = '0px 4px 20px 0px rgba(67, 48, 35, 0.2)'
+  // Verify pass (2026-09-01, Home redesign, node 932:15428/932:15429): was
+  // a directional warm-brown shadow (0px 4px 20px rgba(67,48,35,0.2)) — a
+  // fresh pull shows both photos now use this app's own soft ambient
+  // shadow family instead (no y-offset, near-black at low alpha), just a
+  // wider blur (24px) than --shadow-card's 8px and no spread, distinct
+  // from any existing token so kept local like this file's other
+  // hand-tuned shadows (see ProductsPreview's own `shadow` const below).
+  const shadow = '0px 0px 24px 0px rgba(14, 11, 6, 0.03)'
   return (
     <div className="relative h-[219px] w-full">
       {/* Shorter image, right side. Exact values from the Figma inspector
@@ -416,7 +429,14 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity,
       style={{
         background: 'var(--color-surface)',
         borderRadius: 'var(--radius-tutorial-card)',
-        boxShadow: 'var(--shadow-tutorial-card)',
+        // --shadow-card-elevated, not --shadow-tutorial-card (verify pass,
+        // 2026-09-01, Home redesign): a fresh pull of this card's own root
+        // (node 932:15422) shows "BeautyNotes/Shadow_2" (24px blur, 6px
+        // spread) — the same shared elevated-sheet shadow Step 7/All
+        // Steps/My Products/Account/Bookmarks already use, not the
+        // smaller Shadow_1 this card used to cite (which stays correct
+        // for CardBehind's own ghost/peek layer, untouched this pass).
+        boxShadow: 'var(--shadow-card-elevated)',
         transition: 'transform var(--duration-instant) var(--ease-out-quart)',
       }}
     >
@@ -440,11 +460,24 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity,
             >
               {tutorial.title}
             </p>
-            <div className="flex items-start gap-1 text-[12px]" style={{ fontWeight: 'var(--font-weight-medium)' }}>
-              <p className="opacity-70" style={{ color: 'var(--color-tutorial-card-text)' }}>
+            {/* Verify pass (2026-09-01, Home redesign, node 932:15433):
+                color moved off --color-tutorial-card-text+opacity-70 onto
+                the flat --color-tutorial-card-byline swatch (opacity-70
+                kept — the fresh pull still shows this row at 70% even
+                though the fill itself is already the flat, correct
+                value), tracking (-0.12px) added (was missing entirely,
+                same BeautyNotes/p-12 pair --letter-spacing-shade already
+                names elsewhere), and the brand name's underline dropped
+                — the fresh pull shows plain text now, no
+                text-decoration. */}
+            <div
+              className="flex items-start gap-1 text-[12px] tracking-[--letter-spacing-shade]"
+              style={{ fontWeight: 'var(--font-weight-medium)' }}
+            >
+              <p className="opacity-70" style={{ color: 'var(--color-tutorial-card-byline)' }}>
                 By
               </p>
-              <p className="underline decoration-solid opacity-70" style={{ color: 'var(--color-tutorial-card-text)' }}>
+              <p className="opacity-70" style={{ color: 'var(--color-tutorial-card-byline)' }}>
                 {tutorial.brand}
               </p>
             </div>
@@ -474,7 +507,12 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity,
               className="block"
               style={{ animation: 'check-pop var(--duration-instant) var(--ease-out-quart)' }}
             >
-              <BookmarkIcon filled={!!saved} />
+              {/* BookmarkOutlineIcon, not BookmarkIcon filled={false} — see
+                  that icon's own comment (icons.tsx) for why this card's
+                  unsaved state now renders its own fresh-pulled asset
+                  instead of the old shared dimmed-path branch. Saved stays
+                  on BookmarkIcon (no new asset for that state yet). */}
+              {saved ? <BookmarkIcon filled /> : <BookmarkOutlineIcon />}
             </span>
           </button>
         </motion.div>
@@ -489,11 +527,17 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity,
  *  matching the card's own outer curve, meant specifically for that
  *  corner position). --color-timer-badge-bg is the same token TimerBadge
  *  already uses (rgba(44,41,38,0.05) — confirmed the exact value Figma
- *  specifies here too, not a coincidence worth a second token). */
+ *  specifies here too, not a coincidence worth a second token).
+ *
+ *  Verify pass (2026-09-01, node 934:16470): radius corrected 6px→20px —
+ *  a fresh pull of both pills on this exact card shows a true pill radius
+ *  (the Duration pill's own 28px height makes 20px fully round it either
+ *  way, same math this file's other true-pill radii already lean on), not
+ *  the small rounded-rect this used to be. */
 function DetailPill({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="flex shrink-0 items-center gap-2 rounded-[6px] px-3 py-1.5"
+      className="flex shrink-0 items-center gap-2 rounded-[20px] px-3 py-1.5"
       style={{ background: 'var(--color-timer-badge-bg)' }}
     >
       {children}
@@ -747,12 +791,21 @@ function ProductsPreview({ tutorial, justRevealed = false }: { tutorial: Tutoria
  *  pattern as the front card's bookmark button, see TutorialLookCard's
  *  own comment).
  *
- *  290x52, rounded-[30px] (a true pill at this height), 16px label, no
+ *  290x52, rounded-[30px] (a true pill at this height), 15px label, no
  *  icon: re-pulled from a fresh get_design_context on node 673:3759 — the
  *  source design dropped the play icon and grew the button (was 240x44,
  *  rounded-[12px], 12px label + PlayIcon), per the user's own explicit
  *  ask to size this up and remove its icon rather than an inferred
- *  restyle. */
+ *  restyle.
+ *
+ *  Verify pass (2026-09-01, node 934:16470): background is the user's own
+ *  explicit ask, a literal `#21201F` — not `var(--color-tutorial-card-text)`
+ *  even though that token already resolves to the same hex today, so this
+ *  button's own background can't drift if that shared ink token is ever
+ *  retuned for its other (unrelated) call sites. Label also corrected
+ *  16px→15px and gained the `-0.15px` tracking it was missing — both
+ *  confirmed on this exact node, the same BeautyNotes/p-18 pair the
+ *  chip labels use (HomeScreen.tsx). */
 function StartTutorialButton({ onStart, disabled }: { onStart?: () => void; disabled?: boolean }) {
   return (
     <button
@@ -764,12 +817,12 @@ function StartTutorialButton({ onStart, disabled }: { onStart?: () => void; disa
       }}
       className="flex h-[52px] w-[290px] shrink-0 items-center justify-center overflow-hidden rounded-[30px] border-[0.5px] border-solid active:scale-[0.97]"
       style={{
-        background: 'var(--color-tutorial-card-text)',
+        background: '#21201F',
         borderColor: 'rgba(44, 41, 38, 0.1)',
         transition: 'transform var(--duration-instant) var(--ease-out-quart)',
       }}
     >
-      <span className="text-[16px] text-white" style={{ fontWeight: 'var(--font-weight-medium)' }}>
+      <span className="text-[15px] tracking-[-0.15px] text-white" style={{ fontWeight: 'var(--font-weight-medium)' }}>
         Start Tutorial
       </span>
     </button>
@@ -872,9 +925,13 @@ export function TutorialDetailCard({
       }}
     >
       <div className="flex w-full items-start justify-between px-5 py-4">
+        {/* opacity-80 removed (verify pass, 2026-09-01, node 934:16470): a
+            fresh pull shows this pill's text at the same flat, undimmed
+            #21201f as its Duration sibling below — this was the one of
+            the two pills still carrying the old dimming. */}
         <DetailPill>
           <LevelIcon level={tutorial.level} />
-          <p className="whitespace-nowrap text-[12px] uppercase opacity-80" style={{ color: 'var(--color-tutorial-card-text)', fontWeight: 'var(--font-weight-semibold)' }}>
+          <p className="whitespace-nowrap text-[12px] uppercase" style={{ color: 'var(--color-tutorial-card-text)', fontWeight: 'var(--font-weight-semibold)' }}>
             {tutorial.level}
           </p>
         </DetailPill>

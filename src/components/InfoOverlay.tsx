@@ -349,7 +349,12 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
                 fontSize: 'var(--font-size-title-serif)',
                 letterSpacing: 'var(--letter-spacing-title-serif)',
                 color: 'var(--color-info-overlay-heading)',
-                fontWeight: 'var(--font-weight-medium)',
+                // --font-weight-regular, not --font-weight-medium (verify
+                // pass, 2026-09-01) — a fresh pull of this title (896:10025)
+                // shows 'EB_Garamond:Regular'/font-normal, matching
+                // BookmarksScreen's own title (already on -regular, see its
+                // own comment) — this one just hadn't been re-checked since.
+                fontWeight: 'var(--font-weight-regular)',
               }}
             >
               About

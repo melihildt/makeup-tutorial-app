@@ -145,7 +145,14 @@ export function AccountScreen({ onClose, onOpenMyProducts, onOpenBookmarks }: Ac
               fontSize: 'var(--font-size-title-serif)',
               letterSpacing: 'var(--letter-spacing-title-serif)',
               color: 'var(--color-info-overlay-heading)',
-              fontWeight: 'var(--font-weight-medium)',
+              // --font-weight-regular, not --font-weight-medium (verify
+              // pass, 2026-09-01) — a fresh pull of this title (896:10376)
+              // shows 'EB_Garamond:Regular'/font-normal, matching
+              // BookmarksScreen's own title (already on -regular, see its
+              // own comment) — Account/My Products/About/Product Detail's
+              // titles were apparently never re-checked since Bookmarks got
+              // this fix.
+              fontWeight: 'var(--font-weight-regular)',
             }}
           >
             Account
