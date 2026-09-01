@@ -35,7 +35,17 @@ type ProductCardProps = {
  * without one, the row is simply vertically centered.
  */
 export function ProductCard({ image, brand, name, shade, checked, animate = true, imageRadius = 'default', onToggleChecked }: ProductCardProps) {
-  const radiusVar = imageRadius === 'list' ? '--radius-image-list' : '--radius-image'
+  const isList = imageRadius === 'list'
+  const radiusVar = isList ? '--radius-image-list' : '--radius-image'
+  // AllStepsView's own fresh pull (node 896:9852/896:9892) shows flat ink
+  // (--color-tutorial-card-text) for brand/name and a flat muted swatch
+  // (--color-text-muted-list, no opacity utility) for the shade line —
+  // both genuinely different from StepScreen's own context, which stays on
+  // the pre-V6 alpha-derived --color-text-product / opacity-50 pair
+  // (confirmed correct there in the V5 pass, not re-pulled since). Same
+  // imageRadius="list" flag AllStepsView already passes to pick the list
+  // image radius, reused here rather than a second prop.
+  const nameColorVar = isList ? '--color-tutorial-card-text' : '--color-text-product'
   return (
     <div className="flex w-full items-start gap-4">
       <div
@@ -48,9 +58,10 @@ export function ProductCard({ image, brand, name, shade, checked, animate = true
         className={`flex flex-1 gap-[3px] ${shade ? 'h-[--size-product-image-h] items-start' : 'items-center'}`}
       >
         <div
-          className={`flex flex-1 flex-col text-[--color-text-product] tracking-[--letter-spacing-tight] ${
+          className={`flex flex-1 flex-col tracking-[--letter-spacing-tight] ${
             shade ? 'h-full justify-between' : ''
           }`}
+          style={{ color: `var(${nameColorVar})` }}
         >
           <div>
             <p className="text-[length:var(--font-size-product-name)] font-[--font-weight-semibold] leading-[18px]">
@@ -62,7 +73,9 @@ export function ProductCard({ image, brand, name, shade, checked, animate = true
           </div>
           {shade && (
             <p
-              className="text-[length:var(--font-size-product-sub)] font-[--font-weight-medium] leading-[18px] tracking-[--letter-spacing-shade] text-[--color-text-primary] opacity-50"
+              className={`text-[length:var(--font-size-product-sub)] font-[--font-weight-medium] leading-[18px] tracking-[--letter-spacing-shade] ${
+                isList ? 'text-[--color-text-muted-list]' : 'text-[--color-text-primary] opacity-50'
+              }`}
             >
               {shade}
             </p>

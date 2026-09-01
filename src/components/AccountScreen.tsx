@@ -135,7 +135,12 @@ export function AccountScreen({ onClose, onOpenMyProducts, onOpenBookmarks }: Ac
         </div>
 
         <div
-          className="mt-6 flex w-full flex-col items-stretch rounded-[--radius-account-card] bg-white px-[--space-sm] py-[--space-2xs]"
+          // border-[--color-container-border] — this sheet's own 0.5px
+          // #F1EFEE stroke (see that token's own tokens.css comment): a
+          // fresh pull confirmed it on this exact node (896:10380) too, and
+          // it was missing here along with every other --shadow-card-elevated
+          // container in the app until this pass.
+          className="mt-6 flex w-full flex-col items-stretch rounded-[--radius-account-card] border-[0.5px] border-solid border-[--color-container-border] bg-white px-[--space-sm] py-[--space-2xs]"
           style={{ boxShadow: 'var(--shadow-card-elevated)' }}
           data-node-id="749:10542"
         >

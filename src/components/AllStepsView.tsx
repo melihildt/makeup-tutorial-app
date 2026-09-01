@@ -291,7 +291,12 @@ export function AllStepsView({
               product card would read as heavy stretched across this much
               of it. */}
           <div
-            className="flex flex-col rounded-[--radius-card] p-4 pb-10"
+            // border-[--color-container-border] — this sheet's own 0.5px
+            // #F1EFEE stroke, confirmed on this node (896:9838) alongside
+            // the other three --shadow-card-elevated containers (see that
+            // token's own tokens.css comment) and missing everywhere until
+            // this pass.
+            className="flex flex-col rounded-[--radius-card] border-[0.5px] border-solid border-[--color-container-border] p-4 pb-10"
             style={{
               background: 'var(--color-surface)',
               boxShadow: 'var(--shadow-card-elevated)',
@@ -361,33 +366,30 @@ export function AllStepsView({
                             on this view's own frame, not a shared token. */}
                         <span
                           className="rounded-[--radius-badge] bg-[--color-badge-bg-list] px-1 py-[3px] text-[length:var(--font-size-badge)] tracking-[--letter-spacing-shade]"
-                          style={{ color: 'var(--color-text-product)', fontWeight: 'var(--font-weight-medium)' }}
+                          style={{ color: 'var(--color-badge-text-list)', fontWeight: 'var(--font-weight-medium)' }}
                         >
                           {step}/{TOTAL_STEPS}
                         </span>
                         <span
                           className="text-[length:var(--font-size-badge)] tracking-[--letter-spacing-shade]"
-                          style={{ color: 'var(--color-text-product)', fontWeight: 'var(--font-weight-medium)' }}
+                          style={{ color: 'var(--color-badge-text-list)', fontWeight: 'var(--font-weight-medium)' }}
                         >
                           steps
                         </span>
                       </div>
                     </div>
-                    {/* docs/figma-allsteps-restyle.md: the per-step
-                        instruction sentence was never rendered in this view
-                        at all — the data's been sitting unused in
-                        STEP_CONTENT[step].description since this component
-                        only ever read listTitle/products from it. 12px /
-                        50%-opacity / Medium, matching the badge's own
-                        "dimmed caption" treatment above (rather than
-                        StepScreen's own description, which is a different,
-                        larger 80%-opacity treatment for a different-sized
-                        title). Tracking added after the user tightened it up
-                        on-device — see --letter-spacing-shade's own comment
-                        for why this reuses that token rather than a new one. */}
+                    {/* V7: 13px / flat #848281 (--color-text-muted-list) /
+                        Regular — was 12px / opacity-50-on-ink / Medium,
+                        borrowing the badge's own "dimmed caption" treatment
+                        (docs/figma-allsteps-restyle.md's node-702:2694
+                        pull). A fresh pull of the current frame (node
+                        896:9849) shows this is its own distinct style, not
+                        a reuse of the badge's — see
+                        --font-size-list-group-description's own comment in
+                        tokens.css. */}
                     <p
-                      className="text-[length:var(--font-size-product-sub)] opacity-50 tracking-[--letter-spacing-shade]"
-                      style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--font-weight-medium)' }}
+                      className="text-[length:var(--font-size-list-group-description)] tracking-[--letter-spacing-list-group-description] text-[--color-text-muted-list]"
+                      style={{ fontWeight: 'var(--font-weight-regular)' }}
                     >
                       {description}
                     </p>

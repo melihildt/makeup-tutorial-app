@@ -780,7 +780,12 @@ export function StepScreen({
                 // re-verified against this pass). Padding: pt-[20px]
                 // px-[16px] pb-[16px] (was uniform p-4) — top grows 4px,
                 // sides/bottom unchanged.
-                className="flex flex-col rounded-t-[32px] px-4 pb-4 pt-5"
+                // border-[--color-container-border] — this sheet's own
+                // 0.5px #F1EFEE stroke, confirmed on this node (896:9740)
+                // alongside the other three --shadow-card-elevated
+                // containers (see that token's own tokens.css comment) and
+                // missing everywhere until this pass.
+                className="flex flex-col rounded-t-[32px] border-[0.5px] border-solid border-[--color-container-border] px-4 pb-4 pt-5"
                 style={{ background: 'var(--color-surface)', boxShadow: 'var(--shadow-card-elevated)', transformOrigin: 'bottom center' }}
                 // Rises up from below into place (translateY 16px → 0), not
                 // down from above — the card is fixed to the bottom of the

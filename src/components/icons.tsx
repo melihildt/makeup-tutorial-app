@@ -290,34 +290,40 @@ export function UserIcon() {
 // exported assets (fi-br-plus-small, fi-br-menu-dots-vertical), same
 // convention as every other icon in this app.
 
+// No fillOpacity here (was 0.8) — same fix as CloseIcon above: Figma's own
+// "fi-br-plus-small" asset (My Products' Add-button, node 896:10198) bakes
+// a flat #656462 fill, not an opacity-reduced ink color, confirmed by
+// downloading the raw SVG. Its one call site (MyProductsScreen.tsx) now
+// passes --color-info-overlay-heading (that same #656462) as `color`.
 export function PlusIcon() {
   return (
     <svg width={20} height={20} viewBox="0 0 20 20" fill="none" aria-hidden="true">
       <path
         fill="currentColor"
-        fillOpacity={0.8}
         d="M13.75 8.75H11.25V6.25C11.25 5.91848 11.1183 5.60054 10.8839 5.36612C10.6495 5.1317 10.3315 5 10 5C9.66848 5 9.35054 5.1317 9.11612 5.36612C8.8817 5.60054 8.75 5.91848 8.75 6.25V8.75H6.25C5.91848 8.75 5.60054 8.8817 5.36612 9.11612C5.1317 9.35054 5 9.66848 5 10C5 10.3315 5.1317 10.6495 5.36612 10.8839C5.60054 11.1183 5.91848 11.25 6.25 11.25H8.75V13.75C8.75 14.0815 8.8817 14.3995 9.11612 14.6339C9.35054 14.8683 9.66848 15 10 15C10.3315 15 10.6495 14.8683 10.8839 14.6339C11.1183 14.3995 11.25 14.0815 11.25 13.75V11.25H13.75C14.0815 11.25 14.3995 11.1183 14.6339 10.8839C14.8683 10.6495 15 10.3315 15 10C15 9.66848 14.8683 9.35054 14.6339 9.11612C14.3995 8.8817 14.0815 8.75 13.75 8.75Z"
       />
     </svg>
   )
 }
 
+// No fillOpacity here either (was 0.5) — same bug, caught the same way:
+// the raw fi-br-menu-dots-vertical asset (node 896:10218's instance) bakes
+// a flat #CFCECC, not an ink-derived opacity. Its own token
+// (--color-menu-dots-icon) carries that flat value; MyProductsScreen.tsx's
+// "⋮" button passes it as `color`.
 export function MenuDotsIcon() {
   return (
     <svg width={4.16663} height={20} viewBox="0 0 4.16663 20" fill="none" aria-hidden="true">
       <path
         fill="currentColor"
-        fillOpacity={0.5}
         d="M2.08331 4.16664C3.2339 4.16664 4.16663 3.23391 4.16663 2.08332C4.16663 0.932734 3.2339 0 2.08331 0C0.932731 0 0 0.932734 0 2.08332C0 3.23391 0.932731 4.16664 2.08331 4.16664Z"
       />
       <path
         fill="currentColor"
-        fillOpacity={0.5}
         d="M2.08331 12.0833C3.2339 12.0833 4.16663 11.1506 4.16663 10C4.16663 8.84942 3.2339 7.91669 2.08331 7.91669C0.932731 7.91669 0 8.84942 0 10C0 11.1506 0.932731 12.0833 2.08331 12.0833Z"
       />
       <path
         fill="currentColor"
-        fillOpacity={0.5}
         d="M2.08331 20C3.2339 20 4.16663 19.0673 4.16663 17.9167C4.16663 16.7661 3.2339 15.8334 2.08331 15.8334C0.932731 15.8334 0 16.7661 0 17.9167C0 19.0673 0.932731 20 2.08331 20Z"
       />
     </svg>

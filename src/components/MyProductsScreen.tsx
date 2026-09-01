@@ -65,8 +65,15 @@ function MyProductRow({
         {product.image && <img src={product.image} alt="" className="size-full object-cover" />}
       </div>
       <div className={`flex flex-1 gap-[3px] ${product.shade ? 'h-[--size-product-image-h] items-start' : 'items-center'}`}>
+        {/* text-[--color-tutorial-card-text], not ProductCard.tsx's
+            --color-text-product (this row copies that component's layout,
+            not its color) — a fresh pull of this screen's own frame
+            (896:10192) shows brand/name text as a flat #21201f on every
+            product row, not the 80%-alpha ink --color-text-product bakes
+            in. Different node from ProductCard's own StepScreen context,
+            genuinely a different value there. */}
         <div
-          className={`flex flex-1 flex-col text-[--color-text-product] tracking-[--letter-spacing-tight] ${
+          className={`flex flex-1 flex-col text-[--color-tutorial-card-text] tracking-[--letter-spacing-tight] ${
             product.shade ? 'h-full justify-between' : ''
           }`}
         >
@@ -109,7 +116,9 @@ function MyProductRow({
           // all — every other one already gets this for free via the same
           // class.
           className={`header-icon-button flex shrink-0 items-center justify-center p-2 ${product.shade ? 'self-start' : ''}`}
-          style={{ color: 'var(--color-tutorial-card-text)' }}
+          // --color-menu-dots-icon (#cfcecc, flat) — see MenuDotsIcon's own
+          // comment in icons.tsx for why this isn't --color-tutorial-card-text.
+          style={{ color: 'var(--color-menu-dots-icon)' }}
         >
           <span className="flex size-[20px] items-center justify-center">
             <MenuDotsIcon />
@@ -167,7 +176,10 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
               onClick={showToast}
               aria-label="Add product"
               className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
-              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-tutorial-card-text)' }}
+              // --color-info-overlay-heading, not --color-tutorial-card-text
+              // — see PlusIcon's own comment in icons.tsx for why (same
+              // fillOpacity bug as every close-button's CloseIcon).
+              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-info-overlay-heading)' }}
             >
               <PlusIcon />
             </button>
@@ -191,7 +203,15 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
           // height covers, so the fade blends into real card background
           // instead of washing over the last product row (same reasoning
           // as AllStepsView's own card padding — see ScrollEndFade.tsx).
-          className="mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] bg-[--color-surface] px-[--space-sm] pb-10 pt-[--space-sm]"
+          // pt-[--space-2xs] (8px), not --space-sm (16px) — a fresh pull of
+          // this screen's own Container node (896:10202) shows py-[8px],
+          // matching AccountScreen's own options card (already on
+          // --space-2xs); this one just hadn't been corrected yet.
+          // border-[--color-container-border] — the same node's own 0.5px
+          // #F1EFEE stroke, confirmed on all four --shadow-card-elevated
+          // screens (see that token's own comment) and missing everywhere
+          // until now.
+          className="mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] border-[0.5px] border-solid border-[--color-container-border] bg-[--color-surface] px-[--space-sm] pb-10 pt-[--space-2xs]"
           style={{ boxShadow: 'var(--shadow-card-elevated)' }}
           data-node-id="734:7560"
         >
@@ -204,8 +224,12 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
                 >
                   {group.category}
                 </p>
+                {/* text-[--color-info-overlay-heading] (#656462 flat), not
+                    --color-text-product — same fresh pull (896:10192) shows
+                    this "N product(s)" count in that flat muted tone, not
+                    the 80%-alpha ink --color-text-product bakes in. */}
                 <p
-                  className="shrink-0 whitespace-nowrap text-[length:var(--font-size-badge)] tracking-[--letter-spacing-shade] text-[--color-text-product]"
+                  className="shrink-0 whitespace-nowrap text-[length:var(--font-size-badge)] tracking-[--letter-spacing-shade] text-[--color-info-overlay-heading]"
                   style={{ fontWeight: 'var(--font-weight-medium)' }}
                 >
                   {group.products.length} {group.products.length === 1 ? 'product' : 'products'}
