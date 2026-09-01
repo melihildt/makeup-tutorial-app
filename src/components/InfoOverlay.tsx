@@ -364,8 +364,12 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
               // needs `color` set (CloseIcon's path uses fill="currentColor"),
               // which HEADER_CHIP_STYLE itself doesn't carry since
               // ScreenHeader.tsx's own buttons set their icon color directly
-              // on each path instead.
-              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-tutorial-card-text)' }}
+              // on each path instead. --color-info-overlay-heading, not
+              // --color-tutorial-card-text — Figma's own close-chip asset
+              // (node 896:10026) bakes a flat #656462, the muted heading
+              // ink, not the darker body-text ink (was mismatched app-wide
+              // pre-V6; see icons.tsx's own CloseIcon comment).
+              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-info-overlay-heading)' }}
             >
               <CloseIcon />
             </button>

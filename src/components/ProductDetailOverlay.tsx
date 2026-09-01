@@ -119,7 +119,9 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
               onClick={onClose}
               aria-label="Close product detail"
               className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
-              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-tutorial-card-text)' }}
+              // --color-info-overlay-heading, not --color-tutorial-card-text
+              // — see InfoOverlay.tsx's own close-button comment for why.
+              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-info-overlay-heading)' }}
             >
               <CloseIcon />
             </button>

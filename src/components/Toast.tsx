@@ -109,7 +109,13 @@ export function Toast({ open, onClose }: ToastProps) {
               onClick={onClose}
               aria-label="Dismiss"
               className="header-icon-button -m-1 flex shrink-0 items-center justify-center p-1"
-              style={{ color: 'var(--color-tutorial-card-text)' }}
+              // --color-info-overlay-heading, not --color-tutorial-card-text
+              // — see InfoOverlay.tsx's own close-button comment for why.
+              // No direct Figma pull for Toast's own close ✕ confirms this,
+              // but it's the same shared CloseIcon glyph as every other
+              // instance, so kept consistent rather than left as the one
+              // outlier.
+              style={{ color: 'var(--color-info-overlay-heading)' }}
             >
               <CloseIcon />
             </button>
