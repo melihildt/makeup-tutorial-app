@@ -257,22 +257,36 @@
 
   /* ---------- Info/About overlay ----------
      InfoOverlay.tsx (Figma node 730:5706) — HomeScreen's info icon opens
-     this over the live app, not a device-chrome mock, so unlike this
-     screen's other values (still literal Figma numbers where the design
-     genuinely specifies them) these two are tuned-by-feel, not
-     Figma-sourced — same situation and same convention as
+     this over the live app, not a device-chrome mock. Also reused as-is by
+     ProductDetailOverlay.tsx's own tint (identical gradient line).
+     Promoted here (code review finding #5) rather than left as local JS
+     constants in InfoOverlay.tsx, same precedent as
      --color-list-header-bg/--blur-list-header above (AllStepsView's own
-     frosted sticky header): promoted here (code review finding #5) rather
-     than left as local JS constants in InfoOverlay.tsx, since that's
-     exactly the same kind of value with an existing precedent for where it
-     belongs. Two colors, not one bare alpha number, because the tint is a
-     2-stop gradient between two different base hex values (matching
-     --Background-blur in Figma) — both carry the same alpha for now
-     (tuned together as one dial by feel), but a full rgba() per stop is
-     this file's own established shape for a color token, not a deviation
-     invented for this pair. */
-  --color-info-overlay-tint-top: rgba(249, 243, 235, 0.68);
-  --color-info-overlay-tint-bottom: rgba(247, 233, 202, 0.68);
+     frosted sticky header). Two colors, not one bare alpha number, because
+     the tint is a 2-stop gradient between two different base hex values
+     (matching --Background-blur in Figma).
+
+     Verify pass (2026-09-01): the "tuned-by-feel, not Figma-sourced" claim
+     this comment used to make was wrong — a fresh pull of the About
+     screen's own "Background-blur" layer (node 896:10012) shows a real,
+     literal gradient: `bg-gradient-to-t from-[#ffdf99] opacity-70 to-1/2
+     to-[#faf9f6]`, i.e. flat #FFDF99 (a properly saturated gold, not a
+     pastel) fading to flat #FAF9F6, both at a uniform 70% layer opacity —
+     not the far paler #f7e9ca/#f9f3eb-range values this pair had drifted
+     to. --color-info-overlay-tint-bottom was the real miss (was
+     rgba(247,233,202,0.68), noticeably washed out next to Figma's actual
+     #FFDF99); -top was already close. This is why the design's own gold
+     reads much more prominent than this app's — confirmed by sampling
+     pixels from both a get_screenshot render and this app's own screenshot
+     at the same relative card position. Stop positions (25.235%/84.117%)
+     are UNCHANGED — those already account for this app real backdrop-blur
+     covering the full viewport, unlike Figma's own mockup (a flat,
+     pre-baked "blurred copy" layer sitting under 94px of iOS chrome this
+     app never renders), so re-deriving them from Figma's raw 702px/94px
+     rect would put the gold band at the wrong height here. Only the two
+     color values changed. */
+  --color-info-overlay-tint-top: rgba(250, 249, 246, 0.7);
+  --color-info-overlay-tint-bottom: rgba(255, 223, 153, 0.7);
   --blur-info-overlay-backdrop: 18px;
 
   /* Two more ink-color variants specific to this screen (code review

@@ -125,9 +125,24 @@ export function CloseIcon() {
 // elsewhere in tokens.css. Kept as a literal fill rather than swapped to an
 // ink token: it's a real, intentional accent color in the design (matching
 // the About card's own gold texture, InfoCard.png), not an oversight.
+//
+// height={20}, not Figma's own literal 19.9581 (verify pass, 2026-09-01):
+// this was the only icon in the whole app with a non-square box — every
+// other one here is a plain 20x20 (e.g. AtIcon right below). An <svg>'s UA
+// default is `overflow: hidden`, so a fractional intrinsic height this
+// close to its own viewBox's edge is exactly the shape of bug that reads
+// fine on this desktop browser (confirmed via a 6x CSS-scale zoom, fully
+// intact) but is one sub-pixel rounding step away from clipping a hairline
+// off the bottom on a real device at a different pixel ratio — reported as
+// "the container is clipping it" on-device. Figma's own box for this same
+// icon (fi-br-link, node 896:10019) is itself a true 20x20
+// `overflow-clip` container with the asset inset only 0.11%/0.1% — i.e.
+// Figma treats this as square too, the 19.9581 is just this one export's
+// own rounding noise, not a deliberate non-square icon. Squaring it off
+// stretches the artwork by under a quarter of a percent, imperceptible.
 export function LinkIcon() {
   return (
-    <svg width={20} height={19.9581} viewBox="0 0 20 19.9581" fill="none" aria-hidden="true">
+    <svg width={20} height={20} viewBox="0 0 20 19.9581" fill="none" aria-hidden="true">
       <path
         fill="#E3B345"
         d="M8.67446 16.3012C7.35108 17.6735 5.19591 17.8001 3.72103 16.5921C2.84266 15.8316 2.39398 14.6881 2.5208 13.5332C2.63063 12.6817 3.02859 11.8934 3.64852 11.2994L6.04564 8.90065C6.5337 8.41244 6.5337 7.62104 6.04564 7.13282C5.55743 6.64476 4.76603 6.64476 4.27781 7.13282L1.93155 9.47994C0.862056 10.5113 0.187593 11.8846 0.0253363 13.3615C-0.277728 16.6878 2.17308 19.63 5.49941 19.9331C7.28572 20.0958 9.05214 19.4572 10.3214 18.1899L12.8286 15.6836C13.3166 15.1953 13.3166 14.404 12.8286 13.9157C12.3403 13.4277 11.5489 13.4277 11.0607 13.9157L8.67446 16.3012Z"

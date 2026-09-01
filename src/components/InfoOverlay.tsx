@@ -452,15 +452,52 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
                   crisper on a 3x device for a background texture already
                   sitting at 30% opacity, not worth the ~2x extra bytes
                   size-for-size, but it's in the same folder if that
-                  changes. `opacity-30` IS applied below now (unlike the
-                  get_screenshot-based version briefly used in between) —
-                  this source is unfaded, so the fade has to happen here
-                  instead of being baked into the asset. `object-bottom`
-                  matches Figma's own markup for this node. */}
+                  changes. `opacity-30` is NOT applied below (verify pass,
+                  2026-09-01, reverses the previous pass's own claim that
+                  "this source is unfaded") — reading the actual exported
+                  file's alpha channel (PIL: `Image.open(...).convert
+                  ('RGBA')`, checking the alpha band's min/max) shows a
+                  uniform 77/255 (≈30%) across the whole image, i.e. the
+                  export already baked in the Figma layer's own 30%
+                  opacity — confirmed by get_design_context's own reference
+                  code for this exact node also showing a plain `opacity-30`
+                  Tailwind class on this same img, a single application,
+                  not two. Applying opacity-30 here on top of that
+                  compounded to ~9% effective visibility (0.3×0.3), not the
+                  ~30% Figma actually shows — the "still looks like a lot
+                  of opacity" (i.e. too faded) report after the first pass
+                  here was this compounding, not the white backdrop below.
+                  `object-bottom` matches Figma's own markup for this node.
+
+                  --color-surface backdrop (verify pass, 2026-09-01, code
+                  review follow-up): Figma's own markup puts a `bg-white`
+                  div directly behind the texture (with a
+                  `mix-blend-color-burn`, which is a mathematical no-op for
+                  a pure-white blend source — confirmed via the CSS
+                  compositing spec's own formula — so it isn't doing any
+                  actual burning, just occupying the white layer's spot).
+                  This card had neither: the texture sat directly over
+                  whatever this overlay's own real backdrop-blur was
+                  showing through (the live, warm-toned HomeScreen behind
+                  it), not a flat white base. Sampling pixels from both a
+                  get_screenshot render of the real card (896:10013) and
+                  this app's own screenshot at the same position confirmed
+                  it: Figma's card reads as a mostly-white/cream surface
+                  with a faint gray imprint of the photo, this app's read
+                  as a visibly warm sepia card — the about-image asset
+                  itself is neutral gray (confirmed by sampling the PNG
+                  file directly), so the extra warmth was coming entirely
+                  from the live blurred backdrop bleeding through where
+                  Figma's card has an opaque-ish white one instead. Every
+                  other card-shaped container in this app already has a
+                  real background for the same reason (BigCard, My
+                  Products' list container, etc.) — this was the one
+                  exception. */}
+              <div className="absolute inset-0" style={{ background: 'var(--color-surface)' }} />
               <img
                 src={infoCardTexture}
                 alt=""
-                className="pointer-events-none absolute inset-0 size-full object-bottom opacity-30"
+                className="pointer-events-none absolute inset-0 size-full object-bottom"
               />
               <p className="relative text-[15px] tracking-[-0.15px]" style={{ color: 'var(--color-tutorial-card-text)' }}>
                 {/* fontWeight was --font-weight-semibold (600) — a fresh
