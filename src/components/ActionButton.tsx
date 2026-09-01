@@ -34,7 +34,7 @@ export function ActionButton({ label, variant, onClick, style }: ActionButtonPro
     <button
       type="button"
       onClick={onClick}
-      className="action-button flex h-[--height-action-button] w-full items-center justify-center gap-2 rounded-[--radius-button] border-[0.5px] px-3"
+      className="action-button flex h-[--height-action-button] w-full items-center justify-center gap-2 rounded-[--radius-button] border-[0.5px] px-3 tracking-[--letter-spacing-button]"
       style={{
         fontSize: 'var(--font-size-button)',
         // V5 (docs/figma-step-screen-restyle.md): both Step 1's "Next" and
@@ -44,7 +44,15 @@ export function ActionButton({ label, variant, onClick, style }: ActionButtonPro
         // ProductCard's brand name), so only this component's weight
         // changes.
         fontWeight: 'var(--font-weight-medium)',
-        color: isFinal ? 'var(--color-action-button-final-text)' : 'var(--color-text-primary)',
+        // Verify pass (2026-09-01): the default variant's text was
+        // --color-text-primary (#21201f, the app-wide flat-migrated ink
+        // token) — a fresh pull of this button specifically (Step 5's own
+        // grey "Next", node 932:16246) shows a flat #2c2926 instead, an
+        // older "Dark / 100%" swatch this element hadn't been re-checked
+        // against since the rest of the app moved to #21201f. Its own
+        // token (--color-action-button-text) since the two values
+        // genuinely differ here, not a typo to fold into the shared one.
+        color: isFinal ? 'var(--color-action-button-final-text)' : 'var(--color-action-button-text)',
         background: isFinal ? 'var(--color-action-button-final-bg)' : 'var(--color-action-button)',
         borderColor: isFinal ? 'var(--color-action-button-final-bg)' : 'var(--color-action-button-border)',
         ...style,
