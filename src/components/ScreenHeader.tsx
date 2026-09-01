@@ -92,8 +92,12 @@ export function ScreenHeader({
       {/* Outer group: content-sized (two 40px buttons) — rgba(255,255,255,0.6),
           matching Figma exactly (was rgba(255,255,255,0.2) under the old
           pill). `relative` so the sliding highlight below can position
-          itself against this track, not against the whole header row. */}
-      <div className="relative flex h-[40px] shrink-0 items-center rounded-[--radius-filter-chip] bg-[rgba(255,255,255,0.6)]">
+          itself against this track, not against the whole header row.
+          border-[--color-header-toggle-group-border] — this wrapper's own
+          0.5px #E2E0DF stroke (node 896:9721), distinct from the #DAD8D7
+          border on the individual chip buttons inside it; verify pass
+          (2026-09-01) found it missing entirely. */}
+      <div className="relative flex h-[40px] shrink-0 items-center rounded-[--radius-filter-chip] border-[0.5px] border-solid border-[--color-header-toggle-group-border] bg-[rgba(255,255,255,0.6)]">
         {/* Sliding highlight — a real segmented-control toggle, not two
             buttons independently mounting/unmounting their own chip. Was
             the latter through several rounds of trying to fix a border/

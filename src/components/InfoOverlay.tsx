@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { EASE_OUT_QUART } from './TutorialCard'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { AtIcon, CloseIcon, LinkIcon } from './icons'
-import infoCardTexture from '../assets/home/InfoCard.png'
+import infoCardTexture from '../assets/home/about-image@2x.png'
 
 // Local mirror of tokens.css's --ease-in-out, same "CSS var + JS-array
 // mirror" pattern EASE_OUT_QUART (imported above) uses for its own
@@ -305,7 +305,14 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
           className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-2xl md:py-6"
           style={{
             background:
-              'linear-gradient(0deg, var(--color-info-overlay-tint-top) 25.235%, var(--color-info-overlay-tint-bottom) 84.117%)',
+              // 180deg, not 0deg — 0deg ("to top") puts the *first*-listed
+              // color at the bottom and the *last* at the top, which had
+              // tint-top/tint-bottom backwards from both their own names
+              // and Figma's "Background-blur" layer (gold at the bottom,
+              // fading to white by mid-screen). Verified in-browser: a
+              // plain `linear-gradient(0deg, red, blue)` renders blue on
+              // top. Same colors/stops, just the corrected direction.
+              'linear-gradient(180deg, var(--color-info-overlay-tint-top) 25.235%, var(--color-info-overlay-tint-bottom) 84.117%)',
             backdropFilter: 'blur(var(--blur-info-overlay-backdrop))',
             WebkitBackdropFilter: 'blur(var(--blur-info-overlay-backdrop))',
           }}
@@ -337,8 +344,18 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
               fix now closes that gap instead of leaving it latent. */}
           <div className="flex shrink-0 items-start justify-between px-[--space-sm] pt-[--space-2xs]">
             <p
-              className="text-[20px] tracking-[-0.4px]"
-              style={{ color: 'var(--color-info-overlay-heading)', fontWeight: 'var(--font-weight-medium)' }}
+              style={{
+                fontFamily: 'var(--font-family-serif-card)',
+                fontSize: 'var(--font-size-title-serif)',
+                letterSpacing: 'var(--letter-spacing-title-serif)',
+                color: 'var(--color-info-overlay-heading)',
+                // --font-weight-regular, not --font-weight-medium (verify
+                // pass, 2026-09-01) — a fresh pull of this title (896:10025)
+                // shows 'EB_Garamond:Regular'/font-normal, matching
+                // BookmarksScreen's own title (already on -regular, see its
+                // own comment) — this one just hadn't been re-checked since.
+                fontWeight: 'var(--font-weight-regular)',
+              }}
             >
               About
             </p>
@@ -352,8 +369,12 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
               // needs `color` set (CloseIcon's path uses fill="currentColor"),
               // which HEADER_CHIP_STYLE itself doesn't carry since
               // ScreenHeader.tsx's own buttons set their icon color directly
-              // on each path instead.
-              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-tutorial-card-text)' }}
+              // on each path instead. --color-info-overlay-heading, not
+              // --color-tutorial-card-text — Figma's own close-chip asset
+              // (node 896:10026) bakes a flat #656462, the muted heading
+              // ink, not the darker body-text ink (was mismatched app-wide
+              // pre-V6; see icons.tsx's own CloseIcon comment).
+              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-info-overlay-heading)' }}
             >
               <CloseIcon />
             </button>
@@ -368,13 +389,17 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
           <div className="flex flex-1 flex-col items-center justify-center gap-8 overflow-y-auto px-6 py-6">
             <motion.div
               className="relative flex w-full max-w-[282px] flex-col items-start gap-4 overflow-hidden rounded-[24px] border border-solid px-10 py-12"
-              // borderColor/boxShadow (code review finding): these are
-              // --color-filter-chip-border/--shadow-filter-chip's own exact
-              // values, hand-copied as raw literals instead of referencing
-              // the tokens themselves — HomeScreen.tsx's filter chips
-              // already use the same two tokens for this same "unselected
-              // chip/card" look.
-              style={{ borderColor: 'var(--color-filter-chip-border)', boxShadow: 'var(--shadow-filter-chip)' }}
+              // borderColor: --color-filter-chip-border's own exact value —
+              // HomeScreen.tsx's filter chips already use this token for the
+              // same "unselected chip/card" look, still confirmed correct
+              // on this card's own node (896:10013) in a fresh pull.
+              //
+              // boxShadow: verify pass (2026-09-01) — was --shadow-filter-
+              // chip (0px 0px 8px, no spread), which undersold this card's
+              // real effect. A fresh pull of 896:10013 names it
+              // "BeautyNotes/Shadow_1" (blur 8, spread 2), i.e. bit-for-bit
+              // --shadow-card below, not --shadow-filter-chip.
+              style={{ borderColor: 'var(--color-filter-chip-border)', boxShadow: 'var(--shadow-card)' }}
               // transition is embedded per-target (animate/exit) rather than
               // passed once as a shared prop: Framer Motion applies a
               // component-level `transition` prop to *both* the entrance
@@ -410,14 +435,81 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
                   CardBehind in TutorialCard.tsx never does) let the two
                   antialiased corners land a hair apart, reading as a
                   cropped/double edge right at the rounding — not a source
-                  image problem, and InfoCard.png is still the right asset. */}
+                  image problem.
+
+                  InfoCard.png replaced (verify pass, 2026-09-01) — the prior
+                  asset (a solid gold/mustard photo) didn't match this
+                  "New"-section pull at all; the real texture is the faint
+                  sepia illustration at node 911:12808 ("about-image").
+                  Figma's flat PNG-fill export for that node comes back
+                  fully transparent (0 alpha every pixel — a broken export
+                  on Figma's end, confirmed on both this node and the
+                  card's own 896:10013) — a first pass here worked around
+                  that with get_screenshot's rendered capture instead, but
+                  the user then exported real about-image@2x.png/@3x.png
+                  directly from Figma (same src/assets/home/ folder as
+                  every other image import in this app), which is what's
+                  used now — full-strength/full-detail, not get_screenshot's
+                  faint, already-composited-at-~30%-opacity capture. @2x
+                  (564×474) is the one actually imported, matching this
+                  app's existing single-flat-import convention (no
+                  <img srcSet> anywhere else in src/); @3x is only a bit
+                  crisper on a 3x device for a background texture already
+                  sitting at 30% opacity, not worth the ~2x extra bytes
+                  size-for-size, but it's in the same folder if that
+                  changes. `opacity-30` is NOT applied below (verify pass,
+                  2026-09-01, reverses the previous pass's own claim that
+                  "this source is unfaded") — reading the actual exported
+                  file's alpha channel (PIL: `Image.open(...).convert
+                  ('RGBA')`, checking the alpha band's min/max) shows a
+                  uniform 77/255 (≈30%) across the whole image, i.e. the
+                  export already baked in the Figma layer's own 30%
+                  opacity — confirmed by get_design_context's own reference
+                  code for this exact node also showing a plain `opacity-30`
+                  Tailwind class on this same img, a single application,
+                  not two. Applying opacity-30 here on top of that
+                  compounded to ~9% effective visibility (0.3×0.3), not the
+                  ~30% Figma actually shows — the "still looks like a lot
+                  of opacity" (i.e. too faded) report after the first pass
+                  here was this compounding, not the white backdrop below.
+                  `object-bottom` matches Figma's own markup for this node.
+
+                  --color-surface backdrop (verify pass, 2026-09-01, code
+                  review follow-up): Figma's own markup puts a `bg-white`
+                  div directly behind the texture (with a
+                  `mix-blend-color-burn`, which is a mathematical no-op for
+                  a pure-white blend source — confirmed via the CSS
+                  compositing spec's own formula — so it isn't doing any
+                  actual burning, just occupying the white layer's spot).
+                  This card had neither: the texture sat directly over
+                  whatever this overlay's own real backdrop-blur was
+                  showing through (the live, warm-toned HomeScreen behind
+                  it), not a flat white base. Sampling pixels from both a
+                  get_screenshot render of the real card (896:10013) and
+                  this app's own screenshot at the same position confirmed
+                  it: Figma's card reads as a mostly-white/cream surface
+                  with a faint gray imprint of the photo, this app's read
+                  as a visibly warm sepia card — the about-image asset
+                  itself is neutral gray (confirmed by sampling the PNG
+                  file directly), so the extra warmth was coming entirely
+                  from the live blurred backdrop bleeding through where
+                  Figma's card has an opaque-ish white one instead. Every
+                  other card-shaped container in this app already has a
+                  real background for the same reason (BigCard, My
+                  Products' list container, etc.) — this was the one
+                  exception. */}
+              <div className="absolute inset-0" style={{ background: 'var(--color-surface)' }} />
               <img
                 src={infoCardTexture}
                 alt=""
-                className="pointer-events-none absolute inset-0 size-full object-cover"
+                className="pointer-events-none absolute inset-0 size-full object-bottom"
               />
               <p className="relative text-[15px] tracking-[-0.15px]" style={{ color: 'var(--color-tutorial-card-text)' }}>
-                <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>Beauty Notes</span> is a small app
+                {/* fontWeight was --font-weight-semibold (600) — a fresh
+                    pull of this span (896:10014) shows "Inter 18pt:Bold",
+                    distinct from the paragraph's own Medium base weight;
+                    see --font-weight-bold's own tokens.css comment. */}
+                <span style={{ fontWeight: 'var(--font-weight-bold)' }}>Beauty Notes</span> is a small app
                 designed and built by Melisa Hildt using Figma and Claude Code and optimized for a mobile
                 experience.
               </p>

@@ -5,14 +5,16 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>vite-scaffold</title>
-    <!-- Cactus Classical Serif: tutorial card title (--font-family-serif-card,
-         node 642:5092) and, since the V4 LookSelector redesign, the home
-         title too (node 635:4792/648:2) — one shared font, one request.
-         Goudy Bookletter 1911 (--font-family-serif) dropped from this fetch:
-         nothing uses it anymore, see tokens.css. -->
+    <!-- EB Garamond: --font-family-serif-card (plans/030-serif-title-eb-garamond.md) —
+         tutorial card title, home title, and Account/My Products/
+         Bookmarks/About's shared header title all share this one font now.
+         Cactus Classical Serif kept loaded alongside it for now (see that
+         plan's own Boundaries — not yet confirmed nothing else depends on
+         it). Goudy Bookletter 1911 (--font-family-serif) dropped from this
+         fetch: nothing uses it anymore, see tokens.css. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cactus+Classical+Serif&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Cactus+Classical+Serif&family=EB+Garamond&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>

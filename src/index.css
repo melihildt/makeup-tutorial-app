@@ -249,15 +249,39 @@ body {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Coming-soon thumbnails' own entrance (TutorialCard.tsx's
-   ProductsPreview) — a plain fade, not product-preview-pop-in's
-   scale-and-rise "burst" reveal. A blurred/tinted placeholder is
+/* deprecated: coming-soon thumbnails' entrance (TutorialCard.tsx's
+   ProductsPreview) used to be a plain fade here, distinct from
+   product-preview-pop-in's scale-and-rise "burst" reveal — deliberately,
+   on the reasoning that a celebratory pop was the wrong gesture for
    deliberately-withheld content (see comingSoonThumbnail's own doc
-   comment), not a finished photo snapping into view — the celebratory
-   pop reads as the wrong gesture for it. */
+   comment). The user's own catch (2026-09-01): having two different
+   animations do the same job of revealing this row read as inconsistent
+   flipping between cards, not intentional — ProductsPreview's
+   popAnimationName is now always product-preview-pop-in. Kept here,
+   unused, for the history rather than deleted outright. */
 @keyframes product-preview-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* ComingSoonButton's own ambient cue (TutorialCard.tsx) — a real disabled
+   <button> (see its own comment for why), so it can never get the app's
+   usual press feedback: no :hover, no :active, native browsers strip
+   pointer interaction from disabled elements entirely. Left with zero
+   animation of any kind it read as inert/broken next to StartTutorialButton
+   (its own press active:scale-[0.97] in the same card slot) — a slow,
+   self-driven breathing loop instead, not press-triggered, communicating
+   "here, waiting" rather than "tappable." ease-in-out (not
+   --ease-out-quart): a symmetric back-and-forth loop, same reasoning as
+   CopyEmailButton's failure shake (see --ease-in-out's own token comment).
+   2.4s, well past AUDIT.md's <300ms band for interactive feedback since
+   this isn't feedback for anything — an ambient loop reads as agitated at
+   that speed, not calm. prefers-reduced-motion collapses it to one static
+   frame globally (this file's own media query below), no extra handling
+   needed here. */
+@keyframes coming-soon-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 /* AllStepsView's own mount fade — see its root element's comment for why

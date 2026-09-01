@@ -94,14 +94,17 @@ function AllIcons() {
       </IconGridSection>
 
       <IconGridSection title="Home screen">
+        {/* color: each type's own deepTint (HomeScreen.tsx's LOOK_TYPES) —
+            these three take a color prop now (V5, icons.tsx's own module
+            comment), same value the real selected chip passes. */}
         <IconCell name="SunIcon (Day)">
-          <SunIcon />
+          <SunIcon color="#5a260b" />
         </IconCell>
         <IconCell name="MoonIcon (Night)">
-          <MoonIcon />
+          <MoonIcon color="#0c2560" />
         </IconCell>
         <IconCell name="DiamondIcon (Glam)">
-          <DiamondIcon />
+          <DiamondIcon color="#113c0e" />
         </IconCell>
         <IconCell name="InfoIcon">
           <InfoIcon />

@@ -86,6 +86,142 @@ detail flip, and pending items that are bug fixes rather than audit
 findings) **see `docs/home-stack-handoff.md`** — that doc is the primary
 handoff, this README only tracks plan execution.
 
+**027-032 are a different kind of pass** — not an `improve-animations`
+audit, but a design-token sync against a newer Figma iteration (file
+`6Mr7K0RONTS8SltZRJtqYj`, section "New", node `906:12628`) that turned out
+to have real named variables (`BeNoApp/…`, `BeautyNotes/…`) where the file
+previously had none. Six of the twelve top-level frames in that section
+were pulled and diffed against `src/styles/tokens.css` and the current
+component code: Step 7, All Steps, My Products, Account, About, and two
+`Home/DaySelected` duplicates (one of which — the newest, rightmost one —
+turned out to be more fully updated than the others, and settled an
+otherwise-ambiguous finding). Six findings were confirmed; all six were
+selected to become plans, ordered by blast radius/value: **027** (ink
+color migration, biggest cascade), **028** (background gradient stop
+correction), **029** (new elevated shadow token for sheet containers),
+**030** (serif title font consolidation onto EB Garamond), **031**
+(product-image radius split between StepScreen and AllStepsView/My
+Products), **032** (header icon-button border, lowest priority —
+cohesion-only). **All six executed in the same session they were
+written**, directly in the working tree.
+
+- **027 executed exactly as planned** — `--color-tutorial-card-text`
+  (`#2c2926` → `#21201f`) and `--color-info-overlay-heading`
+  (`rgba(44,41,38,0.5)` → `#656462`) updated in `tokens.css`, no component
+  files touched (cascades entirely via `var(...)`). Live-verified computed
+  color on HomeScreen's title (`rgb(33,32,31)`), BigCard's flipped-face
+  title, and Account/My Products/Bookmarks/About's header titles
+  (`rgb(101,100,98)`) — all match exactly.
+- **028 executed exactly as planned** — `--gradient-bg-home` and
+  `--gradient-bg-list`'s hex stops updated; `--gradient-bg-list`'s `53px`
+  stop deliberately left as its own flagged gap, per the plan's own
+  Boundaries.
+- **029 executed with one on-the-fly fix beyond the plan** —
+  `--shadow-card-elevated` added; `StepScreen.tsx`/`AllStepsView.tsx`
+  repointed via their existing inline `boxShadow` style (worked
+  immediately). `MyProductsScreen.tsx`/`AccountScreen.tsx` were originally
+  planned as a `shadow-[--shadow-card-elevated]` Tailwind class edit, but
+  live verification caught that this arbitrary-value syntax silently
+  compiles to a **shadow *color*** (`--tw-shadow-color`) rather than the
+  whole `box-shadow`, so `box-shadow` itself never gets set — computed
+  style came back `none`. This means `MyProductsScreen.tsx`'s card had
+  been shipping with **zero shadow since before this plan** (same
+  pre-existing `shadow-[--shadow-card]` pattern, never actually working).
+  Fixed by moving both to inline `style={{ boxShadow: 'var(...)' }}`,
+  matching StepScreen/AllStepsView's already-correct pattern — confirmed
+  live afterward (`rgba(14, 11, 6, 0.03) 0px 0px 24px 6px` on both).
+  `BookmarksScreen.tsx:321` has the identical broken `shadow-[--shadow-card]`
+  class and was left untouched (out of scope this round, not silently
+  fixed) — worth a follow-up.
+- **030 executed exactly as planned** — `index.html`'s Google Fonts link
+  now also loads EB Garamond; `--font-family-serif-card` repointed to it;
+  `--font-size-home-title`/`--letter-spacing-home-title` updated to
+  24px/-0.24px; new `--font-size-title-serif`/`--letter-spacing-title-serif`
+  tokens added and applied to `TutorialCard.tsx`'s BigCard title and all
+  four overlay screens' header titles (Account/My Products/
+  Bookmarks/About). Live-verified: `document.fonts.check("16px 'EB
+  Garamond'")` returns `true`; computed `fontFamily` on all six titles
+  reads `"EB Garamond", Georgia, "Times New Roman", serif` at `24px`/
+  `-0.24px`.
+- **031 executed exactly as planned** — `--radius-image-list` (12px)
+  added; `ProductCard.tsx` gained an `imageRadius` prop (default
+  `'default'`, so `StepScreen.tsx`'s call site needed no change);
+  `AllStepsView.tsx`'s one call site passes `imageRadius="list"`;
+  `MyProductsScreen.tsx`'s own inline product-image block repointed
+  directly. Live-verified: StepScreen's product images still `8px`;
+  AllStepsView's and My Products' now `12px`.
+- **032 executed exactly as planned** — `--color-header-icon-border`
+  (`rgba(44,41,38,0.2)` → `#dad8d7`) updated in `tokens.css`; cascades via
+  the existing `HEADER_CHIP_STYLE`. Live-verified: a header button's inset
+  border resolved to `rgb(218, 216, 215)` (`#dad8d7`) exactly.
+
+Mechanical check across all six: `npx tsc -b` clean throughout (including
+after the 029 shadow fix); `oxlint` shows only pre-existing warnings
+unrelated to these changes. One unrelated console error surfaced during
+live verification (`InvalidStateError: Transition was aborted because of
+invalid state`) — traced to this session's own rapid-fire `navigate()`
+calls overlapping a view transition mid-flight, not a regression from any
+of these six plans (none of them touch routing/transitions).
+
+**033-036 are a second wave of the same pass**, prompted directly by the
+user pushing back that the first wave still left visible drift ("I still
+see things that didn't change... maybe it's worth going screen by
+screen"). That challenge was correct: the original sampling of 6 of 12
+frames had extrapolated Bookmarks' and About's values by analogy rather
+than confirming them, and had completely missed
+`ProductDetailOverlay.tsx` — a component whose Figma demo frame is a
+*second* "Home/About" duplicate (node `896:10461`) repurposed to show
+"Product Detail" instead, easy to miss since the frame's own internal name
+never changed. Checking the three remaining unexplored duplicates
+confirmed they were just repeat locked/coming-soon card states (nothing
+new), but the second `Home/Profile-MyProducts` duplicate (`896:10559`)
+turned out to be Bookmarks, not a repeat. **034-036 executed; 033 was
+explicitly deferred by the user** ("ignore the 033, i think that's related
+to the previous home design") even though its container was pulled from
+the same "New" section as its siblings — left as-is per that call, not
+silently dropped.
+
+- **034 executed exactly as planned** — `--color-border-hairline`
+  (`rgba(44,41,38,0.2)` → `#dad8d7`) updated in `tokens.css`, the same
+  migration as plan 032 just missed on a sibling token. Live-verified: a
+  product image's border and the Product Detail hero image's border both
+  resolve to `rgb(218, 216, 215)` (`#dad8d7`).
+- **035 executed exactly as planned** — `ProductDetailOverlay.tsx`'s
+  "Product Detail" title moved onto the same
+  `--font-family-serif-card`/`--font-size-title-serif`/
+  `--letter-spacing-title-serif` tokens plan 030 already introduced (its
+  fifth call site, missed the first time). Live-verified: computed
+  `fontFamily` reads `"EB Garamond", Georgia, "Times New Roman", serif` at
+  `24px`/`-0.24px`.
+- **036 executed exactly as planned** — new `--shadow-product-detail-image`
+  token added (`0px 0px 24px 0px rgba(14,11,6,0.03)` — a genuinely
+  distinct value, not a rounding of any existing shadow token); the hero
+  image `motion.div` resized `238px` → `282px` and repointed to it.
+  Live-verified: computed `width`/`height` `282px`, `boxShadow`
+  `rgba(14, 11, 6, 0.03) 0px 0px 24px 0px`.
+
+The larger finding raised alongside these — the product name's 28px EB
+Garamond headline treatment and a new "Shade/Category/Purchase on"
+info-row section in `ProductDetailOverlay.tsx` — was held pending a data
+question (the `Product` type had no purchase-date field, and category,
+while already tracked, wasn't shown here). The user resolved it directly:
+"add the categories missing in this page, put dummy data if needed" —
+**037** executed on that basis. `Product.category` turned out to already
+be real data, just unwired to this screen; only `purchasedAt` needed new
+placeholder values (added per-product, e.g. `06/2025` for MERIT's The
+Minimalist — matching Figma's own real example — through `11/2024` for
+Chanel's Les 4 Ombres). The Shade row's second "undertone" value shown in
+Figma's one example ("Ochre" / "Light (warm)") was deliberately *not*
+fabricated — this app's existing shade data (e.g. "79 - Spices") doesn't
+carry a second part, and inventing one per product would be more invented
+than what was asked for.
+
+Mechanical check across 034-037: `npx tsc -b` clean; `npm run lint` shows
+only pre-existing warnings; no new console errors during live
+verification (both a with-shade product, Chanel Les 4 Ombres, and a
+without-shade product, MERIT The Minimalist, were checked to confirm the
+Shade row correctly appears/disappears rather than rendering blank).
+
 | # | Plan | Severity | Category | Screen impact | Status |
 | --- | --- | --- | --- | --- | --- |
 | 001 | [Fix ease-in on the fly-off's disappear-faster fade](001-fly-off-fade-easing.md) | HIGH | Easing & duration | Home | DONE |
@@ -114,6 +250,20 @@ handoff, this README only tracks plan execution.
 | 024 | [Give CopyEmailButton's "Couldn't copy" failure state its own motion cue](024-copy-email-failure-shake.md) | LOW | Missed opportunity | About/Info overlay | DONE |
 | 025 | [Fix Toast's entrance/exit duration to match a real token](025-toast-duration-token.md) | LOW | Cohesion & tokens | Toast (Account, My Products) | DONE |
 | 026 | [Give coming-soon thumbnails their own calmer entrance](026-coming-soon-thumbnail-calm-entrance.md) | MEDIUM | Purpose & frequency | Home (tutorial card detail face) | DONE |
+| 027 | [Migrate ink tokens from alpha-derived grays to flat Figma swatches](027-ink-color-flat-migration.md) | HIGH | Cohesion & tokens | App-wide | DONE |
+| 028 | [Correct --gradient-bg-home's drifted hex/stop values](028-home-gradient-stop-correction.md) | MEDIUM | Cohesion & tokens | Home, Account, Bookmarks, My Products, Tutorial step | DONE |
+| 029 | [Give sheet/list containers their own elevated shadow token](029-sheet-container-elevated-shadow.md) | MEDIUM | Cohesion & tokens | Tutorial step, All steps view, My Products, Account | DONE |
+| 030 | [Move shared serif title typography from Cactus Classical Serif to EB Garamond](030-serif-title-eb-garamond.md) | MEDIUM-HIGH | Cohesion & tokens | Home, Tutorial card, Account, My Products, Bookmarks, About | DONE |
+| 031 | [Split product-image corner radius: AllStepsView/My Products want 12px, StepScreen stays 8px](031-product-image-radius-split.md) | MEDIUM | Cohesion & tokens | All steps view, My Products | DONE |
+| 032 | [Header icon-button border: alpha approximation → flat Figma swatch](032-header-icon-border-flat-swatch.md) | LOW | Cohesion & tokens | App-wide (header icon buttons) | DONE |
+| 033 | [Bookmarks catches up to the shadow/radius fixes already applied to its sibling screens](033-bookmarks-shadow-radius-catchup.md) | MEDIUM | Cohesion & tokens | Bookmarks | DEFERRED — user's call |
+| 034 | [--color-border-hairline: alpha approximation → flat Figma swatch](034-border-hairline-flat-swatch.md) | LOW-MEDIUM | Cohesion & tokens | App-wide (product image borders) | DONE |
+| 035 | [Product Detail overlay's title: same stale pattern plan 030 already fixed everywhere else](035-product-detail-title-typography.md) | MEDIUM | Cohesion & tokens | Product Detail overlay | DONE |
+| 036 | [Product Detail overlay's hero image: bigger card, new shadow value](036-product-detail-hero-image-treatment.md) | MEDIUM | Cohesion & tokens | Product Detail overlay | DONE |
+| 037 | [Add the Shade/Category/Purchase-on info rows to ProductDetailOverlay](037-product-detail-info-rows.md) | MEDIUM-HIGH | Missing feature / design-source sync | Product Detail overlay | DONE |
+| 037 | [Product Detail overlay: product-name headline + Shade/Category/Purchase-on rows](037-product-detail-info-rows.md) | MEDIUM-HIGH | Missed content / cohesion & tokens | Product Detail overlay | DONE |
+| 038 | [My Products screen: icon/text color bugs + missing sheet-container border](038-my-products-token-fixes.md) | MEDIUM | Cohesion & tokens | My Products (+ Account/All Steps/Step screen containers) | DONE |
+| 039 | [Step screen: header/badge/title/description/sheet color+typography+radius fixes](039-step-screen-verify-pass.md) | MEDIUM | Cohesion & tokens | Tutorial step screens (all 7) | DONE |
 
 **002's specific fix (`isFlipping` local state) no longer exists in the
 code** — it was removed during the Start Over two-face-flip redesign

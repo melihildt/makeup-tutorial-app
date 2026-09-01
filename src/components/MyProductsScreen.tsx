@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { CloseIcon, MenuDotsIcon, PlusIcon } from './icons'
 import { Toast, useToast } from './Toast'
@@ -61,12 +61,19 @@ function MyProductRow({
       className="flex w-full cursor-pointer items-start gap-4 active:scale-[0.98] has-[button:active]:scale-100"
       style={{ transition: 'transform var(--duration-instant) var(--ease-out-quart)' }}
     >
-      <div className="h-[--size-product-image-h] w-[--size-product-image-w] shrink-0 overflow-hidden rounded-[--radius-image] border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]">
+      <div className="h-[--size-product-image-h] w-[--size-product-image-w] shrink-0 overflow-hidden rounded-[--radius-image-list] border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]">
         {product.image && <img src={product.image} alt="" className="size-full object-cover" />}
       </div>
       <div className={`flex flex-1 gap-[3px] ${product.shade ? 'h-[--size-product-image-h] items-start' : 'items-center'}`}>
+        {/* text-[--color-tutorial-card-text], not ProductCard.tsx's
+            --color-text-product (this row copies that component's layout,
+            not its color) — a fresh pull of this screen's own frame
+            (896:10192) shows brand/name text as a flat #21201f on every
+            product row, not the 80%-alpha ink --color-text-product bakes
+            in. Different node from ProductCard's own StepScreen context,
+            genuinely a different value there. */}
         <div
-          className={`flex flex-1 flex-col text-[--color-text-product] tracking-[--letter-spacing-tight] ${
+          className={`flex flex-1 flex-col text-[--color-tutorial-card-text] tracking-[--letter-spacing-tight] ${
             product.shade ? 'h-full justify-between' : ''
           }`}
         >
@@ -79,7 +86,14 @@ function MyProductRow({
             </p>
           </div>
           {product.shade && (
-            <p className="text-[length:var(--font-size-product-sub)] font-[--font-weight-medium] leading-[18px] tracking-[--letter-spacing-shade] text-[--color-text-primary] opacity-50">
+            // text-[--color-shade-text-list], not --color-text-primary +
+            // opacity-50 (verify pass, 2026-09-01) — a fresh pull of this
+            // screen's own shade line (896:10243, "79 - Spices") shows a
+            // flat #656462 fill, not an alpha-derived ink color; the old
+            // pair composited to a visibly lighter/cooler gray. See that
+            // token's own tokens.css comment for why it's distinct from
+            // ProductCard's --color-text-muted-list.
+            <p className="text-[length:var(--font-size-product-sub)] font-[--font-weight-medium] leading-[18px] tracking-[--letter-spacing-shade] text-[--color-shade-text-list]">
               {product.shade}
             </p>
           )}
@@ -109,7 +123,9 @@ function MyProductRow({
           // all — every other one already gets this for free via the same
           // class.
           className={`header-icon-button flex shrink-0 items-center justify-center p-2 ${product.shade ? 'self-start' : ''}`}
-          style={{ color: 'var(--color-tutorial-card-text)' }}
+          // --color-menu-dots-icon (#cfcecc, flat) — see MenuDotsIcon's own
+          // comment in icons.tsx for why this isn't --color-tutorial-card-text.
+          style={{ color: 'var(--color-menu-dots-icon)' }}
         >
           <span className="flex size-[20px] items-center justify-center">
             <MenuDotsIcon />
@@ -138,6 +154,23 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const groups = getMyProducts()
 
+  // hasOverflow (user-reported): the card's own pb-10 exists purely so
+  // ScrollEndFade has clean surface to fade against instead of washing over
+  // the last row (ScrollEndFade.tsx) — but that class was unconditional, so
+  // a short list still reserved 40px of dead space below the last row even
+  // though the list never scrolls. Same fix, same reasoning as
+  // BookmarksScreen's own hasOverflow (see its comment there) — this screen
+  // just hadn't gotten it yet. Simpler than that one, though: this screen's
+  // list never shrinks in place (no delete here, unlike un-saving a
+  // bookmark), so a plain mount-time check is enough — no need for
+  // Bookmarks' extra re-check tied to the list's own length changing.
+  const [hasOverflow, setHasOverflow] = useState(false)
+  useLayoutEffect(() => {
+    const el = scrollerRef.current
+    if (!el) return
+    setHasOverflow(el.scrollHeight > el.clientHeight)
+  }, [scrollerRef])
+
   return (
     <div
       className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl md:py-6"
@@ -151,8 +184,18 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
       >
         <div className="flex items-start justify-between">
           <p
-            className="text-[20px] tracking-[-0.4px]"
-            style={{ color: 'var(--color-info-overlay-heading)', fontWeight: 'var(--font-weight-medium)' }}
+            style={{
+              fontFamily: 'var(--font-family-serif-card)',
+              fontSize: 'var(--font-size-title-serif)',
+              letterSpacing: 'var(--letter-spacing-title-serif)',
+              color: 'var(--color-info-overlay-heading)',
+              // --font-weight-regular, not --font-weight-medium (verify
+              // pass, 2026-09-01) — a fresh pull of this title (896:10195)
+              // shows 'EB_Garamond:Regular'/font-normal, matching
+              // BookmarksScreen's own title (already on -regular, see its
+              // own comment) — this one just hadn't been re-checked since.
+              fontWeight: 'var(--font-weight-regular)',
+            }}
           >
             My Products
           </p>
@@ -162,7 +205,10 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
               onClick={showToast}
               aria-label="Add product"
               className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
-              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-tutorial-card-text)' }}
+              // --color-info-overlay-heading, not --color-tutorial-card-text
+              // — see PlusIcon's own comment in icons.tsx for why (same
+              // fillOpacity bug as every close-button's CloseIcon).
+              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-info-overlay-heading)' }}
             >
               <PlusIcon />
             </button>
@@ -171,7 +217,9 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
               onClick={onClose}
               aria-label="Close"
               className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
-              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-tutorial-card-text)' }}
+              // --color-info-overlay-heading, not --color-tutorial-card-text
+              // — see InfoOverlay.tsx's own close-button comment for why.
+              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-info-overlay-heading)' }}
             >
               <CloseIcon />
             </button>
@@ -179,12 +227,33 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
         </div>
 
         <div
-          // pb-10 (not p-[--space-sm] all around) — reserves the same 40px
-          // of clean surface below the last row that ScrollEndFade's own
-          // height covers, so the fade blends into real card background
-          // instead of washing over the last product row (same reasoning
-          // as AllStepsView's own card padding — see ScrollEndFade.tsx).
-          className="mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] bg-[--color-surface] px-[--space-sm] pb-10 pt-[--space-sm] shadow-[--shadow-card]"
+          // pb-10 only while hasOverflow (verify pass, 2026-09-01, was
+          // unconditional) — reserves the same 40px of clean surface below
+          // the last row that ScrollEndFade's own height covers, so the
+          // fade blends into real card background instead of washing over
+          // the last product row (same reasoning as AllStepsView's own card
+          // padding — see ScrollEndFade.tsx), but only paid when the list
+          // actually overflows. A short list instead gets pb-[--space-2xs]
+          // — the same 8px this card's own pt already uses, matching
+          // Figma's plain, symmetric py-[8px] (node 896:10202) — instead of
+          // always reserving 40px of dead space a non-scrolling list never
+          // needs. Same bug, same fix as BookmarksScreen's own hasOverflow
+          // (see its comment there and hasOverflow's own comment above);
+          // this screen's own no-overflow value is 8px, not Bookmarks' 16px,
+          // since the two screens' Container nodes use different padding in
+          // Figma to begin with.
+          // pt-[--space-2xs] (8px), not --space-sm (16px) — a fresh pull of
+          // this screen's own Container node (896:10202) shows py-[8px],
+          // matching AccountScreen's own options card (already on
+          // --space-2xs); this one just hadn't been corrected yet.
+          // border-[--color-container-border] — the same node's own 0.5px
+          // #F1EFEE stroke, confirmed on all four --shadow-card-elevated
+          // screens (see that token's own comment) and missing everywhere
+          // until now.
+          className={`mt-4 flex w-full flex-col gap-10 rounded-[--radius-card] border-[0.5px] border-solid border-[--color-container-border] bg-[--color-surface] px-[--space-sm] pt-[--space-2xs] ${
+            hasOverflow ? 'pb-10' : 'pb-[--space-2xs]'
+          }`}
+          style={{ boxShadow: 'var(--shadow-card-elevated)' }}
           data-node-id="734:7560"
         >
           {groups.map((group) => (
@@ -196,8 +265,12 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
                 >
                   {group.category}
                 </p>
+                {/* text-[--color-info-overlay-heading] (#656462 flat), not
+                    --color-text-product — same fresh pull (896:10192) shows
+                    this "N product(s)" count in that flat muted tone, not
+                    the 80%-alpha ink --color-text-product bakes in. */}
                 <p
-                  className="shrink-0 whitespace-nowrap text-[length:var(--font-size-badge)] tracking-[--letter-spacing-shade] text-[--color-text-product]"
+                  className="shrink-0 whitespace-nowrap text-[length:var(--font-size-badge)] tracking-[--letter-spacing-shade] text-[--color-info-overlay-heading]"
                   style={{ fontWeight: 'var(--font-weight-medium)' }}
                 >
                   {group.products.length} {group.products.length === 1 ? 'product' : 'products'}

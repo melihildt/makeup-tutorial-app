@@ -46,6 +46,26 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
     if (product) setDisplayedProduct(product)
   }, [product])
 
+  // Shade/Category/Purchase-on info rows (node 896:10489-896:10501,
+  // plans/037-product-detail-info-rows.md) — Category is real data
+  // (Product.category already existed, just wasn't shown here); Purchase
+  // on uses Product.purchasedAt, placeholder data added alongside this
+  // section since no real purchase-tracking feature exists yet. Shade
+  // reuses the existing Product.shade field, just moved into this row
+  // layout instead of its old standalone muted line. Built as a list and
+  // filtered rather than three separate conditionals so "is this the
+  // first row" (for the shared top border) doesn't have to be
+  // hand-tracked across three near-identical blocks.
+  const detailRows = displayedProduct
+    ? (
+        [
+          displayedProduct.shade ? { label: 'Shade', value: displayedProduct.shade } : null,
+          { label: 'Category', value: displayedProduct.category },
+          displayedProduct.purchasedAt ? { label: 'Purchase on', value: displayedProduct.purchasedAt } : null,
+        ] as const
+      ).filter((row): row is { label: string; value: string } => row !== null)
+    : []
+
   return (
     <AnimatePresence>
       {open && (
@@ -59,7 +79,10 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
           className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-2xl md:py-6"
           style={{
             background:
-              'linear-gradient(0deg, var(--color-info-overlay-tint-top) 25.235%, var(--color-info-overlay-tint-bottom) 84.117%)',
+              // 180deg, not 0deg — same reversed-direction bug as
+              // InfoOverlay.tsx's own copy of this line (fixed alongside
+              // this one); see that file's comment for the full reasoning.
+              'linear-gradient(180deg, var(--color-info-overlay-tint-top) 25.235%, var(--color-info-overlay-tint-bottom) 84.117%)',
             backdropFilter: 'blur(var(--blur-info-overlay-backdrop))',
             WebkitBackdropFilter: 'blur(var(--blur-info-overlay-backdrop))',
           }}
@@ -73,8 +96,18 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
               AccountScreen/MyProductsScreen's own title row. */}
           <div className="flex shrink-0 items-start justify-between px-[--space-sm] pt-[--space-2xs]">
             <p
-              className="text-[20px] tracking-[-0.4px]"
-              style={{ color: 'var(--color-info-overlay-heading)', fontWeight: 'var(--font-weight-medium)' }}
+              style={{
+                fontFamily: 'var(--font-family-serif-card)',
+                fontSize: 'var(--font-size-title-serif)',
+                letterSpacing: 'var(--letter-spacing-title-serif)',
+                color: 'var(--color-info-overlay-heading)',
+                // --font-weight-regular, not --font-weight-medium (verify
+                // pass, 2026-09-01) — a fresh pull of this title (896:10481)
+                // shows 'EB_Garamond:Regular'/font-normal, matching
+                // BookmarksScreen's own title (already on -regular, see its
+                // own comment) — this one just hadn't been re-checked since.
+                fontWeight: 'var(--font-weight-regular)',
+              }}
             >
               Product Detail
             </p>
@@ -91,15 +124,26 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
               onClick={onClose}
               aria-label="Close product detail"
               className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
-              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-tutorial-card-text)' }}
+              // --color-info-overlay-heading, not --color-tutorial-card-text
+              // — see InfoOverlay.tsx's own close-button comment for why.
+              style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-info-overlay-heading)' }}
             >
               <CloseIcon />
             </button>
           </div>
 
           {/* Centered in the remaining space, same technique as
-              InfoOverlay's own card+links and HomeScreen's tutorial stack. */}
-          <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-6">
+              InfoOverlay's own card+links and HomeScreen's tutorial stack.
+
+              gap-[40px], not gap-6 (verify pass, 2026-09-01) — a fresh pull
+              of this screen's own content column (896:10484) shows the
+              image→title spacing comes from the "product-name" block's own
+              pt-[40px] (node 896:10486), not a shared 24px gap. The other
+              two rows below (Shade/Category/Purchase on) don't take part in
+              this gap at all — they're separate siblings whose own py-[16px]
+              + border already sets their spacing, unaffected by this
+              value. */}
+          <div className="flex flex-1 flex-col items-center justify-center gap-[40px] overflow-y-auto px-6 py-6">
             {displayedProduct && (
               <>
                 {/* object-contain, not ProductCard/MyProductRow's
@@ -121,15 +165,14 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
                     un-animated below its card) — only the one hero visual
                     gets the treatment, not everything on screen. */}
                 <motion.div
-                  className="relative size-[238px] shrink-0 overflow-hidden rounded-[24px] border border-solid"
+                  className="relative size-[282px] shrink-0 overflow-hidden rounded-[24px] border border-solid"
                   style={{
                     borderColor: 'var(--color-border-hairline)',
-                    // --shadow-filter-chip's own exact value (code review
-                    // finding), hand-copied as a raw literal instead of
-                    // referencing the token — same value HomeScreen.tsx's
-                    // filter chips and InfoOverlay's own card already
-                    // reference by name.
-                    boxShadow: 'var(--shadow-filter-chip)',
+                    // V6 (plans/036-product-detail-hero-image-treatment.md):
+                    // Figma's "New" section shows a distinct shadow value
+                    // here (24px blur, 0 spread) — not --shadow-filter-chip
+                    // (8px blur) or --shadow-card-elevated (24px/6px).
+                    boxShadow: 'var(--shadow-product-detail-image)',
                     background: 'var(--color-image-placeholder)',
                   }}
                   initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: 'scale(0.96)' }}
@@ -148,18 +191,85 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
                     <img src={displayedProduct.image} alt="" className="size-full object-contain" />
                   )}
                 </motion.div>
-                <div className="flex w-full max-w-[238px] flex-col gap-[2px]">
-                  <div
-                    className="flex flex-col gap-[2px] text-[length:var(--font-size-product-name)] tracking-[--letter-spacing-tight] text-[--color-text-product]"
-                  >
-                    <p className="capitalize font-[--font-weight-semibold]">{displayedProduct.brand}</p>
-                    <p className="font-[--font-weight-medium]">{displayedProduct.name}</p>
-                  </div>
-                  {displayedProduct.shade && (
-                    <p className="text-[length:var(--font-size-product-sub)] font-[--font-weight-medium] tracking-[--letter-spacing-shade] text-[--color-text-primary] opacity-50">
-                      {displayedProduct.shade}
+                {/* gap-[16px] on this wrapper (was gap-[8px]) and
+                    gap-[8px] on the brand/title pair below (was gap-[2px])
+                    — verify pass, 2026-09-01: both were swapped relative to
+                    the fresh pull. The 8px value is actually the
+                    brand→title spacing (product-name's own gap, node
+                    896:10486), and 16px is the title→rows spacing
+                    (product-name's own pb-[16px], the gap before the Shade
+                    row's top border). */}
+                <div className="flex w-full max-w-[282px] flex-col gap-[16px]">
+                  <div className="flex flex-col gap-[8px]">
+                    <p
+                      className="capitalize"
+                      style={{
+                        fontSize: 'var(--font-size-product-name)',
+                        fontWeight: 'var(--font-weight-semibold)',
+                        // No letterSpacing (was 0.14px, i.e. the pull's own
+                        // 1% tracking on this 14px node 896:10487) — removed
+                        // per the user's own ask, not a Figma-sourced
+                        // correction.
+                        color: 'var(--color-tutorial-card-text)',
+                      }}
+                    >
+                      {displayedProduct.brand}
                     </p>
-                  )}
+                    {/* Product name as its own headline (node 896:10488) —
+                        no longer sized/colored to match the brand line
+                        above it, the same serif treatment every screen
+                        title in this app now shares (plans/030, /035). */}
+                    <p
+                      style={{
+                        fontFamily: 'var(--font-family-serif-card)',
+                        fontSize: 'var(--font-size-product-detail-title)',
+                        letterSpacing: 'var(--letter-spacing-product-detail-title)',
+                        color: 'var(--color-tutorial-card-text)',
+                      }}
+                    >
+                      {displayedProduct.name}
+                    </p>
+                  </div>
+                  {/* Shade/Category/Purchase-on rows (node 896:10489-
+                      896:10501) — see detailRows' own comment above for why
+                      this is a mapped list instead of three hand-written
+                      blocks. First row gets a top border too (closing off
+                      the block from the name above it); every row gets its
+                      own bottom border. */}
+                  <div className="flex flex-col">
+                    {detailRows.map(({ label, value }, index) => (
+                      <div
+                        key={label}
+                        className="flex items-center justify-between py-4"
+                        style={{
+                          borderTop: index === 0 ? '0.5px solid var(--color-detail-row-border)' : undefined,
+                          borderBottom: '0.5px solid var(--color-detail-row-border)',
+                        }}
+                      >
+                        <p
+                          className="uppercase"
+                          style={{
+                            fontSize: 'var(--font-size-detail-row-label)',
+                            letterSpacing: 'var(--letter-spacing-detail-row-label)',
+                            fontWeight: 'var(--font-weight-medium)',
+                            color: 'var(--color-info-overlay-heading)',
+                          }}
+                        >
+                          {label}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 'var(--font-size-detail-row-value)',
+                            letterSpacing: 'var(--letter-spacing-detail-row-value)',
+                            fontWeight: 'var(--font-weight-medium)',
+                            color: 'var(--color-tutorial-card-text)',
+                          }}
+                        >
+                          {value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </>
             )}

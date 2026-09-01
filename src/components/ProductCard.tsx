@@ -15,6 +15,12 @@ type ProductCardProps = {
    *  from. Defaults true so any future caller that doesn't pass it still
    *  gets the animation rather than silently losing it. */
   animate?: boolean
+  /** Image corner radius variant. 'default' (--radius-image, 8px) is
+   *  StepScreen's own per-step product row. 'list' (--radius-image-list,
+   *  12px) is AllStepsView's per-step-group list — a real, confirmed
+   *  difference in the current Figma file even though both call this same
+   *  shared component, not a rounding of one value into the other. */
+  imageRadius?: 'default' | 'list'
   onToggleChecked?: () => void
 }
 
@@ -28,19 +34,37 @@ type ProductCardProps = {
  * brand/name pinned to the top and shade to the bottom (matching Figma);
  * without one, the row is simply vertically centered.
  */
-export function ProductCard({ image, brand, name, shade, checked, animate = true, onToggleChecked }: ProductCardProps) {
+export function ProductCard({ image, brand, name, shade, checked, animate = true, imageRadius = 'default', onToggleChecked }: ProductCardProps) {
+  const isList = imageRadius === 'list'
+  const radiusVar = isList ? '--radius-image-list' : '--radius-image'
+  // Verify pass (2026-09-01): brand/name color used to branch on isList —
+  // AllStepsView's context got the correct flat --color-tutorial-card-text
+  // (confirmed earlier), while StepScreen's own (imageRadius="default")
+  // stayed on the pre-V6 alpha-derived --color-text-product, on the theory
+  // that node hadn't been re-pulled since. A fresh, direct pull of Step 7's
+  // own product rows (node 896:9746-9748, 896:9756-9758) shows the exact
+  // same flat #21201f swatch there too — not a different value after all,
+  // just the same flat-swatch migration StepScreen's own product rows had
+  // never actually been re-checked against. Collapsed to one unconditional
+  // value; the isList flag still exists for the shade-line color below,
+  // which genuinely does differ.
+  const nameColorVar = '--color-tutorial-card-text'
   return (
     <div className="flex w-full items-start gap-4">
-      <div className="h-[--size-product-image-h] w-[--size-product-image-w] shrink-0 overflow-hidden rounded-[--radius-image] border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]">
+      <div
+        className="h-[--size-product-image-h] w-[--size-product-image-w] shrink-0 overflow-hidden border-[0.5px] border-[--color-border-hairline] bg-[--color-image-placeholder]"
+        style={{ borderRadius: `var(${radiusVar})` }}
+      >
         {image && <img src={image} alt="" className="size-full object-cover" />}
       </div>
       <div
         className={`flex flex-1 gap-[3px] ${shade ? 'h-[--size-product-image-h] items-start' : 'items-center'}`}
       >
         <div
-          className={`flex flex-1 flex-col text-[--color-text-product] tracking-[--letter-spacing-tight] ${
+          className={`flex flex-1 flex-col tracking-[--letter-spacing-tight] ${
             shade ? 'h-full justify-between' : ''
           }`}
+          style={{ color: `var(${nameColorVar})` }}
         >
           <div>
             <p className="text-[length:var(--font-size-product-name)] font-[--font-weight-semibold] leading-[18px]">
@@ -52,7 +76,9 @@ export function ProductCard({ image, brand, name, shade, checked, animate = true
           </div>
           {shade && (
             <p
-              className="text-[length:var(--font-size-product-sub)] font-[--font-weight-medium] leading-[18px] tracking-[--letter-spacing-shade] text-[--color-text-primary] opacity-50"
+              className={`text-[length:var(--font-size-product-sub)] font-[--font-weight-medium] leading-[18px] tracking-[--letter-spacing-shade] ${
+                isList ? 'text-[--color-text-muted-list]' : 'text-[--color-text-primary] opacity-50'
+              }`}
             >
               {shade}
             </p>

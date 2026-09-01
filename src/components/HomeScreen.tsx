@@ -39,13 +39,45 @@ type HomeScreenProps = {
 // icons' own V2/V4 revision history (why they're single inline SVGs, the
 // 24px→20px size/opacity changes, InfoIcon/UserIcon being new in V4).
 
-/** One Day/Night/Glam option: label, its own photo-texture + mix-blend-mode
- * tint (see LookSelectorChip below), and the icon shown only while selected.
- * `glow` is a per-type colored ambient shadow used only on the selected
- * state — inferred from the one sample the source design shows selected
- * (Day: a gold-tinted glow matching its own gold overlay tint); Night/Glam
- * follow the same pattern with their own tint color rather than reusing
- * Day's gold glow verbatim.
+/** One Day/Night/Glam option: label, its own photo-texture + two-layer
+ * mix-blend-mode tint (see LookSelectorChip below — a flat `overlayTint`/
+ * `overlayBlend` layer, plus a `gradient` layer on top), and the icon —
+ * both now shown only while the chip is selected. `glow` is a per-type
+ * colored ambient shadow used only on the selected state — inferred from
+ * the one sample the source design shows selected (Day: a gold-tinted
+ * glow matching its own gold overlay tint); Night/Glam follow the same
+ * pattern with their own tint color rather than reusing Day's gold glow
+ * verbatim.
+ *
+ * Verify pass (2026-09-01, Home redesign, node 644:2630 — the LookSelector
+ * component's own 6 named variants, Type={Day,Night,Glam} x
+ * Selected?={Selected,Unselected}): a fresh pull of all six states at once
+ * (rather than inferring Night/Glam from Day's one sample) surfaced real
+ * per-type differences this file's single `tint`/`blend` pair couldn't
+ * express:
+ * - The resting/unselected chip no longer shows any texture or icon at
+ *   all — a plain translucent chip (see LookSelectorChip below) — so
+ *   `overlayTint`/`overlayBlend`/`gradient`/icon only ever render for the
+ *   selected chip now.
+ * - Two stacked tint layers when selected, not one: a flat `overlayTint`
+ *   (`overlayBlend`), then a `gradient` layer on top of that. Day/Glam's
+ *   flat layer blends via `overlay`; Night's via `soft-light`. Night's
+ *   flat color also changed (#688db6 → #81b6f0) — this file's `tint`
+ *   field is kept only for the *flash sweep*'s own blend target below,
+ *   not the resting-layer color, so it's intentionally NOT the same value
+ *   as `overlayTint` for Night.
+ * - `overlayBlend` and `blend` (the flash sweep's own blend mode) can
+ *   differ per type on purpose: Glam's fresh-pulled flat layer blends via
+ *   `overlay`, but the flash sweep stays on `soft-light` — the one the
+ *   user already confirmed separately (see `flash`'s own comment below) —
+ *   so these are two independent fields, not one shared value.
+ * - `borderSelected`/`deepTint` (new): the selected chip's border and
+ *   label/icon color are each their own fresh-pulled value, not derived
+ *   from `tint` by a shared formula — Day's border is its own tint at 50%
+ *   opacity, but Night's is the shared ink color at 50% (the same value
+ *   this app's old, since-removed --color-filter-chip-border-selected
+ *   token had) and Glam's is a third, distinct muted-sage rgba — so each
+ *   is its own literal per-type value rather than computed.
  *
  * `flash` is the press-flash sweep (see chip-flash-sweep, index.css) — just
  * `peak` now, the one color that actually moves. The gradient's own two
@@ -70,11 +102,28 @@ export const LOOK_TYPES: Array<{
   id: LookType
   label: string
   texture: string
+  /** The flash sweep's own blend target (chip-flash-sweep, index.css) —
+   *  not necessarily the same value as `overlayBlend` below, see this
+   *  const's own module comment (Glam in particular). */
   tint: string
   blend: 'overlay' | 'soft-light'
+  /** Selected chip's flat tint layer. */
+  overlayTint: string
+  overlayBlend: 'overlay' | 'soft-light'
+  /** Selected chip's second tint layer, on top of overlayTint/overlayBlend. */
+  gradient: { from: string; to: string; blend: 'soft-light' | 'color-burn' }
   glow: string
+  /** Selected chip's own border color — its own literal per-type value,
+   *  not `tint`/`overlayTint` at a shared alpha (see this const's own
+   *  module comment). */
+  borderSelected: string
+  /** Selected chip's label + icon color. */
+  deepTint: string
   flash?: { peak: string }
-  Icon: () => React.JSX.Element
+  /** Takes `color` now (V5, icons.tsx) — each type's own `deepTint`, not a
+   *  shared ink color any more, see LOOK_TYPES' and icons.tsx's own
+   *  comments. */
+  Icon: (props: { color: string }) => React.JSX.Element
 }> = [
   {
     id: 'day',
@@ -82,7 +131,12 @@ export const LOOK_TYPES: Array<{
     texture: dayTexture,
     tint: '#e3b345',
     blend: 'overlay',
+    overlayTint: '#e3b345',
+    overlayBlend: 'overlay',
+    gradient: { from: '#d4cd6c', to: '#ff6969', blend: 'soft-light' },
     glow: 'rgba(227, 179, 69, 0.2)',
+    borderSelected: 'rgba(227, 179, 69, 0.5)',
+    deepTint: '#5a260b',
     flash: { peak: '#ffb200' },
     Icon: SunIcon,
   },
@@ -92,7 +146,12 @@ export const LOOK_TYPES: Array<{
     texture: nightTexture,
     tint: '#688db6',
     blend: 'soft-light',
+    overlayTint: '#81b6f0',
+    overlayBlend: 'soft-light',
+    gradient: { from: 'rgba(136, 39, 255, 0.15)', to: 'rgba(32, 120, 167, 0.15)', blend: 'color-burn' },
     glow: 'rgba(104, 141, 182, 0.2)',
+    borderSelected: 'rgba(44, 41, 38, 0.5)',
+    deepTint: '#0c2560',
     flash: { peak: '#0079ff' },
     Icon: MoonIcon,
   },
@@ -102,7 +161,12 @@ export const LOOK_TYPES: Array<{
     texture: glamTexture,
     tint: '#beef9e',
     blend: 'soft-light',
+    overlayTint: '#beef9e',
+    overlayBlend: 'overlay',
+    gradient: { from: '#fff133', to: '#3c7c13', blend: 'soft-light' },
     glow: 'rgba(190, 239, 158, 0.2)',
+    borderSelected: 'rgba(134, 167, 132, 0.5)',
+    deepTint: '#113c0e',
     flash: { peak: '#99ff58' },
     Icon: DiamondIcon,
   },
@@ -117,7 +181,7 @@ export function LookSelectorChip({
   selected: boolean
   onClick: () => void
 }) {
-  const { label, texture, tint, blend, glow, flash, Icon } = type
+  const { label, texture, blend, overlayTint, overlayBlend, gradient, glow, borderSelected, deepTint, flash, Icon } = type
   // Counts presses, not just "is flashing" — needs a value that's
   // different every time so `key={flashCount}` (below) actually forces a
   // remount on every press, not just the first. Starts at 0 and the
@@ -141,24 +205,50 @@ export function LookSelectorChip({
       // select-none: a press/hold on this chip was landing on mobile as a
       // text-selection callout on the label instead of registering as a
       // tap — this is a press-driven control, not selectable text.
+      //
+      // Verify pass (2026-09-01, Home redesign, node 644:2630): border and
+      // shadow both moved off the old shared ink-based tokens onto
+      // per-type/state values — see LOOK_TYPES' own module comment for why
+      // `borderSelected` is a literal per-type value rather than a shared
+      // formula. Unselected shadow reuses --shadow-card-elevated directly
+      // (confirmed exact match via its own named Figma variable,
+      // "BeautyNotes/Shadow_2" — the same elevated-sheet shadow every
+      // other container in the app already cites), not --shadow-filter-chip
+      // (deprecated — see its own tokens.css comment). Selected shadow's
+      // ambient component is its own fresh-pulled value (16px blur), also
+      // distinct from the old --shadow-filter-chip's 8px.
       className="relative flex h-[46px] flex-1 select-none items-center justify-between overflow-hidden rounded-[--radius-filter-chip] border border-solid p-3 active:scale-[0.97]"
       style={{
-        borderColor: selected ? 'var(--color-filter-chip-border-selected)' : 'var(--color-filter-chip-border)',
-        boxShadow: selected ? `0px 0px 4px ${glow}, var(--shadow-filter-chip)` : 'var(--shadow-filter-chip)',
+        borderColor: selected ? borderSelected : 'var(--color-filter-chip-border)',
+        boxShadow: selected ? `0px 0px 4px ${glow}, 0px 0px 16px 0px rgba(14, 11, 6, 0.03)` : 'var(--shadow-card-elevated)',
         transition:
           'border-color var(--duration-instant) var(--ease-out-quart), box-shadow var(--duration-instant) var(--ease-out-quart), transform var(--duration-instant) var(--ease-out-quart)',
       }}
     >
-      {/* Photo-texture background + colored tint — same shared woven texture
-          asset per option (see src/assets/filter-chips), just a different
-          mix-blend-mode color per look. Day uses `overlay`, Night/Glam use
-          `soft-light` — matches the per-type blend mode in the source design,
-          not a stylistic choice. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-white" />
-        <img alt="" src={texture} className="absolute inset-0 size-full object-cover object-bottom" />
-        <div className="absolute inset-0" style={{ background: tint, mixBlendMode: blend }} />
-      </div>
+      {/* Photo-texture background + two-layer colored tint — same shared
+          woven texture asset per option (see src/assets/filter-chips), a
+          flat `overlayTint`/`overlayBlend` layer, then a `gradient` layer
+          on top (see LOOK_TYPES' own comment for why this is two layers
+          now, and why they're not simply `tint`/`blend` under new names).
+          Verify pass (2026-09-01, Home redesign, node 644:2630): only
+          rendered for the *selected* chip now — a fresh pull of all six
+          Type×Selected states shows the resting/unselected chip as a
+          plain translucent card with no texture or tint at all, not this
+          layer at a dimmed opacity. */}
+      {selected && (
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-white" />
+          <img alt="" src={texture} className="absolute inset-0 size-full object-cover object-bottom" />
+          <div className="absolute inset-0" style={{ background: overlayTint, mixBlendMode: overlayBlend }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(to left, ${gradient.from}, ${gradient.to})`,
+              mixBlendMode: gradient.blend,
+            }}
+          />
+        </div>
+      )}
       {/* Press-flash sweep — see chip-flash-sweep's own comment (index.css)
           for the exact background-position direction/opacity reasoning.
           key={flashCount} forces a fresh mount on every press so the CSS
@@ -230,9 +320,22 @@ export function LookSelectorChip({
           />
         </div>
       )}
+      {/* Verify pass (2026-09-01, Home redesign, node 644:2630): size moved
+          14px→15px with -0.15px tracking added (was missing), and both are
+          now shared by every state — the fresh pull shows this uniformly
+          across all six Type×Selected variants, not split by state the
+          way color/weight are. Color/weight do still split by state: flat
+          --color-tutorial-card-text at font-weight-medium at rest, this
+          type's own `deepTint` at font-weight-semibold once selected —
+          confirmed on the one state the earlier Home-only pull could show
+          (Day) and now on all three via this component's own six-variant
+          pull. */}
       <span
-        className="relative capitalize text-[14px]"
-        style={{ color: 'var(--color-tutorial-card-text)', fontWeight: 'var(--font-weight-medium)' }}
+        className="relative capitalize text-[15px] tracking-[-0.15px]"
+        style={{
+          color: selected ? deepTint : 'var(--color-tutorial-card-text)',
+          fontWeight: selected ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
+        }}
       >
         {label}
       </span>
@@ -242,7 +345,7 @@ export function LookSelectorChip({
         // state swap" shape this icon needs, already on --duration-base/
         // --ease-out-quart.
         <span className="relative" style={{ animation: 'check-ring-in var(--duration-base) var(--ease-out-quart)' }}>
-          <Icon />
+          <Icon color={deepTint} />
         </span>
       )}
     </button>
@@ -357,7 +460,15 @@ export function HomeScreen({
                 fontFamily: 'var(--font-family-serif-card)',
                 fontSize: 'var(--font-size-home-title)',
                 letterSpacing: 'var(--letter-spacing-home-title)',
-                color: 'var(--color-tutorial-card-text)',
+                // --color-info-overlay-heading, not --color-tutorial-card-text
+                // (verify pass, 2026-09-01, Home redesign): a fresh pull of
+                // this title (node 932:15402) shows the same flat #656462
+                // swatch every other screen's own header title already
+                // uses (Account/My Products/Bookmarks/About, see each of
+                // their own comments) — this was apparently the one
+                // header title never brought in line with that pass,
+                // still on the darker near-black ink token.
+                color: 'var(--color-info-overlay-heading)',
               }}
             >
               Beauty Notes

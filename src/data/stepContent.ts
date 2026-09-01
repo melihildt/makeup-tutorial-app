@@ -1,10 +1,15 @@
-import concealerImg from '../assets/product-images/Product_Concealer.png'
-import concealerBrushImg from '../assets/product-images/Product_Concealer-Bush.png'
-import eyeshadowImg from '../assets/product-images/Product_Eyeshadow.png'
-import meritBrushImg from '../assets/product-images/Product_Merit-Brush.png'
-import highlightImg from '../assets/product-images/Product_Highlight.png'
-import eyelinerImg from '../assets/product-images/Product_Eyeliner.png'
-import mascaraImg from '../assets/product-images/Product_Mascara.png'
+// V2 (2026-09-01): swapped for bigger real photography (564x564, was
+// 128x144) — same products, higher-res source. Matters most here:
+// ProductDetailOverlay's own hero image is object-contain at a much
+// larger display size than ProductCard's list-row thumbnail, so the old
+// low-res source was visibly soft there.
+import concealerImg from '../assets/product-images/Merit-Concealer.png'
+import concealerBrushImg from '../assets/product-images/Hourglass-ConcealerBrush.png'
+import eyeshadowImg from '../assets/product-images/Chanel-Les4ombres.png'
+import meritBrushImg from '../assets/product-images/Merit-BrushNo2.png'
+import highlightImg from '../assets/product-images/CharlotteTilbury-HollywoodGlow.png'
+import eyelinerImg from '../assets/product-images/WA-EyePencil.png'
+import mascaraImg from '../assets/product-images/WA-EyeWantYouMascara.png'
 
 /** MyProductsScreen.tsx's own grouping — see that file and getMyProducts()
  *  below. Distinct from `listTitle`: several steps share the same
@@ -22,6 +27,11 @@ export type Product = {
   checked: boolean
   image?: string
   category: ProductCategory
+  /** "Purchased on" line shown in ProductDetailOverlay, e.g. "06/2025".
+   *  Placeholder data — no real purchase-tracking feature exists yet, this
+   *  just fills in the row Figma's Product Detail overlay shows (node
+   *  896:10499). Optional so a product without one just skips the row. */
+  purchasedAt?: string
 }
 
 export type StepContent = {
@@ -63,8 +73,22 @@ export const STEP_CONTENT: Record<number, StepContent> = {
     description:
       "Dab concealer under the brow and inner corner, then pat gently to blend. Don't rub, just press it in.",
     products: [
-      { brand: 'MERIT', name: 'The Minimalist', checked: true, image: concealerImg, category: 'Concealer' },
-      { brand: 'Hourglass', name: 'Concealer Brush', checked: false, image: concealerBrushImg, category: 'Brushes' },
+      {
+        brand: 'MERIT',
+        name: 'The Minimalist',
+        checked: true,
+        image: concealerImg,
+        category: 'Concealer',
+        purchasedAt: '06/2025',
+      },
+      {
+        brand: 'Hourglass',
+        name: 'Concealer Brush',
+        checked: false,
+        image: concealerBrushImg,
+        category: 'Brushes',
+        purchasedAt: '04/2025',
+      },
     ],
   },
   2: {
@@ -79,8 +103,16 @@ export const STEP_CONTENT: Record<number, StepContent> = {
         checked: true,
         image: eyeshadowImg,
         category: 'Eye Shadows',
+        purchasedAt: '11/2024',
       },
-      { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg, category: 'Brushes' },
+      {
+        brand: 'Merit',
+        name: 'Brush No. 2',
+        checked: false,
+        image: meritBrushImg,
+        category: 'Brushes',
+        purchasedAt: '03/2025',
+      },
     ],
   },
   3: {
@@ -96,8 +128,16 @@ export const STEP_CONTENT: Record<number, StepContent> = {
         checked: true,
         image: eyeshadowImg,
         category: 'Eye Shadows',
+        purchasedAt: '11/2024',
       },
-      { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg, category: 'Brushes' },
+      {
+        brand: 'Merit',
+        name: 'Brush No. 2',
+        checked: false,
+        image: meritBrushImg,
+        category: 'Brushes',
+        purchasedAt: '03/2025',
+      },
     ],
   },
   4: {
@@ -106,7 +146,14 @@ export const STEP_CONTENT: Record<number, StepContent> = {
     description:
       "Discharge the powder residue of the brush onto a tissue, then buff the edges in small circular motions so there's no harsh line between the shades.",
     products: [
-      { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg, category: 'Brushes' },
+      {
+        brand: 'Merit',
+        name: 'Brush No. 2',
+        checked: false,
+        image: meritBrushImg,
+        category: 'Brushes',
+        purchasedAt: '03/2025',
+      },
     ],
   },
   5: {
@@ -122,8 +169,16 @@ export const STEP_CONTENT: Record<number, StepContent> = {
         checked: true,
         image: eyeshadowImg,
         category: 'Eye Shadows',
+        purchasedAt: '11/2024',
       },
-      { brand: 'Merit', name: 'Brush No. 2', checked: false, image: meritBrushImg, category: 'Brushes' },
+      {
+        brand: 'Merit',
+        name: 'Brush No. 2',
+        checked: false,
+        image: meritBrushImg,
+        category: 'Brushes',
+        purchasedAt: '03/2025',
+      },
     ],
   },
   6: {
@@ -138,6 +193,7 @@ export const STEP_CONTENT: Record<number, StepContent> = {
         checked: false,
         image: highlightImg,
         category: 'Highlight',
+        purchasedAt: '09/2024',
       },
     ],
   },
@@ -152,6 +208,7 @@ export const STEP_CONTENT: Record<number, StepContent> = {
         checked: true,
         image: eyelinerImg,
         category: 'Eyeliner and Mascara',
+        purchasedAt: '01/2025',
       },
       {
         brand: 'Westman Atelier',
@@ -159,6 +216,7 @@ export const STEP_CONTENT: Record<number, StepContent> = {
         checked: false,
         image: mascaraImg,
         category: 'Eyeliner and Mascara',
+        purchasedAt: '01/2025',
       },
     ],
   },
