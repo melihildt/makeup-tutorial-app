@@ -504,14 +504,20 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity,
           >
             <span
               key={saved ? 'saved' : 'unsaved'}
-              className="block"
+              // Fixed 20px-tall box, not each icon's own bare intrinsic
+              // size: BookmarkOutlineIcon is a fresh 20x20 pull (node
+              // 932:15436) but BookmarkIcon's filled path is still its old
+              // shared 22x24 master (no fresh asset for the saved state on
+              // this card yet — see icons.tsx's own comment). Left
+              // unconstrained, the button visibly grew on every save/unsave
+              // tap. Constraining the rendered height here (not touching
+              // BookmarkIcon itself, which BookmarksScreen.tsx still uses
+              // at its own correct 22x24) keeps both states the same
+              // footprint without guessing at pixel values for an asset we
+              // haven't verified.
+              className="flex h-5 w-5 items-center justify-center [&>svg]:h-full [&>svg]:w-auto"
               style={{ animation: 'check-pop var(--duration-instant) var(--ease-out-quart)' }}
             >
-              {/* BookmarkOutlineIcon, not BookmarkIcon filled={false} — see
-                  that icon's own comment (icons.tsx) for why this card's
-                  unsaved state now renders its own fresh-pulled asset
-                  instead of the old shared dimmed-path branch. Saved stays
-                  on BookmarkIcon (no new asset for that state yet). */}
               {saved ? <BookmarkIcon filled /> : <BookmarkOutlineIcon />}
             </span>
           </button>
@@ -685,12 +691,15 @@ function ProductsPreview({ tutorial, justRevealed = false }: { tutorial: Tutoria
     justRevealed && !reduceMotion
       ? { animation: `${animationName} var(--duration-base) var(--ease-out-quart) both`, animationDelay: `${delayMs}ms` }
       : undefined
-  // Real photos get the celebratory pop; coming-soon placeholders get a
-  // plain fade — see product-preview-fade-in's own comment (index.css) for
-  // why. Resolved once per row rather than per thumbnail: all three
-  // thumbnails in a given ProductsPreview are always the same branch
-  // (tutorial.hasContent doesn't vary within one row).
-  const popAnimationName = tutorial.hasContent ? 'product-preview-pop-in' : 'product-preview-fade-in'
+  // Same pop-in for real photos and coming-soon placeholders alike — was a
+  // split (real photos got this bouncy pop, placeholders got a plain fade,
+  // on the reasoning that a celebratory pop was the wrong gesture for
+  // withheld content — see product-preview-fade-in's own comment, index.css,
+  // still there for the history). The user's own catch: flipping between
+  // cards read as inconsistent, two different animations doing the same
+  // job of revealing this row, and asked for one. Kept as its own variable
+  // (not inlined) in case a real per-state difference is wanted again later.
+  const popAnimationName = 'product-preview-pop-in'
   const thumbnail = (rotateDeg: number, image?: string) => (
     <div
       className="h-[108px] w-[96px] shrink-0 overflow-hidden rounded-[18px] border-[3px] border-solid border-white"
@@ -857,7 +866,15 @@ function ComingSoonButton() {
       disabled
       aria-label="Coming soon — this tutorial isn't available yet"
       className="flex h-[52px] w-[290px] shrink-0 items-center justify-center gap-2 overflow-hidden rounded-[30px]"
-      style={{ background: 'var(--color-coming-soon-button-bg)' }}
+      style={{
+        background: 'var(--color-coming-soon-button-bg)',
+        // Ambient breathing loop, not press feedback — this button is a
+        // real disabled element (see the function's own comment) and
+        // can't receive :hover/:active at all. See coming-soon-pulse's
+        // own comment (index.css) for why this exists and why it's this
+        // slow.
+        animation: 'coming-soon-pulse 2.4s var(--ease-in-out) infinite',
+      }}
     >
       <LockIcon />
       <span

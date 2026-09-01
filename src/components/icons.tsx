@@ -320,7 +320,18 @@ export function InfoIcon() {
 // swatch as its sibling InfoIcon).
 export function UserIcon() {
   return (
-    <svg width={10.6671} height={16.0005} viewBox="0 0 10.6671 16.0005" fill="none" aria-hidden="true">
+    // overflow: visible, not the SVG default (hidden): the path's own bbox
+    // sits flush against the viewBox on every edge (a real 0px margin, by
+    // design — the "shoulders" silhouette is meant to touch its own box's
+    // bottom edge), and this viewBox is fractional (10.6671/16.0005, not
+    // whole px). At real small render size that combination risks a
+    // sub-pixel rasterizer rounding error clipping a hairline off the
+    // glyph's own edge — invisible when this same path is checked at a
+    // blown-up debug scale (where it renders clean), but plausibly what
+    // read as "clipped" at the button's real 40px size. Costs nothing when
+    // there's no rounding error (nothing in the path exceeds the viewBox to
+    // begin with) and removes the one mechanism left that could clip it.
+    <svg width={10.6671} height={16.0005} viewBox="0 0 10.6671 16.0005" fill="none" style={{ overflow: 'visible' }} aria-hidden="true">
       <path
         d="M4.96849 9.34585C2.12733 9.60266 -0.0372333 12.0034 0.000485473 14.8559V15.0005C0.000485473 15.5528 0.448204 16.0005 1.00049 16.0005C1.55277 16.0005 2.00049 15.5528 2.00049 15.0005V14.8159C1.97042 13.0644 3.26292 11.5709 5.00049 11.3492C6.83464 11.1673 8.46899 12.5068 8.65086 14.3409C8.66161 14.4494 8.66705 14.5582 8.66714 14.6672V15.0005C8.66714 15.5528 9.11486 16.0005 9.66714 16.0005C10.2194 16.0005 10.6671 15.5528 10.6671 15.0005V14.6672C10.6639 11.7183 8.27074 9.33047 5.32192 9.33372C5.20402 9.33388 5.08614 9.33791 4.96849 9.34585Z"
         fill="var(--color-info-overlay-heading)"
@@ -628,13 +639,17 @@ export function DoneIcon() {
 
 export function SearchIcon({ active }: { active: boolean }) {
   return (
+    // overflow: visible — see UserIcon's own comment (icons.tsx) for why:
+    // same fractional, zero-margin viewBox (20.0164/20.0164), same
+    // "clean at debug scale, reported clipped at the real 40px button"
+    // symptom (the magnifier handle's rounded tip, StepScreen's header).
     <svg
       width={20.0164}
       height={20.0164}
       viewBox="0 0 20.0164 20.0164"
       preserveAspectRatio="xMidYMid meet"
       fill="none"
-      style={{ color: 'var(--color-tutorial-card-text)', opacity: active ? ICON_OPACITY_ACTIVE : ICON_OPACITY_INACTIVE }}
+      style={{ color: 'var(--color-tutorial-card-text)', opacity: active ? ICON_OPACITY_ACTIVE : ICON_OPACITY_INACTIVE, overflow: 'visible' }}
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
@@ -647,13 +662,17 @@ export function SearchIcon({ active }: { active: boolean }) {
 
 export function WidgetIcon({ active }: { active: boolean }) {
   return (
+    // overflow: visible — same reasoning as SearchIcon just above (its own
+    // comment); this is that button's tab-bar partner, same fractional
+    // viewBox pattern, so the same latent risk applies even though only
+    // the magnifier was reported.
     <svg
       width={20.0007}
       height={18.3142}
       viewBox="0 0 20.0007 18.3142"
       preserveAspectRatio="xMidYMid meet"
       fill="none"
-      style={{ color: 'var(--color-tutorial-card-text)', opacity: active ? ICON_OPACITY_ACTIVE : ICON_OPACITY_INACTIVE }}
+      style={{ color: 'var(--color-tutorial-card-text)', opacity: active ? ICON_OPACITY_ACTIVE : ICON_OPACITY_INACTIVE, overflow: 'visible' }}
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
