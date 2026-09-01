@@ -17,9 +17,14 @@ import autumnImage1 from '../assets/looks/autumn-hermes-1.jpg'
 import autumnImage2 from '../assets/looks/autumn-hermes-2.jpg'
 import mattesImage1 from '../assets/looks/everyday-mattes-1.jpg'
 import mattesImage2 from '../assets/looks/everyday-mattes-2.jpg'
-import cardGhostTexture from '../assets/looks/card-ghost-texture.jpg'
-import cardGhostTextureNight from '../assets/looks/card-ghost-texture-night.png'
-import cardGhostTextureGlam from '../assets/looks/card-ghost-texture-glam.png'
+// V2 (2026-09-01): swapped for the user's own fresh export, matched to the
+// redesigned Day/Night/Glam LookSelectorChip colors (HomeScreen.tsx's
+// LOOK_TYPES) rather than the old set's per-filter branding. New home
+// (background-cards/, not looks/) is the user's own export location, kept
+// as-is rather than moved.
+import cardGhostTexture from '../assets/background-cards/BigCard-Ghost_Day.png'
+import cardGhostTextureNight from '../assets/background-cards/BigCard-Ghost_Night.png'
+import cardGhostTextureGlam from '../assets/background-cards/BigCard-Ghost_Glam.png'
 // Real product photography, already shot/cropped for the step-by-step flow
 // (src/data/stepContent.ts) — reused here rather than re-sourced, for
 // CardBack's own product preview. Three of the seven, picked for visual
@@ -981,16 +986,15 @@ export function TutorialDetailCard({
 
 /** Which ghost-card texture goes with which filter chip — see HomeScreen's
  *  own LOOK_TYPES for the chip colors this is matching (day gold #e3b345,
- *  night blue #688db6, glam green #beef9e). Day keeps the original photo
- *  texture (card-ghost-texture.jpg, already gold-toned on its own); night/
- *  glam are new PNG exports the user supplied specifically for this,
- *  matched to their filter by actual pixel color rather than their
- *  original filenames — the files as first delivered were misnamed
- *  relative to which chip they visually matched (confirmed by sampling
- *  their average color against the chip tints above, and by the user's own
- *  reference mock once renamed to match). CardBehind and StartOverCard
- *  both read from this one map rather than each hardcoding their own
- *  three-way branch. */
+ *  night blue #688db6, glam green #beef9e). V2 (2026-09-01): all three
+ *  swapped for one matched set the user exported together
+ *  (BigCard-Ghost_Day/Night/Glam.png, background-cards/) once the chips
+ *  themselves got their V5 redesign (HomeScreen.tsx, node 644:2630) — the
+ *  original three (one JPEG day photo + two separately-supplied, initially
+ *  mismatched-by-filename PNGs, see git history) predate that redesign and
+ *  no longer matched its colors. CardBehind and StartOverCard both read
+ *  from this one map rather than each hardcoding their own three-way
+ *  branch. */
 const GHOST_TEXTURES: Record<LookType, string> = {
   day: cardGhostTexture,
   night: cardGhostTextureNight,
@@ -1011,13 +1015,12 @@ const GHOST_TEXTURES: Record<LookType, string> = {
  *  Purely decorative: doesn't represent a specific tutorial, just "here's
  *  the next one, not shown yet." Source design uses a photo texture tinted
  *  gold via mix-blend-overlay — this now uses the real texture asset
- *  directly as the image (day: card-ghost-texture.jpg, downsized/
- *  recompressed PNG→JPEG from the original ~618KB export down to ~58KB, no
- *  visible difference), not layered under a separate
- *  --color-card-behind-tint overlay: the day photo is already gold-toned
- *  on its own, so the flat-swatch tint it stood in for is retired rather
- *  than kept as a redundant second layer on top of a photo that already
- *  reads as gold. `opacity` drives the peek reveal — see useCardMotion's
+ *  directly as the image (GHOST_TEXTURES, above), not layered under a
+ *  separate --color-card-behind-tint overlay: each texture is already
+ *  toned to its own filter on its own, so the flat-swatch tint they stood
+ *  in for is retired rather than kept as a redundant second layer on top
+ *  of a photo that already reads as that color. `opacity` drives the peek
+ *  reveal — see useCardMotion's
  *  contentOpacity. `backfaceVisibility: 'hidden'` is a permanent no-op for
  *  every card except the first tutorial slot mid-restart-flip (see
  *  TutorialStackCard's flipRotateY) — this layer's *inherited* rotation

@@ -234,7 +234,7 @@
   --color-coming-soon-button-bg: #e2e0df; /* Verify pass (2026-09-01): BigCard's own "Coming soon" CTA (node 903:12079, "Back-button"), a fresh pull of the live Home/DaySelected mock — was rgba(44,41,38,0.1), a flat "BeNoApp/Interactive Components/3" swatch instead. Same pull also shows no border on this button at all (was border-[0.5px] rgba(44,41,38,0.1) — removed). */
   --color-coming-soon-text: #656462; /* Same 903:12079 pull — "Coming soon" label, flat "BeNoApp/Chips Text Accessible/1" swatch (same value as --color-tutorial-card-byline above, but a genuinely different element/node, kept as its own token per this file's one-token-per-meaning convention). Was --color-tutorial-card-text at opacity-80. */
   --color-coming-soon-icon: #848281; /* Same 903:12079 pull — the lock icon's own fill, flat "BeNoApp/Chips Text (Solid)/2" swatch. Was --color-tutorial-card-text at opacity-80 (sourced from an older, unrelated reference node, 754:11046 — see LockIcon's own comment in icons.tsx). */
-  --color-card-behind-tint: #e3b345; /* deprecated: CardBehind (TutorialCard.tsx) now uses the real card-ghost-texture.jpg photo asset directly instead of this flat swatch + blend-mode tint */
+  --color-card-behind-tint: #e3b345; /* deprecated: CardBehind (TutorialCard.tsx) now uses a real ghost-texture photo asset (GHOST_TEXTURES) directly instead of this flat swatch + blend-mode tint */
   --color-product-placeholder: #e5e5e7; /* ProductsPreview (TutorialCard.tsx) — the flipped card's product-photo thumbnails, before real product photography exists. Not an invented color: this is Figma's own placeholder-gray fill for the same not-yet-real image slots in the source design. */
   --radius-tutorial-card: 32px;
   --radius-tutorial-card-behind: 24px;
