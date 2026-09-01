@@ -14,21 +14,31 @@ type AccountScreenProps = {
 // BookmarkGlyphIcon rename in particular.
 
 // Beauty Calculator's permanent disabled-state pill (already shown this way
-// in the design itself, not something this app added) — same "Dark/80%"
-// style (BeautyNotes/p-14) as elsewhere, reusing --color-badge-bg-list/
-// --color-text-product rather than new tokens since both already carry
-// exactly this value (AllStepsView's own per-group pill; ProductCard's
-// product-name ink — see their own tokens.css comments). This is the only
+// in the design itself, not something this app added). This is the only
 // remaining non-functional row on this screen now that Bookmarks navigates
 // for real — Toast.tsx (formerly used for Bookmarks' own "coming soon" tap
 // feedback) isn't needed on this screen any more.
+//
+// Verify pass (2026-09-01): this block used to claim the pill reused
+// --color-badge-bg-list/--color-text-product as an exact-value match
+// (BeautyNotes/p-14, 14px) — a fresh pull of this pill's own node
+// (896:10402) shows that was wrong on every count: it's BeautyNotes/p-12
+// (12px/-0.12px, not 14px/no tracking), a flat #e9e7e6 background (not
+// --color-badge-bg-list's swatch — that token is a different named Figma
+// variable, now confirmed AllStepsView-specific), #656462 text (not
+// --color-text-product's 80%-alpha ink), and 10px horizontal padding (was
+// 8px). Font-size/tracking now reuse --font-size-product-sub/
+// --letter-spacing-shade (already the exact BeautyNotes/p-12 pair,
+// confirmed elsewhere in tokens.css); background is the new
+// --color-coming-soon-pill-bg; text color is --color-info-overlay-heading,
+// already the right flat #656462 value.
 export function ComingSoonPill() {
   return (
     <span
-      className="shrink-0 whitespace-nowrap rounded-full px-2 py-1 text-[length:var(--font-size-product-name)]"
+      className="shrink-0 whitespace-nowrap rounded-full px-[10px] py-1 text-[length:var(--font-size-product-sub)] tracking-[--letter-spacing-shade]"
       style={{
-        background: 'var(--color-badge-bg-list)',
-        color: 'var(--color-text-product)',
+        background: 'var(--color-coming-soon-pill-bg)',
+        color: 'var(--color-info-overlay-heading)',
         fontWeight: 'var(--font-weight-medium)',
       }}
     >
@@ -37,10 +47,18 @@ export function ComingSoonPill() {
   )
 }
 
+// Verify pass (2026-09-01): `color` was --color-tutorial-card-text (#21201f)
+// — a fresh pull + raw-asset download of these row icons (fi-br-box/
+// -bookmark/-calculator, e.g. 896:10384) confirmed a flat #656462 fill
+// instead, i.e. --color-info-overlay-heading, not the darker ink token
+// (same class of fix as CloseIcon's own "info-overlay-heading, not
+// tutorial-card-text" correction). `borderColor` is dropped entirely — the
+// icon box itself (896:10383) carries no stroke in Figma, only the fill;
+// the 0.5px border classes below came off the icon `<span>` for the same
+// reason.
 const ROW_ICON_STYLE = {
   background: 'var(--color-list-row-icon-bg)',
-  borderColor: 'var(--color-border-hairline)',
-  color: 'var(--color-tutorial-card-text)',
+  color: 'var(--color-info-overlay-heading)',
 } as const
 
 type AccountRowProps = {
@@ -76,18 +94,29 @@ function AccountRow({ icon, label, onClick, trailing }: AccountRowProps) {
       style={{ transition: 'transform var(--duration-instant) var(--ease-out-quart)' }}
     >
       <span
-        className="flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+        className="flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip]"
         style={ROW_ICON_STYLE}
       >
         {icon}
       </span>
+      {/* text-[16px] → --font-size-account-row-label (15px), plus the
+          tracking (-0.15px) it was missing entirely — BeautyNotes/p-18,
+          confirmed on this row's own node (896:10386), see that token's
+          own tokens.css comment. */}
       <span
-        className="flex-1 text-left text-[16px]"
+        className="flex-1 text-left text-[length:var(--font-size-account-row-label)] tracking-[--letter-spacing-account-row-label]"
         style={{ color: 'var(--color-tutorial-card-text)', fontWeight: 'var(--font-weight-medium)' }}
       >
         {label}
       </span>
-      {trailing ?? (onClick && <ChevronRightIcon />)}
+      {/* Chevron's own color wasn't set anywhere — it was silently
+          inheriting the ambient (black) text color instead of the flat
+          #cfcecc fi-br-angle-small-right actually bakes. */}
+      {trailing ?? (onClick && (
+        <span style={{ color: 'var(--color-chevron-icon)' }}>
+          <ChevronRightIcon />
+        </span>
+      ))}
     </button>
   )
 }
