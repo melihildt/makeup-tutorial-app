@@ -128,8 +128,17 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
           </div>
 
           {/* Centered in the remaining space, same technique as
-              InfoOverlay's own card+links and HomeScreen's tutorial stack. */}
-          <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-6">
+              InfoOverlay's own card+links and HomeScreen's tutorial stack.
+
+              gap-[40px], not gap-6 (verify pass, 2026-09-01) — a fresh pull
+              of this screen's own content column (896:10484) shows the
+              image→title spacing comes from the "product-name" block's own
+              pt-[40px] (node 896:10486), not a shared 24px gap. The other
+              two rows below (Shade/Category/Purchase on) don't take part in
+              this gap at all — they're separate siblings whose own py-[16px]
+              + border already sets their spacing, unaffected by this
+              value. */}
+          <div className="flex flex-1 flex-col items-center justify-center gap-[40px] overflow-y-auto px-6 py-6">
             {displayedProduct && (
               <>
                 {/* object-contain, not ProductCard/MyProductRow's
@@ -177,20 +186,25 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
                     <img src={displayedProduct.image} alt="" className="size-full object-contain" />
                   )}
                 </motion.div>
-                <div className="flex w-full max-w-[282px] flex-col gap-[8px]">
-                  <div className="flex flex-col gap-[2px]">
+                {/* gap-[16px] on this wrapper (was gap-[8px]) and
+                    gap-[8px] on the brand/title pair below (was gap-[2px])
+                    — verify pass, 2026-09-01: both were swapped relative to
+                    the fresh pull. The 8px value is actually the
+                    brand→title spacing (product-name's own gap, node
+                    896:10486), and 16px is the title→rows spacing
+                    (product-name's own pb-[16px], the gap before the Shade
+                    row's top border). */}
+                <div className="flex w-full max-w-[282px] flex-col gap-[16px]">
+                  <div className="flex flex-col gap-[8px]">
                     <p
                       className="capitalize"
                       style={{
                         fontSize: 'var(--font-size-product-name)',
                         fontWeight: 'var(--font-weight-semibold)',
-                        // 0.14px — positive, confirmed on the pull (node
-                        // 896:10487). Not --letter-spacing-tight (-0.14px,
-                        // ProductCard/MyProductRow's own brand-line
-                        // tracking): same file convention, different sign,
-                        // a genuinely different value for this headline
-                        // treatment, not a typo carried over.
-                        letterSpacing: '0.14px',
+                        // No letterSpacing (was 0.14px, i.e. the pull's own
+                        // 1% tracking on this 14px node 896:10487) — removed
+                        // per the user's own ask, not a Figma-sourced
+                        // correction.
                         color: 'var(--color-tutorial-card-text)',
                       }}
                     >
