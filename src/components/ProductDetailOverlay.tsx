@@ -46,6 +46,26 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
     if (product) setDisplayedProduct(product)
   }, [product])
 
+  // Shade/Category/Purchase-on info rows (node 896:10489-896:10501,
+  // plans/037-product-detail-info-rows.md) — Category is real data
+  // (Product.category already existed, just wasn't shown here); Purchase
+  // on uses Product.purchasedAt, placeholder data added alongside this
+  // section since no real purchase-tracking feature exists yet. Shade
+  // reuses the existing Product.shade field, just moved into this row
+  // layout instead of its old standalone muted line. Built as a list and
+  // filtered rather than three separate conditionals so "is this the
+  // first row" (for the shared top border) doesn't have to be
+  // hand-tracked across three near-identical blocks.
+  const detailRows = displayedProduct
+    ? (
+        [
+          displayedProduct.shade ? { label: 'Shade', value: displayedProduct.shade } : null,
+          { label: 'Category', value: displayedProduct.category },
+          displayedProduct.purchasedAt ? { label: 'Purchase on', value: displayedProduct.purchasedAt } : null,
+        ] as const
+      ).filter((row): row is { label: string; value: string } => row !== null)
+    : []
+
   return (
     <AnimatePresence>
       {open && (
@@ -73,8 +93,13 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
               AccountScreen/MyProductsScreen's own title row. */}
           <div className="flex shrink-0 items-start justify-between px-[--space-sm] pt-[--space-2xs]">
             <p
-              className="text-[20px] tracking-[-0.4px]"
-              style={{ color: 'var(--color-info-overlay-heading)', fontWeight: 'var(--font-weight-medium)' }}
+              style={{
+                fontFamily: 'var(--font-family-serif-card)',
+                fontSize: 'var(--font-size-title-serif)',
+                letterSpacing: 'var(--letter-spacing-title-serif)',
+                color: 'var(--color-info-overlay-heading)',
+                fontWeight: 'var(--font-weight-medium)',
+              }}
             >
               Product Detail
             </p>
@@ -121,15 +146,14 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
                     un-animated below its card) — only the one hero visual
                     gets the treatment, not everything on screen. */}
                 <motion.div
-                  className="relative size-[238px] shrink-0 overflow-hidden rounded-[24px] border border-solid"
+                  className="relative size-[282px] shrink-0 overflow-hidden rounded-[24px] border border-solid"
                   style={{
                     borderColor: 'var(--color-border-hairline)',
-                    // --shadow-filter-chip's own exact value (code review
-                    // finding), hand-copied as a raw literal instead of
-                    // referencing the token — same value HomeScreen.tsx's
-                    // filter chips and InfoOverlay's own card already
-                    // reference by name.
-                    boxShadow: 'var(--shadow-filter-chip)',
+                    // V6 (plans/036-product-detail-hero-image-treatment.md):
+                    // Figma's "New" section shows a distinct shadow value
+                    // here (24px blur, 0 spread) — not --shadow-filter-chip
+                    // (8px blur) or --shadow-card-elevated (24px/6px).
+                    boxShadow: 'var(--shadow-product-detail-image)',
                     background: 'var(--color-image-placeholder)',
                   }}
                   initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: 'scale(0.96)' }}
@@ -148,18 +172,80 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
                     <img src={displayedProduct.image} alt="" className="size-full object-contain" />
                   )}
                 </motion.div>
-                <div className="flex w-full max-w-[238px] flex-col gap-[2px]">
-                  <div
-                    className="flex flex-col gap-[2px] text-[length:var(--font-size-product-name)] tracking-[--letter-spacing-tight] text-[--color-text-product]"
-                  >
-                    <p className="capitalize font-[--font-weight-semibold]">{displayedProduct.brand}</p>
-                    <p className="font-[--font-weight-medium]">{displayedProduct.name}</p>
-                  </div>
-                  {displayedProduct.shade && (
-                    <p className="text-[length:var(--font-size-product-sub)] font-[--font-weight-medium] tracking-[--letter-spacing-shade] text-[--color-text-primary] opacity-50">
-                      {displayedProduct.shade}
+                <div className="flex w-full max-w-[282px] flex-col gap-[8px]">
+                  <div className="flex flex-col gap-[2px]">
+                    <p
+                      className="capitalize"
+                      style={{
+                        fontSize: 'var(--font-size-product-name)',
+                        fontWeight: 'var(--font-weight-semibold)',
+                        // 0.14px — positive, confirmed on the pull (node
+                        // 896:10487). Not --letter-spacing-tight (-0.14px,
+                        // ProductCard/MyProductRow's own brand-line
+                        // tracking): same file convention, different sign,
+                        // a genuinely different value for this headline
+                        // treatment, not a typo carried over.
+                        letterSpacing: '0.14px',
+                        color: 'var(--color-tutorial-card-text)',
+                      }}
+                    >
+                      {displayedProduct.brand}
                     </p>
-                  )}
+                    {/* Product name as its own headline (node 896:10488) —
+                        no longer sized/colored to match the brand line
+                        above it, the same serif treatment every screen
+                        title in this app now shares (plans/030, /035). */}
+                    <p
+                      style={{
+                        fontFamily: 'var(--font-family-serif-card)',
+                        fontSize: 'var(--font-size-product-detail-title)',
+                        letterSpacing: 'var(--letter-spacing-product-detail-title)',
+                        color: 'var(--color-tutorial-card-text)',
+                      }}
+                    >
+                      {displayedProduct.name}
+                    </p>
+                  </div>
+                  {/* Shade/Category/Purchase-on rows (node 896:10489-
+                      896:10501) — see detailRows' own comment above for why
+                      this is a mapped list instead of three hand-written
+                      blocks. First row gets a top border too (closing off
+                      the block from the name above it); every row gets its
+                      own bottom border. */}
+                  <div className="flex flex-col">
+                    {detailRows.map(({ label, value }, index) => (
+                      <div
+                        key={label}
+                        className="flex items-center justify-between py-4"
+                        style={{
+                          borderTop: index === 0 ? '0.5px solid var(--color-detail-row-border)' : undefined,
+                          borderBottom: '0.5px solid var(--color-detail-row-border)',
+                        }}
+                      >
+                        <p
+                          className="uppercase"
+                          style={{
+                            fontSize: 'var(--font-size-detail-row-label)',
+                            letterSpacing: 'var(--letter-spacing-detail-row-label)',
+                            fontWeight: 'var(--font-weight-medium)',
+                            color: 'var(--color-info-overlay-heading)',
+                          }}
+                        >
+                          {label}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 'var(--font-size-detail-row-value)',
+                            letterSpacing: 'var(--letter-spacing-detail-row-value)',
+                            fontWeight: 'var(--font-weight-medium)',
+                            color: 'var(--color-tutorial-card-text)',
+                          }}
+                        >
+                          {value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </>
             )}

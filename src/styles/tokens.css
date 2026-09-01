@@ -37,7 +37,7 @@
   --color-text-caption: rgba(0, 0, 0, 0.4);   /* deprecated: "90s inspired" caption removed in V2 */
   --color-text-subtle: rgba(0, 0, 0, 0.7);    /* product sub-line, e.g. "79 - Spices" */
   --color-text-product: rgba(44, 41, 38, 0.8);   /* V5 (was rgba(0,0,0,0.8)) — product name block, same ink migration as everywhere else in this pass. Also reused by AccountScreen.tsx/MyProductsScreen.tsx's "Coming soon" pill text — same "Dark/80%" style (BeautyNotes/p-14) in both pulls, not a coincidence; no longer ProductCard.tsx-only. */
-  --color-border-hairline: rgba(44, 41, 38, 0.2); /* V5 (was rgba(14,11,6,0.05)) — real contrast increase, not just a recolor */
+  --color-border-hairline: #dad8d7; /* V6 (was rgba(44,41,38,0.2)) — same migration as --color-header-icon-border (plan 032): Figma's "New" section defines this as the flat "BeNoApp/Borders and Separators/1" swatch, not an alpha derivation of the ink color. Confirmed on Bookmarks' product images (896:10571) and the Product Detail overlay's hero image (896:10485). See plans/034-border-hairline-flat-swatch.md. */
   --color-border-card: rgba(255, 255, 255, 0.3); /* deprecated: V2 card has no visible stroke */
   --color-image-placeholder: #e5e5e7; /* fallback bg behind product images before load */
   --color-badge-bg: rgba(44, 41, 38, 0.05); /* V5 (was rgba(14,11,6,0.07)) — StepScreen's own top-of-screen "N/7 steps" badge only; confirmed against its own pull in the V5 pass. Not the same value as AllStepsView's per-group badge, see --color-badge-bg-list below — the two instances turned out to be genuinely different alphas in the design, not one shared value. */
@@ -166,6 +166,7 @@
   --radius-look-card: 16px; /* deprecated: V3's BigCard uses --radius-tutorial-card (32px), see below */
   --radius-filter-chip: 12px; /* V2 (was 16px) — node 572:3875/615:2884, smaller filter sheet; V4 reuses this same radius for the header icon boxes too */
   --shadow-filter-chip: 0px 0px 8px rgba(14, 11, 6, 0.03); /* unselected chip shadow — also used on the look card, see node 615:2884 */
+  --shadow-product-detail-image: 0px 0px 24px 0px rgba(14, 11, 6, 0.03); /* V6 — Figma's "New" section (node 896:10461/896:10485), Product Detail overlay's own hero image card. Same color as --shadow-card family, but a distinct blur/spread (24px blur, 0 spread) — not a rounding of --shadow-filter-chip or --shadow-card-elevated. See plans/036-product-detail-hero-image-treatment.md. */
   --shadow-filter-chip-selected: 0 0 0 1.5px rgba(14, 11, 6, 0.25), 0px 0px 8px rgba(14, 11, 6, 0.03); /* deprecated: a shadow-ring selection state was tried against an isolated pull (572:3875) that turned out to omit the sheet's real border/bg — node 615:2884 (fuller context) confirmed selection is still --color-filter-chip-border-selected. V4 superseded this again: selection now reads via border weight + a per-type colored glow (LOOK_TYPES.glow in HomeScreen.tsx), not a shadow ring. */
   --color-header-icon-bg: rgba(255, 255, 255, 0.6); /* V4: info/profile icon boxes, node 635:4792 */
   --color-header-icon-border: #dad8d7; /* V6 (was rgba(44,41,38,0.2)) — Figma's "New" section (node 906:12628) defines this as a flat named swatch, "BeNoApp/Borders and Separators/1", not an alpha derivation of the ink color. Visually near-identical to the old value over this app's white/cream surfaces — a cohesion correction, not a visible redesign. See plans/032-header-icon-border-flat-swatch.md. */
@@ -289,6 +290,22 @@
      genuinely new to this pair of screens. */
   --radius-account-card: 24px; /* Account's own options card — rounder than --radius-card (20px), confirmed on its own pull, not a rounding of that token */
   --color-list-row-icon-bg: rgba(44, 41, 38, 0.05); /* Account row icon boxes (My Products/Bookmarks/Beauty Calculator) — same value as --color-badge-bg but kept separate since it's a different element/meaning, per this file's own one-token-per-meaning convention (see --shadow-card vs --shadow-tutorial-card) */
+
+  /* ---------- Product Detail overlay (ProductDetailOverlay.tsx) ----------
+     Figma's "New" section (node 896:10461/896:10485-896:10501) — the
+     Shade/Category/Purchased info rows below the hero image, plus the
+     product name's own headline treatment. Reuses --color-info-overlay-
+     heading (row labels) and --color-tutorial-card-text (row values,
+     brand line, product-name headline) directly rather than new color
+     tokens — same two values confirmed on this pull. See
+     plans/037-product-detail-info-rows.md. */
+  --font-size-product-detail-title: 28px; /* product name, e.g. "The Minimalist" — a headline now, not a small label matching the brand line */
+  --letter-spacing-product-detail-title: -0.28px;
+  --font-size-detail-row-label: 12px; /* "SHADE" / "CATEGORY" / "PURCHASE ON" — uppercase, applied via CSS not baked into the string */
+  --letter-spacing-detail-row-label: 0.24px; /* positive tracking, confirmed on the pull — unusual for this app (every other tracking value is negative or zero) but not a typo to "correct"; matches Figma's own uppercase-caption convention */
+  --font-size-detail-row-value: 13px;
+  --letter-spacing-detail-row-value: -0.13px;
+  --color-detail-row-border: rgba(44, 41, 38, 0.1); /* hairline between/around the info rows — not the same value as --color-border-hairline, kept separate per this file's one-token-per-meaning convention */
 
   /* ---------- Toast (Toast.tsx) ----------
      Not Figma-sourced — this app had no toast/snackbar component until the

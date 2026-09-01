@@ -163,6 +163,65 @@ invalid state`) — traced to this session's own rapid-fire `navigate()`
 calls overlapping a view transition mid-flight, not a regression from any
 of these six plans (none of them touch routing/transitions).
 
+**033-036 are a second wave of the same pass**, prompted directly by the
+user pushing back that the first wave still left visible drift ("I still
+see things that didn't change... maybe it's worth going screen by
+screen"). That challenge was correct: the original sampling of 6 of 12
+frames had extrapolated Bookmarks' and About's values by analogy rather
+than confirming them, and had completely missed
+`ProductDetailOverlay.tsx` — a component whose Figma demo frame is a
+*second* "Home/About" duplicate (node `896:10461`) repurposed to show
+"Product Detail" instead, easy to miss since the frame's own internal name
+never changed. Checking the three remaining unexplored duplicates
+confirmed they were just repeat locked/coming-soon card states (nothing
+new), but the second `Home/Profile-MyProducts` duplicate (`896:10559`)
+turned out to be Bookmarks, not a repeat. **034-036 executed; 033 was
+explicitly deferred by the user** ("ignore the 033, i think that's related
+to the previous home design") even though its container was pulled from
+the same "New" section as its siblings — left as-is per that call, not
+silently dropped.
+
+- **034 executed exactly as planned** — `--color-border-hairline`
+  (`rgba(44,41,38,0.2)` → `#dad8d7`) updated in `tokens.css`, the same
+  migration as plan 032 just missed on a sibling token. Live-verified: a
+  product image's border and the Product Detail hero image's border both
+  resolve to `rgb(218, 216, 215)` (`#dad8d7`).
+- **035 executed exactly as planned** — `ProductDetailOverlay.tsx`'s
+  "Product Detail" title moved onto the same
+  `--font-family-serif-card`/`--font-size-title-serif`/
+  `--letter-spacing-title-serif` tokens plan 030 already introduced (its
+  fifth call site, missed the first time). Live-verified: computed
+  `fontFamily` reads `"EB Garamond", Georgia, "Times New Roman", serif` at
+  `24px`/`-0.24px`.
+- **036 executed exactly as planned** — new `--shadow-product-detail-image`
+  token added (`0px 0px 24px 0px rgba(14,11,6,0.03)` — a genuinely
+  distinct value, not a rounding of any existing shadow token); the hero
+  image `motion.div` resized `238px` → `282px` and repointed to it.
+  Live-verified: computed `width`/`height` `282px`, `boxShadow`
+  `rgba(14, 11, 6, 0.03) 0px 0px 24px 0px`.
+
+The larger finding raised alongside these — the product name's 28px EB
+Garamond headline treatment and a new "Shade/Category/Purchase on"
+info-row section in `ProductDetailOverlay.tsx` — was held pending a data
+question (the `Product` type had no purchase-date field, and category,
+while already tracked, wasn't shown here). The user resolved it directly:
+"add the categories missing in this page, put dummy data if needed" —
+**037** executed on that basis. `Product.category` turned out to already
+be real data, just unwired to this screen; only `purchasedAt` needed new
+placeholder values (added per-product, e.g. `06/2025` for MERIT's The
+Minimalist — matching Figma's own real example — through `11/2024` for
+Chanel's Les 4 Ombres). The Shade row's second "undertone" value shown in
+Figma's one example ("Ochre" / "Light (warm)") was deliberately *not*
+fabricated — this app's existing shade data (e.g. "79 - Spices") doesn't
+carry a second part, and inventing one per product would be more invented
+than what was asked for.
+
+Mechanical check across 034-037: `npx tsc -b` clean; `npm run lint` shows
+only pre-existing warnings; no new console errors during live
+verification (both a with-shade product, Chanel Les 4 Ombres, and a
+without-shade product, MERIT The Minimalist, were checked to confirm the
+Shade row correctly appears/disappears rather than rendering blank).
+
 | # | Plan | Severity | Category | Screen impact | Status |
 | --- | --- | --- | --- | --- | --- |
 | 001 | [Fix ease-in on the fly-off's disappear-faster fade](001-fly-off-fade-easing.md) | HIGH | Easing & duration | Home | DONE |
@@ -197,6 +256,12 @@ of these six plans (none of them touch routing/transitions).
 | 030 | [Move shared serif title typography from Cactus Classical Serif to EB Garamond](030-serif-title-eb-garamond.md) | MEDIUM-HIGH | Cohesion & tokens | Home, Tutorial card, Account, My Products, Bookmarks, About | DONE |
 | 031 | [Split product-image corner radius: AllStepsView/My Products want 12px, StepScreen stays 8px](031-product-image-radius-split.md) | MEDIUM | Cohesion & tokens | All steps view, My Products | DONE |
 | 032 | [Header icon-button border: alpha approximation → flat Figma swatch](032-header-icon-border-flat-swatch.md) | LOW | Cohesion & tokens | App-wide (header icon buttons) | DONE |
+| 033 | [Bookmarks catches up to the shadow/radius fixes already applied to its sibling screens](033-bookmarks-shadow-radius-catchup.md) | MEDIUM | Cohesion & tokens | Bookmarks | DEFERRED — user's call |
+| 034 | [--color-border-hairline: alpha approximation → flat Figma swatch](034-border-hairline-flat-swatch.md) | LOW-MEDIUM | Cohesion & tokens | App-wide (product image borders) | DONE |
+| 035 | [Product Detail overlay's title: same stale pattern plan 030 already fixed everywhere else](035-product-detail-title-typography.md) | MEDIUM | Cohesion & tokens | Product Detail overlay | DONE |
+| 036 | [Product Detail overlay's hero image: bigger card, new shadow value](036-product-detail-hero-image-treatment.md) | MEDIUM | Cohesion & tokens | Product Detail overlay | DONE |
+| 037 | [Add the Shade/Category/Purchase-on info rows to ProductDetailOverlay](037-product-detail-info-rows.md) | MEDIUM-HIGH | Missing feature / design-source sync | Product Detail overlay | DONE |
+| 037 | [Product Detail overlay: product-name headline + Shade/Category/Purchase-on rows](037-product-detail-info-rows.md) | MEDIUM-HIGH | Missed content / cohesion & tokens | Product Detail overlay | DONE |
 
 **002's specific fix (`isFlipping` local state) no longer exists in the
 code** — it was removed during the Start Over two-face-flip redesign
