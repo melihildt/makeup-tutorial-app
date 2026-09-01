@@ -360,11 +360,12 @@ export function LookSelectorChip({
  * bottom sheet + close icon entirely (a real layout change, confirmed with
  * the user rather than assumed — the prior sheet was a deliberate product
  * decision, see git history). The Day/Night/Glam filters now actually
- * filter: `TUTORIALS` carries a `lookType` per entry (four per chip — see
- * that field's own doc comment in TutorialCard.tsx for the current dummy-
- * data set, real photography/copy pending separately), and `visibleTutorials`
- * below narrows the full list down to the selected chip's four before
- * handing them to TutorialStack. The chip selection still also toggles
+ * filter: `TUTORIALS` carries a `lookType` per entry (see that field's own
+ * doc comment in TutorialCard.tsx for the current data set — 4 Day/3
+ * Night/6 Glam as of the V3 real-photography pass, not an even four per
+ * chip anymore), and `visibleTutorials` below narrows the full list down
+ * to the selected chip's own cards before handing them to TutorialStack.
+ * The chip selection still also toggles
  * which chip shows its icon (see LookSelectorChip above) and the tutorial
  * stack's own ghost card color (`selectedType` threaded down as `lookType`
  * — see TutorialStack's own prop and CardBehind/StartOverCard in

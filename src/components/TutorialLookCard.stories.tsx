@@ -45,7 +45,7 @@ export const Saved: Story = {
   args: { tutorial: softSmokeyEye, saved: true },
 }
 
-// A tutorial with no real content yet (the other 11 of 12) — the front
+// A tutorial with no real content yet (the other 12 of 13) — the front
 // face itself doesn't gate on that at all; tapping it flips to
 // TutorialDetailCard, where the gating actually shows up.
 export const ComingSoonTutorial: Story = {
