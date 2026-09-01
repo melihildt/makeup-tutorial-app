@@ -25,16 +25,18 @@ import cardGhostTextureGlam from '../assets/looks/card-ghost-texture-glam.png'
 // CardBack's own product preview. Three of the seven, picked for visual
 // variety (a palette, a red-tubed mascara, a gold compact) rather than
 // story order — this row is a preview, not a step sequence.
-import previewEyeshadowImg from '../assets/product-images/Product_Eyeshadow.png'
-import previewMascaraImg from '../assets/product-images/Product_Mascara.png'
-import previewHighlightImg from '../assets/product-images/Product_Highlight.png'
+// V2 (2026-09-01): same swap to bigger 564x564 sources as stepContent.ts —
+// see that file's own import comment.
+import previewEyeshadowImg from '../assets/product-images/Chanel-Les4ombres.png'
+import previewMascaraImg from '../assets/product-images/WA-EyeWantYouMascara.png'
+import previewHighlightImg from '../assets/product-images/CharlotteTilbury-HollywoodGlow.png'
 // The remaining four of the same seven product photos — reused below as the
 // "coming soon" thumbnails' blurred base image (see PLACEHOLDER_PRODUCT_IMAGES),
 // rather than sourcing new stock photography for a placeholder state.
-import previewConcealerImg from '../assets/product-images/Product_Concealer.png'
-import previewConcealerBrushImg from '../assets/product-images/Product_Concealer-Bush.png'
-import previewEyelinerImg from '../assets/product-images/Product_Eyeliner.png'
-import previewMeritBrushImg from '../assets/product-images/Product_Merit-Brush.png'
+import previewConcealerImg from '../assets/product-images/Merit-Concealer.png'
+import previewConcealerBrushImg from '../assets/product-images/Hourglass-ConcealerBrush.png'
+import previewEyelinerImg from '../assets/product-images/WA-EyePencil.png'
+import previewMeritBrushImg from '../assets/product-images/Merit-BrushNo2.png'
 import type { LookType } from './HomeScreen'
 import { getRoleButtonProps } from './rowActivation'
 import { BookmarkIcon, BookmarkOutlineIcon, LevelIcon, LockIcon, RotateRightIcon } from './icons'

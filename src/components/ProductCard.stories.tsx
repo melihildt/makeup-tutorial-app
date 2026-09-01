@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { ProductCard } from './ProductCard'
-import eyeshadowImg from '../assets/product-images/Product_Eyeshadow.png'
+import eyeshadowImg from '../assets/product-images/Chanel-Les4ombres.png'
 
 const meta = {
   title: 'Components/ProductCard',

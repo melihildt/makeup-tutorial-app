@@ -1,10 +1,15 @@
-import concealerImg from '../assets/product-images/Product_Concealer.png'
-import concealerBrushImg from '../assets/product-images/Product_Concealer-Bush.png'
-import eyeshadowImg from '../assets/product-images/Product_Eyeshadow.png'
-import meritBrushImg from '../assets/product-images/Product_Merit-Brush.png'
-import highlightImg from '../assets/product-images/Product_Highlight.png'
-import eyelinerImg from '../assets/product-images/Product_Eyeliner.png'
-import mascaraImg from '../assets/product-images/Product_Mascara.png'
+// V2 (2026-09-01): swapped for bigger real photography (564x564, was
+// 128x144) — same products, higher-res source. Matters most here:
+// ProductDetailOverlay's own hero image is object-contain at a much
+// larger display size than ProductCard's list-row thumbnail, so the old
+// low-res source was visibly soft there.
+import concealerImg from '../assets/product-images/Merit-Concealer.png'
+import concealerBrushImg from '../assets/product-images/Hourglass-ConcealerBrush.png'
+import eyeshadowImg from '../assets/product-images/Chanel-Les4ombres.png'
+import meritBrushImg from '../assets/product-images/Merit-BrushNo2.png'
+import highlightImg from '../assets/product-images/CharlotteTilbury-HollywoodGlow.png'
+import eyelinerImg from '../assets/product-images/WA-EyePencil.png'
+import mascaraImg from '../assets/product-images/WA-EyeWantYouMascara.png'
 
 /** MyProductsScreen.tsx's own grouping — see that file and getMyProducts()
  *  below. Distinct from `listTitle`: several steps share the same
