@@ -834,31 +834,38 @@ function StartTutorialButton({ onStart, disabled }: { onStart?: () => void; disa
 
 /** "Coming soon" CTA — replaces StartTutorialButton for a tutorial with no
  *  real content yet (`!tutorial.hasContent`, see that field's own doc
- *  comment), node 754:11044 ("Back-button") of the same "Coming Soon"
- *  reference mock LockIcon above comes from. A real disabled `<button>`,
- *  not a styled div: a disabled button doesn't dispatch click at all, so
- *  tapping it neither "starts" anything nor bubbles up to flip the card
- *  back to front (no stopPropagation needed here the way
- *  StartTutorialButton's onClick needs one) — it just inertly communicates
- *  "not tappable," matching the lock icon. Same 290x52 pill footprint as
- *  StartTutorialButton so swapping between the two doesn't reflow anything
- *  else in the card. */
+ *  comment). A real disabled `<button>`, not a styled div: a disabled
+ *  button doesn't dispatch click at all, so tapping it neither "starts"
+ *  anything nor bubbles up to flip the card back to front (no
+ *  stopPropagation needed here the way StartTutorialButton's onClick
+ *  needs one) — it just inertly communicates "not tappable," matching the
+ *  lock icon. Same 290x52 pill footprint as StartTutorialButton so
+ *  swapping between the two doesn't reflow anything else in the card.
+ *
+ *  Verify pass (2026-09-01): re-pulled against node 903:12079
+ *  ("Back-button", Home/DaySelected — the real in-context mock, not the
+ *  older isolated 754:11044 reference this was originally built from).
+ *  Three things were wrong: background was rgba(44,41,38,0.1) (should be
+ *  flat --color-coming-soon-button-bg); there was a 0.5px border (Figma
+ *  has none — removed entirely); and the icon came after the label
+ *  (Figma orders it icon-then-label). Text opacity-80 also dropped in
+ *  favor of the fresh pull's flat --color-coming-soon-text. */
 function ComingSoonButton() {
   return (
     <button
       type="button"
       disabled
       aria-label="Coming soon — this tutorial isn't available yet"
-      className="flex h-[52px] w-[290px] shrink-0 items-center justify-center gap-2 overflow-hidden rounded-[30px] border-[0.5px] border-solid"
-      style={{ background: 'rgba(44, 41, 38, 0.1)', borderColor: 'rgba(44, 41, 38, 0.1)' }}
+      className="flex h-[52px] w-[290px] shrink-0 items-center justify-center gap-2 overflow-hidden rounded-[30px]"
+      style={{ background: 'var(--color-coming-soon-button-bg)' }}
     >
+      <LockIcon />
       <span
-        className="text-[15px] opacity-80"
-        style={{ color: 'var(--color-tutorial-card-text)', fontWeight: 'var(--font-weight-medium)', letterSpacing: '-0.15px' }}
+        className="text-[15px]"
+        style={{ color: 'var(--color-coming-soon-text)', fontWeight: 'var(--font-weight-medium)', letterSpacing: '-0.15px' }}
       >
         Coming soon
       </span>
-      <LockIcon />
     </button>
   )
 }

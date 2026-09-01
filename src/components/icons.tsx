@@ -523,26 +523,23 @@ export function LevelIcon({ level }: { level: TutorialLevel }) {
   )
 }
 
-// Lock icon for the flipped tutorial card's "Coming soon" CTA — node
-// 754:11046 ("fi-br-lock", Tech-Experimentation's "Coming Soon" reference
-// mock), real path data pulled via get_design_context, not hand-
-// approximated. Source export had both paths' fill hardcoded to the
-// literal hex #2C2926 at 80% opacity — swapped for
-// `var(--color-tutorial-card-text)` + fillOpacity since that's the exact
-// same color as this app's shared ink token, matching how every other icon
-// here is themed.
+// Lock icon for the flipped tutorial card's "Coming soon" CTA. Path data
+// unchanged (it was already pulled correctly), but the fill was wrong:
+// node 754:11046 ("fi-br-lock", an older/unrelated reference node) gave
+// #2C2926 at 80% opacity, mapped onto `--color-tutorial-card-text`.
+// Verify pass (2026-09-01): a fresh pull of the actual live "Coming soon"
+// button in its real context (node 903:12080, Home/DaySelected) shows a
+// flat #848281 fill instead, no opacity — see --color-coming-soon-icon.
 export function LockIcon() {
   return (
     <svg width={14} height={14} viewBox="0 0 11.7405 14" fill="none" aria-hidden="true">
       <path
         d="M9.97946 4.9639V4.1092C9.97946 1.83975 8.13971 0 5.87026 0C3.6008 0 1.76108 1.83975 1.76108 4.10918V4.96388C0.681428 5.51485 0.00132081 6.62408 0 7.8362V10.7713C0.0019537 12.5537 1.44631 13.998 3.22864 14H8.51187C10.2942 13.998 11.7386 12.5537 11.7405 10.7713V7.83622C11.7392 6.62411 11.0591 5.51485 9.97946 4.9639ZM5.87026 1.76108C7.16707 1.76108 8.21835 2.81236 8.21835 4.10918V4.60756H3.52216V4.10918C3.52216 2.81236 4.57344 1.76108 5.87026 1.76108ZM9.97946 10.7713C9.97946 11.5818 9.32241 12.2389 8.5119 12.2389H3.22866C2.41815 12.2389 1.76111 11.5818 1.76111 10.7713V7.83622C1.76111 7.02572 2.41815 6.36867 3.22866 6.36867H8.5119C9.32241 6.36867 9.97946 7.02572 9.97946 7.83622V10.7713V10.7713Z"
-        fill="var(--color-tutorial-card-text)"
-        fillOpacity={0.8}
+        fill="var(--color-coming-soon-icon)"
       />
       <path
         d="M5.57678 8.12972H6.16379C6.6501 8.12972 7.04433 8.52395 7.04433 9.01026C7.04433 9.49656 6.6501 9.89079 6.16379 9.89079H5.57678C5.09047 9.89079 4.69624 9.49656 4.69624 9.01026C4.69624 8.52395 5.09047 8.12972 5.57678 8.12972Z"
-        fill="var(--color-tutorial-card-text)"
-        fillOpacity={0.8}
+        fill="var(--color-coming-soon-icon)"
       />
     </svg>
   )
