@@ -1,186 +1,22 @@
 # Handoff — makeup tutorial app
 
-Written to carry context into a fresh session. Read this first, then
-`docs/figma-step-screen-restyle.md` for the current (V5) visual diff if
-you're touching colors/spacing/sizing on any step screen, or
-`docs/figma-v2-redesign.md` for the underlying V2 structural diff if
-you're touching illustration data or copy — V5 didn't change either of
-those, see "Design history" below for how the two docs relate.
+**Current as of 2026-09-02** — re-verified against the actual code on that
+date. Read this first, then `docs/figma-step-screen-restyle.md` for the
+current (V5) visual diff if you're touching colors/spacing/sizing on any
+step screen, or `docs/figma-v2-redesign.md` for the underlying V2
+structural diff if you're touching illustration data or copy — V5 didn't
+change either of those, see "Design history" below for how the two docs
+relate.
 
-**Re-verified and substantially rewritten 2026-08-21** — this doc had
-gone stale since the initial commit (`8544b66`) and hadn't been touched
-since, while several commits' worth of work on the home screen
-(`docs/home-stack-handoff.md`, a separate doc for that separate area)
-also picked up real changes to this feature's own files along the way
-(motion, wiring, product photography). Re-checked every claim below
-against the actual current code before writing this version — see each
-section for what changed. **Git state**: branch `feature/home-tutorial-stack`
-— see the 2026-08-25 update near the bottom of this section for the
-current pointer and PR status; this line is intentionally left as
-written at the time (2026-08-21), not kept in sync in place — run
-`git status`/`git log --oneline -5` on a fresh session start regardless,
-same caveat as `docs/home-stack-handoff.md`'s own git-state note.
+Written to carry context into a fresh session. If you find a stale claim
+after this point, fix it here in place rather than appending another dated
+"update" note — see "History" at the bottom for why that convention was
+dropped.
 
-**2026-08-24 update — V5 restyle pass shipped.** The user iterated the V2
-flow further in Figma (sizing/spacing/color refinements + an eye-instance
-resize) and it's now fully implemented, reviewed, and tuned — see
-**`docs/figma-step-screen-restyle.md`** for the complete diff, node IDs,
-and a full round-by-round log of what was found and fixed (several real
-gaps surfaced only during implementation/review, not from the initial
-Figma diff alone — that doc's own history is worth reading if anything
-here seems inconsistent with the actual code). Short version: every
-`StepScreen`/`ScreenHeader`/`ProductCard`/`ActionButton`/`CheckIndicator`
-color, size, and spacing value now matches this newest Figma pass; the
-header icons were rebuilt from real downloaded assets (inline SVG path
-data, no more hand-traced shapes); a skin-tone radial gradient behind the
-eye was added (previously missing entirely); the eye illustration's
-render size was corrected to track the user's Figma resize (see
-`EyeIllustration.tsx`'s `REFERENCE_RENDER_WIDTH`); and the paper-texture
-noise mask's position/opacity/blend-mode/grain-scale were tuned
-interactively to final values (top 58px, height 250px, width 300px,
-opacity 0.4, soft-light blend, 0.9x grain scale) — same soft-light blend
-mode as before this pass, just at lower opacity, a smaller/repositioned
-box, and (new) an independent grain-scale control. `AllStepsView.tsx` is
-explicitly **not** part of this pass — still on the older V2 styling,
-deferred by the user's own call, see that doc's opening scope note.
-
-**2026-08-24 update — the skin-tone radial wash's own position/size/color
-were re-tuned again, live, after the V5 pass above.** Two hard-edge seam
-bugs were found and fixed in `StepScreen.tsx`'s wash div (the ellipse's
-40%→100% fade never actually reached true transparency at either the top
-or bottom edge of its own box, so alpha jumped from partial to zero in a
-single pixel row — read as a visible line right at the header/illustration
-boundary, then again at the illustration/sheet boundary once later layout
-work made that second seam land in open background instead of inside the
-card). Fixed with a symmetric `maskImage` fade on both edges. The wash's
-actual position/radii/box-height/edge-fade were then re-tuned live via a
-temporary `WashTuner` dev panel (same lifecycle as `TutorialCard.tsx`'s
-now-removed `MotionTuner`) and baked into a plain `WASH_TUNING` constant
-once settled — panel removed. Separately, the step-screen text's vertical
-position was made consistent: the title/description block used to be
-centered as one unit with the illustration, so a step with a longer
-description shifted the *title's* position too; the description now
-reserves a fixed height (`STEP_DESCRIPTION_RESERVED_HEIGHT`, sized to the
-tallest real 3-line case) so title position is identical across all 7
-steps regardless of copy length — same "reserve the tallest real case"
-technique applied to the bottom product sheet
-(`PRODUCT_SHEET_RESERVED_HEIGHT`), which previously let the sheet's own
-height (159px for a 1-product step vs. 238px for 2-product) shift where
-the centered text landed step to step.
-
-**2026-08-24 update — a third, whole-flow animation audit ran this
-session** (HomeScreen → `TutorialCard`'s stack/flip/Start Over →
-`TutorialFlow` → `StepScreen` → `AllStepsView`, the first audit to cover
-every screen at once rather than just the home stack) and surfaced 14
-findings; plans written for all of them (`plans/008-*.md` through
-`plans/021-*.md`). **Eight executed this session**: removed leftover
-`console.log` debug instrumentation left in `TutorialCard.tsx` from an
-earlier diagnostic session; added press/hover feedback to `ScreenHeader`'s
-four buttons (previously the only screen where Back/Search/Widget/Done had
-zero tap feedback while the bottom action button did); composed
-`StepScreen`'s product-card entrance/exit onto full `transform` strings
-instead of Framer Motion's `y`/`scaleY` shorthand (not hardware-
-accelerated); gave `prefers-reduced-motion` users the same tutorial detail
-content (level/product-preview/CTA) instead of skipping straight into the
-tutorial on a tap; consolidated a third hand-typed copy of the
-`ease-out-quart` curve onto the shared `EASE_OUT_QUART` constant; animated
-the product-sheet's reserved-height collapse on Finish→Done instead of an
-instant snap; added a rapid-tap guard on the step screen's Next button
-(was restarting the badge/title keyframes mid-play); and gave the
-per-step content swap its own faster, budget-compliant duration token
-(`--duration-step-content: 280ms`, separate from the shared
-`--duration-layout` used by rarer screen/view transitions). **Worth
-knowing**: the reserved-height collapse fix's first attempt (Framer
-Motion's `layout` prop) was tried and empirically disproven live — it
-does nothing when collapsing to a target height of 0 (the FLIP
-technique's inverse-transform math divides by zero) — animating `height`
-directly is what actually works, confirmed by polling the real rendered
-height every animation frame across the transition, not assumed from
-Framer Motion's docs. **Three more executed in a later session**: `check-ring-in`'s
-entrance scale brought inside the 0.9–0.97 physicality band (plan 013);
-`justToggledKey` (this file, `TutorialFlow.tsx`) now clears synchronously
-on both view-switch paths instead of only after its 260ms timeout, closing
-the window where toggling a product then immediately switching between
-step/list view replayed the check animation on the matching row in the
-freshly-mounted view even though the user never touched it there (plan
-014); and nested pressables (the bookmark, `StartTutorialButton`) no
-longer compound their ancestor card's `:active` scale via
-`has-[button:active]:scale-100` (plan 018, `TutorialCard.tsx`). **Two more
-executed in a session after that**: `StartOverCard`'s filter-color swap
-replaced with an interruptible JS-driven crossfade (copied from
-`CardBehind`'s already-proven `imgOpacity`/`displayedLookType` pattern),
-closing the same keyframe-restart-on-rapid-tap bug `CardBehind` already
-had fixed (plan 015, `TutorialCard.tsx`); and `AllStepsView`'s
-scroll-shadow fade moved off Tailwind's default `transition-opacity
-duration-200` onto the app's own `--duration-base`/`--ease-out-quart`
-tokens (plan 020). **The last one, plan 019, executed in a session after
-that too** — the filter chip's own press-flash sweep (`HomeScreen.tsx` +
-`index.css`) no longer animates `background-position` (paint-triggering,
-stacked on two other paint/blend layers on the same chip); it's a
-`transform: translateX(...)` on a new inner strip now, compositor-only,
-same visual sweep. **This closes out the entire third audit — all 14
-findings (008-021) are now executed.**
-Full findings tables, severity/leverage ranking, and per-plan execution
-notes live in **`plans/README.md`** — that file, not this section, is the
-source of truth for what's actually done vs. still open in this set.
-
-**2026-08-25 update — `AllStepsView.tsx` restyle shipped; `ScreenHeader`'s
-toggle rebuilt a second time.** Two things this update corrects everywhere
-else in this doc still says otherwise:
-
-- **`AllStepsView.tsx` is no longer "still V2 styling."** It got its own
-  fresh Figma pull and is now fully restyled — background gradient
-  (`--gradient-bg-list`, a cream token distinct from `--gradient-bg-home`),
-  a real back button (was hidden on this view), per-step descriptions
-  (previously never rendered at all despite the data existing), corrected
-  group-title/badge typography, and a pill-shaped Finish button. It also
-  picked up its own scroll-driven behavior not in the original V5 scope at
-  all: a frosted-glass sticky header (shown only once scrolled) that hides
-  on scroll-down and reveals on scroll-up. Full diff, node IDs, and — this
-  one went through several rounds of user-tested corrections after its
-  first ship (gradient extent, letter-spacing, a desktop mouse-wheel scroll
-  bug that turned out to be in `App.tsx` not this file, a stray
-  rounded-corner bug, three separate frost-color iterations) — all in
-  **`docs/figma-allsteps-restyle.md`**.
-- **`ScreenHeader`'s Search/Widget toggle is not "two independent
-  buttons" anymore either** (the shape the V5 update above, and the "Quick
-  file map" below, still describe). Reworked into a single persistent
-  sliding highlight — real segmented-control behavior, not two chips each
-  independently fading in/out on selection — after that fading-chip
-  approach turned out to have a run of real, if subtle, rendering bugs
-  (a hairline `border` sometimes missing an edge at sub-pixel widths, then
-  a `box-shadow` chip desyncing from the button's own press-transform).
-  The harder problem underneath all of it: Search/Widget doesn't toggle
-  state within one mounted screen, it switches which of `StepScreen`/
-  `AllStepsView` `TutorialFlow` renders — two separate component trees,
-  each with their own `<ScreenHeader>` — so a plain CSS `transition` can
-  never animate across the swap. The actual cross-screen slide is driven
-  by the browser's **View Transitions API**
-  (`TutorialFlow.tsx`'s `switchViewWithTransition`, wrapping `setView`
-  calls in `document.startViewTransition` + `flushSync`), matched to a
-  `view-transition-name` on the highlight (`ScreenHeader.tsx`/`index.css`).
-  Falls back to today's plain instant swap on browsers without View
-  Transitions or under `prefers-reduced-motion`. Full round-by-round
-  history (sixth through ninth follow-up rounds) in
-  **`docs/figma-step-screen-restyle.md`** — don't trust that doc's own
-  original `### Header` section for the toggle's current shape, it's
-  marked superseded inline but easy to miss on a skim.
-- A docs-cleanup pass on both of the above also caught a real, if minor,
-  piece of dead code: `--gradient-bg-screen` (tokens.css) has **zero**
-  remaining consumers in `src/` — both `StepScreen` and `AllStepsView`
-  independently moved to the cream gradient family (`--gradient-bg-home`
-  / `--gradient-bg-list`) without either doc noticing the other had done
-  the same. Marked `deprecated` in tokens.css rather than deleted, per
-  this file's own convention for values like it.
-
-**Git state**: **2026-08-25 update — `feature/home-tutorial-stack`'s PR
-(#1) merged into `main`** (`9f1aa24`); this file's own scope (the step-flow/
-illustration work) wasn't touched by anything since. New, unrelated work
-after the merge (the About/Info overlay + its own animation-audit plans)
-is out of this doc's scope — see `docs/home-stack-handoff.md`'s own
-git-state note for that branch. Run `git status`/`git log --oneline -5`
-regardless on a fresh session start, same standing caveat as every earlier
-git-state note in this doc.
+**Git/branch state**: this feature is merged to `main` (`9f1aa24`), no
+open branch work remaining in its own scope. Run `git status` /
+`git log --oneline -5` on a fresh session start regardless — this note is
+a snapshot, not a live value.
 
 ## What this app is
 
@@ -217,18 +53,20 @@ Run it: `npm run dev` (or via the Browser pane's `preview_start` with name
    sizing/spacing/color refinements plus an eye-instance resize — over the
    shipped V2 shell. Tracked in **`docs/figma-step-screen-restyle.md`**
    (full diff, node IDs, and every round of user review/correction that
-   followed). Done and shipped; `AllStepsView.tsx` explicitly excluded,
-   still on V2 styling.
+   followed). Done and shipped; `AllStepsView.tsx` was excluded from this
+   pass but got its own separate Figma pull and restyle afterward — see
+   **`docs/figma-allsteps-restyle.md`**, also done and shipped.
 
 ## Current state (what's done)
 
-**V5 is done and shipped** (see the top-of-doc 2026-08-24 note and
-`docs/figma-step-screen-restyle.md`) — everything in the V2 sections below
-is now further overlaid with V5's colors/spacing/sizing on top of it,
-except `AllStepsView.tsx` (still V2). Reading the V2 detail below is still
-useful for the underlying structure/wiring, just not for current visual
-values on `StepScreen`/`ScreenHeader`/`ProductCard`/`ActionButton`/
-`CheckIndicator` — check `figma-step-screen-restyle.md` for those.
+**V5 (`StepScreen`/`ScreenHeader`/`ProductCard`/`ActionButton`/
+`CheckIndicator`) and the separate `AllStepsView.tsx` restyle are both done
+and shipped** — see `docs/figma-step-screen-restyle.md` and
+`docs/figma-allsteps-restyle.md` respectively for the full diffs, node IDs,
+and every follow-up correction round. Both docs lead with a "current
+values" quick-reference if you just need the numbers, not the history.
+Reading the V2 detail below is still useful for the underlying
+structure/wiring, just not for current visual values.
 
 **V2 phases 1, 2, and 4 are complete and verified in-browser:**
 
@@ -241,63 +79,56 @@ values on `StepScreen`/`ScreenHeader`/`ProductCard`/`ActionButton`/
   rebuilt from the actual downloaded V2 check assets (not guessed).
 - **Phase 4** (All Steps view): new `AllStepsView.tsx`, shared step data
   extracted to `src/data/stepContent.ts`, view toggle (`step` ⇄ `list`)
-  wired in `TutorialFlow.tsx` via the header's Search/Widget icons.
-- **Header selector fix** (post-phase-4, user-reported): the Search/Widget
-  toggle used to shift both icons sideways when swapping which one was
-  active (naive flex resize). Fixed by pinning each icon to a fixed center
+  wired in `TutorialFlow.tsx` via the header's Search/Widget icons —
+  now a single sliding-highlight segmented control, driven across the
+  screen swap by the browser's View Transitions API
+  (`TutorialFlow.tsx`'s `switchViewWithTransition`,
+  `document.startViewTransition` + `flushSync`), not two independently
+  fading buttons. Falls back to an instant swap without View Transitions
+  support or under `prefers-reduced-motion`.
+- **Header selector fix**: each toggle icon is pinned to a fixed center
   point (`left`/`top` + `translate(-50%,-50%)`, independent of flexbox) so
-  only the circle's diameter changes, never its position. Verified with
-  exact coordinate math, not just a screenshot — see `ScreenHeader.tsx`'s
-  comment above the pill for the reasoning if it needs touching again.
+  only the circle's diameter changes when the selection swaps, never its
+  position.
 
-**Phase 3 is partial, not "not yet touched"** — this doc previously said
-`EyeIllustration.tsx` was 100% V1; that was true when originally written
-but is now wrong for step 1 specifically. **Step 1 was re-pulled as real
-V2 per-layer data** (commit `4978592`, `STEP_LAYOUTS[1]`, node `545:1793`)
-and renders through the same per-layer path as every other step now — no
-longer the flattened-SVG special case it used to be. **Steps 2-7 are
-still V1 data**, confirmed directly in `EyeIllustration.tsx`'s own module
-comment ("not the V1 data steps 2-4 below still use") — this is still
-real, unstarted work, see "Pending work" below.
+**Phase 3 is partial.** **Step 1 has real V2 per-layer data**
+(`STEP_LAYOUTS[1]`, node `545:1793`) and renders through the same
+per-layer path as every other step — no longer a flattened-SVG special
+case. **Steps 2-7 are still V1 data**, confirmed directly in
+`EyeIllustration.tsx`'s own module comment — real, unstarted work, see
+"Pending work" below.
 
-**Phase 5 (motion) is done, contrary to what this doc previously said.**
-Everything below was actually built (`StepScreen.tsx`, largely — check
-its own extensive comments for full reasoning on each):
+**Phase 5 (motion) is done.** `StepScreen.tsx` (check its own extensive
+comments for full reasoning on each):
 - **Step-to-step transitions**: title/description + progress badge
   slide/fade in on every Next/Back, direction-aware (from the right on
   Next, from the left on Back — standard push/pop convention), driven by
   a `prevStepRef`-based direction calculation, not a guess.
-- **Finish fade-out**: clicking Finish on step 7 now plays a real
+- **Finish fade-out**: clicking Finish on step 7 plays a real
   `AnimatePresence`-driven exit (`cardExitTransition`) on the product
   card before advancing to step 8's "done" screen — the
   `onExitComplete` callback is what actually triggers the step-8
   transition, not a guessed delay.
-- **Illustration layer diffing** (not previously documented at all): the
-  eye illustration is never remounted between steps — React's own
-  `key={layerKey}` reconciliation means a layer whose name persists
-  across a step change (e.g. "Sclera") is the same DOM node the whole
-  time, no motion; a layer that's new this step gets a stagger entrance.
-  This is also what made step 1's V2 re-pull worth doing beyond just
-  correctness: sharing real layer names with step 2 (instead of one
-  opaque flattened SVG) is what let the 1→2 transition diff correctly at
-  all.
+- **Illustration layer diffing**: the eye illustration is never
+  remounted between steps — React's own `key={layerKey}` reconciliation
+  means a layer whose name persists across a step change (e.g. "Sclera")
+  is the same DOM node the whole time, no motion; a layer that's new this
+  step gets a stagger entrance. This is also what made step 1's V2
+  re-pull worth doing beyond correctness alone: sharing real layer names
+  with step 2 (instead of one opaque flattened SVG) is what lets the 1→2
+  transition diff correctly at all.
 
-**Other things this doc previously listed as pending, now also
-resolved** (re-verified against current code, not assumed):
-- **Home page / look selector exists now** — out of this doc's own
-  scope (see `docs/home-stack-handoff.md`, the dedicated doc for that
-  feature area); `App.tsx` routes between `HomeScreen` and
-  `TutorialFlow`, `TutorialFlow` takes an `onExit` prop.
-- **"Done" button is wired** — `onDone={onExit}` in `TutorialFlow.tsx`,
-  returns to the home screen. No longer unwired.
-- **All Steps view checkboxes are live-synced** — `checkedOverrides` now
-  lives in `TutorialFlow` and is passed to both `StepScreen` and
-  `AllStepsView`, one shared source of truth, not two independent
-  `useState`s.
-- **Product photography is real**, not placeholder — every product in
-  `src/data/stepContent.ts` has a real imported `image`; `ProductCard`
-  only falls back to the placeholder box when `image` is omitted, which
-  no longer happens for any current product.
+**Also done**: the home page / look selector (out of this doc's own
+scope — see `docs/home-stack-handoff.md`; `App.tsx` routes between
+`HomeScreen` and `TutorialFlow`, `TutorialFlow` takes an `onExit` prop);
+the Done button (`onDone={onExit}`, returns to the home screen); All Steps
+view checkboxes (`checkedOverrides` lives in `TutorialFlow`, shared with
+both `StepScreen` and `AllStepsView` — one source of truth, not two);
+real product photography throughout `src/data/stepContent.ts` (`ProductCard`
+only falls back to a placeholder box when an `image` is actually omitted,
+which no current product does); `aria-label`s on every icon-only header
+button (`Back`/`Show step view`/`Show all steps`/`Exit tutorial`,
+`ScreenHeader.tsx`).
 
 ## Pending work
 
@@ -401,27 +232,21 @@ artwork.
 
 ### 2. Known gaps / minor details worth a look
 
-Re-checked against current code this pass — several items previously
-listed here turned out to already be resolved (moved into "Current
-state" above instead: All Steps checkbox sync, the Done button's wiring,
-real product photography). What's actually still open:
+Re-verified against current code 2026-09-02. Header icon-only buttons now
+have `aria-label`s (`ScreenHeader.tsx`) — resolved, no longer listed here.
+What's actually still open:
 
-- **Header's Done and Back icon buttons have no `aria-label`** — icon-only
-  buttons with no accessible name, confirmed still true (no `aria-label`
-  anywhere in `ScreenHeader.tsx`, unlike `CheckIndicator`/`ProductCard`
-  elsewhere in the app, which do have them). Quick a11y fix.
 - **This tutorial's own content is still hardcoded to one look
   ("Soft Smokey Eye")** — `stepContent.ts` and `EyeIllustration.tsx` both
-  assume a single flow, no `look`/tutorial-id keying anywhere. This
-  matters more now than when originally written: the home screen
-  (`docs/home-stack-handoff.md`) already renders 4 tutorial cards, but
-  only this one actually opens a real `TutorialFlow` — the other three
-  have real photos/bookmarks but aren't wired to real content, by the
-  home screen's own explicit, current design (not a bug, a scope call
-  documented there). Restructuring `stepContent.ts`/`EyeIllustration.tsx`
-  to be keyed by look, not just by step, is what unlocks the other three
-  — real prerequisite work if "make the other 3 looks real" ever becomes
-  the next ask, not this doc's own current task.
+  assume a single flow, no `look`/tutorial-id keying anywhere. The home
+  screen (`docs/home-stack-handoff.md`) filters and renders all 4 tutorial
+  cards, but only this one has `hasContent: true` — the other three open
+  a "Coming soon" state (a disabled `ComingSoonButton` on the card, a toast
+  from Bookmarks) instead of a real `TutorialFlow`, by design, not as an
+  unhandled gap. Restructuring `stepContent.ts`/`EyeIllustration.tsx` to be
+  keyed by look, not just by step, is what unlocks the other three — real
+  prerequisite work if "make the other 3 looks real" ever becomes the next
+  ask, not this doc's own current task.
 - **No automated tests** — confirmed still true (no `*.test.*` files, no
   `test` script in `package.json`). Every check so far has been manual
   (`tsc -b` + browser verification).
@@ -449,10 +274,12 @@ actually verified, not a screenshot).
 ## Quick file map
 
 ```
+docs/README.md                      Index of every doc in this folder, with current-vs-historical status
 docs/figma-v2-redesign.md          Full V2 Figma diff + node-ID reference + 5-phase plan
 docs/figma-step-screen-restyle.md  Full V5 Figma diff + node IDs + every follow-up round (read this for anything V5-related — most of the interesting detail is in the follow-up rounds, not the original plan)
+docs/figma-allsteps-restyle.md     Full AllStepsView Figma diff + node IDs + follow-up rounds
 docs/handoff.md                     This file
-docs/home-stack-handoff.md          Separate doc: the HomeScreen tutorial-card stack + its own motion — read that one for App.tsx/HomeScreen/TutorialCard.tsx questions, not this doc
+docs/home-stack-handoff.md          Companion doc: the HomeScreen tutorial-card stack + its own motion — read that one for App.tsx/HomeScreen/TutorialCard.tsx questions, not this doc
 
 src/data/stepContent.ts      Shared step copy + product data (STEP_CONTENT, TOTAL_STEPS) — real product photos, still single-look (Soft Smokey Eye) only, see "Known gaps"; `checked` values verified against Figma directly as of V5 (see figma-step-screen-restyle.md)
 src/styles/tokens.css        Design tokens; V1 values marked, V2/V5 replacements marked in place
@@ -460,11 +287,11 @@ src/styles/tokens.css        Design tokens; V1 values marked, V2/V5 replacements
 src/components/
   CheckIndicator.tsx        36x36 check control (checked/unchecked) — SVG shapes traced from V2 assets, colors/stroke-width updated for V5
   ProductCard.tsx           Product row: image, brand/name/shade, CheckIndicator — sizing/colors updated for V5
-  ScreenHeader.tsx          Back / Search-Widget toggle / Done — shared by StepScreen + AllStepsView — rebuilt for V5 (real downloaded icon assets as inline SVG path data, frosted-chip chrome), then rebuilt *again* (2026-08-25 update above): the toggle is now one persistent sliding highlight (inset `box-shadow`, not `border`), animated across the Search/Widget screen swap via the View Transitions API — not "two independent buttons" as this line used to say. Done/Back buttons still lack aria-label, see "Known gaps"
-  ActionButton.tsx          Shared default/final bottom button — colors/height/typography updated for V5; takes an optional per-call-site `style` override since the 2026-08-25 update (AllStepsView's own Finish button is a 24px-radius pill, StepScreen's stays the shared 12px default)
+  ScreenHeader.tsx          Back / Search-Widget toggle / Done — shared by StepScreen + AllStepsView. Icons are inline SVG path data (frosted-chip chrome); the Search/Widget toggle is one persistent sliding highlight (inset `box-shadow`, not `border`), animated across the screen swap via the View Transitions API. All four icon-only buttons (Back/Show step view/Show all steps/Exit tutorial) carry an `aria-label`.
+  ActionButton.tsx          Shared default/final bottom button — colors/height/typography updated for V5; takes an optional per-call-site `style` override (AllStepsView's own Finish button is a 24px-radius pill, StepScreen's stays the shared 12px default)
   EyeIllustration.tsx       Layered SVG eye composite — step 1 real V2 per-layer data + stagger diffing; steps 2-7 still V1 layer data (this is the still-open half of phase 3, see above) — render *size* corrected for V5's Figma resize (REFERENCE_RENDER_WIDTH)
   StepScreen.tsx            One step's full screen — owns the step-to-step direction-aware transition + Finish fade-out (Framer Motion, phase 5, done); V5 added the skin-tone radial-gradient wash and re-tuned the noise mask (final: top 58px/h 250px/w 300px/opacity 0.4/soft-light/0.9x grain scale)
-  AllStepsView.tsx          All-steps list screen — checkedOverrides now shared with StepScreen via TutorialFlow, not its own local state — restyled as of the 2026-08-25 update above (was NOT part of V5, still on V2 styling before that); see docs/figma-allsteps-restyle.md for the full diff, including its own scroll-driven frosted/hide-on-scroll header not present in any Figma pull
+  AllStepsView.tsx          All-steps list screen — checkedOverrides shared with StepScreen via TutorialFlow, not its own local state — fully restyled (own Figma pull, distinct from V5); see docs/figma-allsteps-restyle.md for the full diff, including its own scroll-driven frosted/hide-on-scroll header not present in any Figma pull
 
 src/TutorialFlow.tsx        Owns `step`/`view`/`checkedOverrides` state, wires everything together; takes `onExit` (wired to the Done button, returns to Home)
 src/App.tsx                 Routes HomeScreen ⇄ TutorialFlow — see docs/home-stack-handoff.md for the real detail on this file, out of this doc's own scope
@@ -474,3 +301,29 @@ src/assets/eyes/Step_2/ … Step_7/   V1 eye illustration layer SVGs (downloaded
 src/assets/icons/           V1 Checked/Unchecked (superseded by icons/v2/check-*.svg, kept for reference)
 src/assets/icons/v2/        radial-noise.svg (used, StepScreen.tsx) + check-*.svg (reference only — CheckIndicator.tsx traces these as inline paths, doesn't import the files). The old V2 header icon files (arrow-left.svg, done-check.svg, search-ellipse-*.svg, search-handle.svg, widget-bar-*.svg) were deleted during V5 — ScreenHeader.tsx's icons are inline SVG path data now, no image imports.
 ```
+
+## History
+
+Compact milestone list, newest first — full reasoning for each lives in
+git history and `plans/README.md`, not repeated here. This replaces what
+used to be a long, layered "2026-08-2x update" narrative at the top of
+this doc; if that level of detail is ever needed, it's in this file's own
+git history.
+
+- **2026-09-02**: doc re-verified end-to-end and corrected in several
+  places where it had drifted (aria-labels landed without this doc being
+  updated; `AllStepsView.tsx`'s restyle status was stale; the "hardcoded
+  to one look" gap is now a deliberate `hasContent`/`ComingSoonButton`
+  design, not an unhandled edge).
+- **`AllStepsView.tsx` restyled**; `ScreenHeader`'s Search/Widget toggle
+  rebuilt into a single sliding highlight driven by the View Transitions
+  API — see `docs/figma-allsteps-restyle.md`.
+- **Third, whole-flow `improve-animations` audit** (plans 008-021) — see
+  `plans/README.md`.
+- **V5 restyle pass shipped** — see `docs/figma-step-screen-restyle.md`.
+- **`feature/home-tutorial-stack` merged to `main`** (`9f1aa24`).
+- **Step 1's eye illustration re-pulled as real V2 per-layer data**
+  (`STEP_LAYOUTS[1]`, node `545:1793`) — steps 2-7 still V1, see
+  "Pending work" above.
+- **V2 redesign implemented** (phases 1, 2, 4, 5) — see
+  `docs/figma-v2-redesign.md`.
