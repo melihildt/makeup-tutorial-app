@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { EASE_OUT_QUART, TUTORIALS, toggleInSet } from './components/TutorialCard'
+import { DURATION, EASE_OUT_QUART, TUTORIALS, toggleInSet } from './components/TutorialCard'
 import { HomeScreen } from './components/HomeScreen'
 import { AccountScreen } from './components/AccountScreen'
 import { MyProductsScreen } from './components/MyProductsScreen'
@@ -344,7 +344,7 @@ function App() {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: reduceMotion ? 0.2 : 0.35, ease: EASE_OUT_QUART }}
+            transition={{ duration: reduceMotion ? DURATION.base : DURATION.layout, ease: EASE_OUT_QUART }}
           >
             {screen === 'home' && (
               <HomeScreen

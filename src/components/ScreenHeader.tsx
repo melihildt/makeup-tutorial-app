@@ -166,7 +166,7 @@ export function ScreenHeader({
             background: 'var(--color-header-icon-bg)',
             boxShadow: 'inset 0 0 0 0.5px var(--color-header-icon-border)',
             transform: isListView ? 'translateX(100%)' : 'translateX(0)',
-            transition: 'transform var(--duration-base) var(--ease-out-quart)',
+            transition: 'transform var(--duration-base) var(--ease-in-out)',
           }}
         />
         <button

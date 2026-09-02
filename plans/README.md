@@ -264,6 +264,93 @@ Shade row correctly appears/disappears rather than rendering blank).
 | 037 | [Product Detail overlay: product-name headline + Shade/Category/Purchase-on rows](037-product-detail-info-rows.md) | MEDIUM-HIGH | Missed content / cohesion & tokens | Product Detail overlay | DONE |
 | 038 | [My Products screen: icon/text color bugs + missing sheet-container border](038-my-products-token-fixes.md) | MEDIUM | Cohesion & tokens | My Products (+ Account/All Steps/Step screen containers) | DONE |
 | 039 | [Step screen: header/badge/title/description/sheet color+typography+radius fixes](039-step-screen-verify-pass.md) | MEDIUM | Cohesion & tokens | Tutorial step screens (all 7) | DONE |
+| 040 | [Toast entrance: use a full transform string, not the y shorthand](040-toast-transform-string.md) | MEDIUM | Performance | Toast (Account, My Products) | DONE |
+| 041 | [ScreenHeader toggle highlight: use --ease-in-out for its on-screen slide](041-header-toggle-ease-in-out.md) | MEDIUM | Easing & duration | Tutorial step, All steps view | DONE |
+| 042 | [Gate hover feedback on (pointer: fine) as well as (hover: hover)](042-hover-gate-pointer-fine.md) | MEDIUM | Accessibility | App-wide (.action-button, .header-icon-button) | DONE |
+| 043 | [CheckIndicator: consolidate its toggle choreography to fewer animated properties](043-checkindicator-consolidate-animation.md) | MEDIUM | Purpose & frequency | Tutorial step, All steps view | DONE |
+| 044 | [Promote a shared DURATION JS constant, mirroring tokens.css](044-shared-duration-constant.md) | LOW | Cohesion & tokens | App-wide | DONE |
+| 045 | [BookmarksScreen EmptyState: trace its 0.3s duration to a real token](045-bookmarks-emptystate-duration-token.md) | LOW | Cohesion & tokens | Bookmarks | DONE |
+| 046 | [Extract InfoOverlay/ProductDetailOverlay's duplicated hero-entrance transition](046-shared-hero-entrance-transition.md) | LOW | Cohesion & tokens | About/Info overlay, Product Detail overlay | DONE |
+| 047 | [Idle-hint nudge: align spring bounce to the file's 0.15 convention](047-idle-nudge-bounce-consistency.md) | LOW | Cohesion & tokens | Home (tutorial card stack) | DONE |
+| 048 | [Promote EASE_IN_OUT to a shared export, matching EASE_OUT_QUART's pattern](048-export-ease-in-out.md) | LOW | Cohesion & tokens | About/Info overlay (+ any future consumer) | DONE |
+| 049 | [StepScreen's product-card spring: convert stiffness/damping/mass to bounce/duration](049-stepscreen-spring-api-consistency.md) | LOW | Cohesion & tokens | Tutorial step | DONE |
+
+## Sixth audit (040-049)
+
+A fresh, full `/improve-animations` audit against commit `2d86cf3` — the
+user explicitly asked for a clean pass rather than reconciling the existing
+(then all-DONE-or-deferred) backlog above. Four parallel subagents covered
+all 8 AUDIT.md categories; every finding below was independently re-verified
+against its cited file:line before being presented. 13 findings were
+confirmed total; the user selected 10 (040-049, this batch) to become plans.
+The other 3 (ScreenHeader/TutorialFlow's Back button missing the same
+rapid-tap guard Next already has; AllStepsView's sticky header animating
+background-color/backdrop-filter; HomeScreen's LookSelectorChip animating
+border-color/box-shadow alongside transform) and 2 additive "missed
+opportunities" (Home's filter-switch entrance only playing once per session;
+the selected chip's texture/tint layer hard-mounting with no fade) were
+presented but not selected — not written up as plans, per this skill's own
+Phase 3 instruction to only write plans for user-selected findings.
+
+**All ten (040-049) executed in the same session they were written**,
+directly in the working tree (same reasoning as every prior batch — the repo
+had uncommitted changes at execution time), in the dependency order this
+file's own "Recommended execution order" section lays out: 040/041/042/043/
+045/047/049 (independent, any order) first, then 044 (new `DURATION` export
++ 16 call-site migrations), then 048 (new `EASE_IN_OUT` export, promoted from
+`InfoOverlay.tsx`'s local copy), then 046 (new `heroEntranceTransition`
+helper, built on top of 044's `DURATION`). All re-verified against current
+file content immediately before editing; no drift found from the commit
+`2d86cf3` citations.
+
+- **040-042, 045, 047, 049 executed exactly as planned** — no deviations.
+- **043 executed exactly as planned, with one addition the plan's own step 4
+  anticipated**: the `grep` check for other `check-ring-in`/`check-draw`
+  consumers found `check-ring-in` still used by `HomeScreen.tsx:350` (a
+  LookSelectorChip checkmark, outside `CheckIndicator.tsx` entirely) — so
+  `@keyframes check-ring-in` was correctly **kept** in `index.css` (only its
+  two usages inside `CheckIndicator.tsx` were removed), while
+  `@keyframes check-draw`/`--check-draw-length` had no other consumer and
+  were removed outright, exactly as the plan's own contingency described.
+  `CheckIndicator.tsx`'s now-unused `CSSProperties` import was also removed
+  (flagged by the plan's own Verification step).
+- **044 executed exactly as planned** — `DURATION` exported from
+  `TutorialCard.tsx` immediately after `EASE_OUT_QUART`; all 16 call sites
+  migrated. Two sites (`InfoOverlay.tsx:427`, `ProductDetailOverlay.tsx:189`
+  in the plan's own line numbering) were migrated directly into 046's
+  `heroEntranceTransition` helper instead of as a standalone intermediate
+  edit, since 046 fully rewrites that block anyway — exactly the sequencing
+  this file's own "Recommended execution order" section called for ("if 044
+  lands first, 046 should reference `DURATION.layout`/`DURATION.base` inside
+  `heroEntranceTransition` instead of raw literals").
+- **046 and 048 executed exactly as planned**, in that order — `EASE_IN_OUT`
+  and `heroEntranceTransition` both live in `TutorialCard.tsx` immediately
+  after `DURATION`; `InfoOverlay.tsx` now imports both instead of declaring
+  its own local `EASE_IN_OUT` or hand-typing its card-entrance transition.
+
+Mechanical check across all ten: `npx tsc --noEmit` clean, `npm run build`
+clean. Live-verified in the dev preview: full tutorial flow (Night → Soft
+Smokey Eye → Start Tutorial → step 1), CheckIndicator toggle (pop-only
+animation confirmed, no replay on All Steps ↔ step-view switching),
+Search/Widget toggle slide (both the same-instance CSS transition and the
+cross-screen View Transitions path), Back navigating all the way out to Home
+at step 1, and the About overlay's `heroEntranceTransition` entrance — all
+rendered correctly with zero new console errors. (Two stale
+`InvalidStateError: Transition was aborted because of invalid state` console
+entries surfaced once, traced to this session's own mistimed test click on a
+stale element ref during an in-flight view transition — native View
+Transitions API behavior when a transition is superseded before it settles,
+unrelated to any of these ten plans: none of them touch
+`TutorialFlow.tsx`'s `switchViewWithTransition`/`startViewTransition` call
+site, only animation *values*. Not reproducible on a clean, single-step
+navigation pass.)
+
+Rejected during vetting (documented deliberate tradeoffs, Hard Rule 5 — not
+presented as findings at all): `.header-icon-button:active svg`'s 0.93
+press-scale; `TutorialCard.tsx`'s `DEFAULT_MOTION_TUNING` fly-off/flip spring
+durations at 0.7s; `product-preview-pop-in`'s 0.7 scale (the user's own
+"burst reveal" call, 2026-09-01 — see this session's own
+`product-preview-popin-static-delay-accepted` memory).
 
 **002's specific fix (`isFlipping` local state) no longer exists in the
 code** — it was removed during the Start Over two-face-flip redesign
@@ -724,6 +811,55 @@ plans existed).
    function from every other `TutorialCard.tsx` plan above — 015/018
    touch `StartOverCard`/the card-family `className`s, not
    `ProductsPreview`). Any order, including fully parallel.
+9. **040-049 (sixth audit batch) — do 044 and 048 first, before 046; the
+   rest are independent of each other and of everything above:**
+   - **040** (`Toast.tsx`, shorthand → transform string) — independent,
+     any time.
+   - **041** (`ScreenHeader.tsx` + `index.css`, easing swap) — independent,
+     any time. Not a hard dependency of 048 (048's own comment references
+     041 only as *motivating context* for the promotion, not a prerequisite
+     — 048 can run before, after, or without 041).
+   - **042** (`index.css`, two `@media` queries) — independent, any time.
+   - **043** (`CheckIndicator.tsx`, drop two of three animations, possibly
+     removing two now-dead keyframes from `index.css`) — independent, any
+     time.
+   - **044** (`TutorialCard.tsx` + 6 files, new `DURATION` export + 16
+     call-site swaps) — **run before 046**: 044 touches
+     `InfoOverlay.tsx:427` and `ProductDetailOverlay.tsx:189` (the
+     `duration` half of each line), 046 rewrites those same two lines
+     wholesale (extracting the whole `animate`/`exit` block into
+     `heroEntranceTransition`). If 044 lands first, 046's own Target
+     block should reference `DURATION.layout`/`DURATION.base` inside
+     `heroEntranceTransition` instead of raw `0.35`/`0.2` literals — each
+     plan's own "Repo conventions to follow" section already says to check
+     for this. If 046 lands first instead, re-scope 044's steps 4 and 6
+     (the `ProductDetailOverlay.tsx`/`InfoOverlay.tsx` entries) to edit
+     inside `heroEntranceTransition`'s body in `TutorialCard.tsx` instead of
+     the original call sites, since the literals will have moved there.
+     Either order works; just don't run both blind/parallel against the
+     original file content.
+   - **045** (`BookmarksScreen.tsx:236`, one literal) — independent of
+     044/046 (touches a line both plans explicitly exclude), any time. If
+     044 already landed, use `DURATION.layout` instead of the literal
+     `0.35` per 045's own "Repo conventions to follow" note.
+   - **046** (`InfoOverlay.tsx` + `ProductDetailOverlay.tsx`, shared
+     `heroEntranceTransition`) — see 044 above for sequencing. Independent
+     of 040/041/042/043/045/047/048/049.
+   - **047** (`TutorialCard.tsx`, idle-nudge bounce) — independent, any
+     time. Touches lines 2005/2007, well clear of 044's `TutorialCard.tsx`
+     edits (a new export near line 81, plus lines 2486/2545) and 043's file
+     (`CheckIndicator.tsx`, not `TutorialCard.tsx`) — no overlap.
+   - **048** (`TutorialCard.tsx` new export + `InfoOverlay.tsx` import
+     swap) — independent of 044/046 (different export, different lines),
+     though all three add exports near `TutorialCard.tsx:81` — if executing
+     044 and 048 close together, re-verify the insertion point by content
+     ("immediately after the `EASE_OUT_QUART` export") rather than assuming
+     a fixed line number, since whichever lands first shifts where the next
+     one's "immediately after" actually is.
+   - **049** (`StepScreen.tsx`, spring API conversion) — independent of
+     everything else in this batch; the file's other consumer of `cardSpring`
+     (the exit transition, `cardExitTransition`) is a separate, untouched
+     variable.
 
 001-005 touch only `src/components/TutorialCard.tsx` and were
 written against commit `628b8b7` — **now well behind current** (see

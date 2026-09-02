@@ -4,7 +4,7 @@ import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { BookmarkIcon, CloseIcon } from './icons'
 import { Toast, useToast } from './Toast'
 import { ScrollEndFade, useAtScrollEnd, useHasOverflow } from './ScrollEndFade'
-import { EASE_OUT_QUART, type Tutorial, type TutorialLevel } from './TutorialCard'
+import { DURATION, EASE_OUT_QUART, type Tutorial, type TutorialLevel } from './TutorialCard'
 import { getRoleButtonProps } from './rowActivation'
 import { useEscapeToClose } from './useEscapeToClose'
 
@@ -121,7 +121,7 @@ function BookmarkRow({
     <motion.div
       layout={!reduceMotion}
       exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: 'scale(0.96)' }}
-      transition={{ duration: reduceMotion ? 0.15 : 0.2, ease: EASE_OUT_QUART }}
+      transition={{ duration: reduceMotion ? DURATION.instant : DURATION.base, ease: EASE_OUT_QUART }}
     >
       <div
         {...getRoleButtonProps(handleActivate)}
@@ -233,7 +233,10 @@ function EmptyState() {
       className="flex flex-1 flex-col items-center justify-center gap-3 px-10 text-center"
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: 'scale(0.97)' }}
       animate={{ opacity: 1, transform: 'scale(1)' }}
-      transition={{ duration: reduceMotion ? 0.2 : 0.3, ease: EASE_OUT_QUART }}
+      // 0.35 = --duration-layout — first-time/rare settle-in, same bucket
+      // Toast's own banner entrance uses (see plans/045; was an untraceable
+      // 0.3 before this fix).
+      transition={{ duration: reduceMotion ? DURATION.base : DURATION.layout, ease: EASE_OUT_QUART }}
     >
       <span
         className="flex size-[64px] items-center justify-center rounded-full"
