@@ -235,7 +235,18 @@ export function TutorialFlow({ onExit, step, setStep }: TutorialFlowProps) {
         checkedOverrides={checkedOverrides}
         justToggledKeys={justToggledKeys}
         onToggleChecked={toggleProduct}
-        onBack={handleBack}
+        // The list view's own back arrow returns to the per-step view
+        // (code review finding) — it used to reuse `handleBack`, which
+        // only knows about `step` and has no idea `view` is 'list' here.
+        // Since AllStepsView always renders every step regardless of
+        // `step`, that decrement was invisible: tapping back repeatedly
+        // silently walked `step` down to 1 with no on-screen change, and
+        // the *next* tap then exited the whole tutorial out from under the
+        // user. `handleSelectStepView` is the actual "return to the other
+        // tutorial view" action (same one the header's Search icon
+        // triggers) — it's what "back" from a list means here, not a step
+        // decrement.
+        onBack={handleSelectStepView}
         onDone={onExit}
         onSelectStepView={handleSelectStepView}
         onFinish={handleFinish}

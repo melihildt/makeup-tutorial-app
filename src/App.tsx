@@ -154,9 +154,21 @@ function App() {
       setAboutOpen(route.aboutOpen)
     }
     window.addEventListener('popstate', handlePopState)
-    // Tags the entry the app loaded on with order 0, so the very first
-    // popstate (if any) has something real to compare against.
-    window.history.replaceState({ order: 0 }, '', window.location.pathname + window.location.search)
+    // Tags the entry the app loaded on with a real timestamp, not a reset-
+    // to-0 counter (code review finding): a per-load counter starting over
+    // at 0 on every reload collides with whatever order value older
+    // entries already sitting in `history` — pushed by this same app
+    // during a *previous* page load, and still carrying their own real
+    // order — happen to have. The first native Back after a reload pops to
+    // one of those, and `order < historyOrderRef.current` compared a stale
+    // higher order against the freshly-reset 0, misreading an actual Back
+    // as forward. Date.now() doesn't have that problem: it keeps
+    // increasing across a reload the same way it does within one session,
+    // so any entry tagged now is guaranteed to compare correctly against
+    // one tagged before the reload, with nothing needing to persist
+    // anywhere for that to hold.
+    historyOrderRef.current = Date.now()
+    window.history.replaceState({ order: historyOrderRef.current }, '', window.location.pathname + window.location.search)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
@@ -167,7 +179,7 @@ function App() {
     }
     const path = pathForRoute({ screen, tutorialStep, tutorialOrigin, aboutOpen })
     if (path === window.location.pathname + window.location.search) return
-    historyOrderRef.current += 1
+    historyOrderRef.current = Date.now()
     window.history.pushState({ order: historyOrderRef.current }, '', path)
   }, [screen, tutorialStep, tutorialOrigin, aboutOpen])
 

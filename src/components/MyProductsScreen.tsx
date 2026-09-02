@@ -1,8 +1,8 @@
-import { useLayoutEffect, useState } from 'react'
+import { useState } from 'react'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { CloseIcon, MenuDotsIcon, PlusIcon } from './icons'
 import { Toast, useToast } from './Toast'
-import { ScrollEndFade, useAtScrollEnd } from './ScrollEndFade'
+import { ScrollEndFade, useAtScrollEnd, useHasOverflow } from './ScrollEndFade'
 import { ProductDetailOverlay } from './ProductDetailOverlay'
 import { getRoleButtonProps } from './rowActivation'
 import { getMyProducts, type Product } from '../data/stepContent'
@@ -160,16 +160,13 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
   // a short list still reserved 40px of dead space below the last row even
   // though the list never scrolls. Same fix, same reasoning as
   // BookmarksScreen's own hasOverflow (see its comment there) — this screen
-  // just hadn't gotten it yet. Simpler than that one, though: this screen's
-  // list never shrinks in place (no delete here, unlike un-saving a
-  // bookmark), so a plain mount-time check is enough — no need for
-  // Bookmarks' extra re-check tied to the list's own length changing.
-  const [hasOverflow, setHasOverflow] = useState(false)
-  useLayoutEffect(() => {
-    const el = scrollerRef.current
-    if (!el) return
-    setHasOverflow(el.scrollHeight > el.clientHeight)
-  }, [scrollerRef])
+  // just hadn't gotten it yet. This screen's list never shrinks in place (no
+  // delete here, unlike un-saving a bookmark), so no extra deps are needed
+  // beyond useHasOverflow's own mount + resize checks (code review finding:
+  // the previous plain mount-time check never recomputed after a viewport
+  // resize/rotation, e.g. going from a short list that fit to one that now
+  // genuinely overflows — see useHasOverflow's own comment).
+  const hasOverflow = useHasOverflow(scrollerRef)
 
   return (
     <div
@@ -177,10 +174,18 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
       style={{ background: 'var(--gradient-bg-home)' }}
     >
       <Toast open={toastOpen} onClose={hideToast} />
+      {/* inert while ProductDetailOverlay is open (code review finding,
+          same class as HomeScreen's InfoOverlay — see its own comment):
+          this div — including the header's Add/Close buttons — sits
+          *before* ProductDetailOverlay in DOM order, so without this, Tab
+          from inside the overlay can reach those buttons even though the
+          overlay visually covers them. `inert` removes the whole subtree
+          from focus/pointer interaction while the overlay's showing. */}
       <div
         ref={scrollerRef}
         onScroll={onScroll}
         className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-[--space-sm] pb-2 pt-[--space-2xs]"
+        inert={!!selectedProduct}
       >
         <div className="flex items-start justify-between">
           <p

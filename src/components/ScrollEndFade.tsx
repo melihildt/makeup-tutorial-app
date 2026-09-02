@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type UIEvent } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState, type DependencyList, type RefObject, type UIEvent } from 'react'
 
 /**
  * Tracks whether a scrollable element is scrolled all the way to its own
@@ -21,19 +21,77 @@ export function useAtScrollEnd<T extends HTMLElement>() {
   const ref = useRef<T>(null)
   const [atEnd, setAtEnd] = useState(false)
 
-  function check(el: T) {
+  // useCallback (code review finding): both of these used to be plain
+  // function declarations, recreated with a new identity on every render.
+  // Fine for `onScroll` wired straight to the DOM's own onScroll prop
+  // (nothing else ever depended on *it*), but BookmarksScreen.tsx also put
+  // `onScroll` itself in a `useLayoutEffect` dependency array (to force a
+  // recheck when its list shrinks in place) — with a fresh identity every
+  // render, that effect actually re-ran on every re-render of the screen,
+  // not just when the list changed size as its own comment claimed.
+  // Memoizing both here (stable across re-renders, still fresh over
+  // `ref`/`check`'s own closed-over state via the setState updater form
+  // below, so neither needs `atEnd` itself as a dependency) fixes that at
+  // the source instead of leaving every call site to work around it.
+  const check = useCallback((el: T) => {
     setAtEnd(el.scrollHeight - el.scrollTop - el.clientHeight <= 1)
-  }
+  }, [])
 
   useLayoutEffect(() => {
     if (ref.current) check(ref.current)
-  }, [])
+  }, [check])
 
-  function onScroll(e: UIEvent<T>) {
-    check(e.currentTarget)
-  }
+  const onScroll = useCallback(
+    (e: UIEvent<T>) => {
+      check(e.currentTarget)
+    },
+    [check],
+  )
 
-  return { ref, atEnd, onScroll }
+  // Callable outside of a real scroll event — e.g. after a list shrinks in
+  // place with no scroll gesture involved (BookmarksScreen's own use case).
+  // Stable identity (via `ref`, not a captured element) so it's safe in a
+  // dependency array without reintroducing the same problem this hook's
+  // own `onScroll` used to have.
+  const recheck = useCallback(() => {
+    if (ref.current) check(ref.current)
+  }, [check])
+
+  return { ref, atEnd, onScroll, recheck }
+}
+
+/**
+ * Tracks whether a scrollable element's content actually overflows its own
+ * box — pairs with the `pb-10`-vs-`pb-[--space-2xs]` choice both
+ * MyProductsScreen.tsx and BookmarksScreen.tsx make off this (reserving
+ * clean surface for ScrollEndFade only when there's something to scroll
+ * past). Re-checks on mount, on any explicit `deps` change (e.g. a list's
+ * own length, for a screen where rows can be removed in place), AND on a
+ * ResizeObserver firing for the element itself (code review finding: the
+ * previous per-screen mount-only checks never recomputed when the
+ * viewport resized or the device rotated, so a list that only started
+ * overflowing after that stayed on the smaller, no-overflow padding with
+ * ScrollEndFade's own fade band left sitting over real content). A
+ * ResizeObserver on the scroller only fires for the scroller's *own* box
+ * size changing (viewport/rotation), not its content's — that's what
+ * `deps` is for separately.
+ */
+export function useHasOverflow<T extends HTMLElement>(ref: RefObject<T | null>, deps: DependencyList = []) {
+  const [hasOverflow, setHasOverflow] = useState(false)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const check = () => setHasOverflow(el.scrollHeight > el.clientHeight)
+    check()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(check)
+    observer.observe(el)
+    return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ref, ...deps])
+
+  return hasOverflow
 }
 
 type ScrollEndFadeProps = {

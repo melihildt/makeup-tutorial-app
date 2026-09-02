@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   animate as animateValue,
   motion,
@@ -1456,7 +1456,18 @@ type TutorialStackCardVariant =
   | { kind: 'tutorial'; tutorial: Tutorial; saved: boolean; onToggleSave: () => void }
   | { kind: 'start-over'; firstTutorial: Tutorial; firstTutorialSaved: boolean }
 
-function TutorialStackCard({
+// memo (code review finding): every card in the stack used to re-render on
+// every TutorialStack re-render regardless of cause — including the idle
+// swipe-hint interval's 4s `hintTrigger` bump, which only the front card's
+// own effect (isFrontCard, below) ever actually acts on. The other ~13
+// cards re-rendered anyway, purely because nothing stopped them. Memo alone
+// doesn't fix that on its own: TutorialStack's `variant`/`onToggleSave` used
+// to be fresh object/closure literals built inline in its `.map` on every
+// render, so even a memoized card would still see "changed" props every
+// time — see TutorialStack's own comment on cardVariants/hintTrigger below
+// for the other half of this fix (stabilizing those, and only actually
+// varying `hintTrigger` for whichever card is currently front).
+const TutorialStackCard = memo(function TutorialStackCard({
   variant,
   index,
   total,
@@ -2192,7 +2203,7 @@ function TutorialStackCard({
       )}
     </motion.div>
   )
-}
+})
 
 /**
  * The card stack: front card + one peeking card behind, both driven by a
@@ -2309,9 +2320,13 @@ export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggl
     // activeCardIndex, not just reduceMotion: a new front card needs its
     // own fresh interval/flag, not a continuation of the previous card's.
   }, [reduceMotion, activeCardIndex])
-  function handleInteraction() {
+  // useCallback (code review finding): stable across TutorialStack's own
+  // re-renders (e.g. the idle hint interval below bumping hintTrigger) so
+  // it stays referentially equal for TutorialStackCard's memo — see that
+  // component's own comment. Empty deps: only ever touches a ref.
+  const handleInteraction = useCallback(() => {
     hasInteractedRef.current = true
-  }
+  }, [])
   // Plain constant, not useState — nothing calls a setter to change this
   // live any more now that MotionTuner's gone (see MotionTuning's own
   // comment), so state with no writer was just indirection. 003/004
@@ -2325,14 +2340,18 @@ export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggl
   // before this state moved to App.tsx, rather than needing its own
   // "mark interacted, then toggle" pair inline at each of the (several)
   // call sites.
-  function handleToggleSave(id: string) {
-    // Tap-driven engagement with the stack — see TutorialStackCard's
-    // onInteraction prop doc comment. Called directly (not via a card's own
-    // onInteraction prop) since this handler lives up here, not on
-    // TutorialStackCard itself.
-    handleInteraction()
-    onToggleSave(id)
-  }
+  // useCallback, same reasoning as handleInteraction above.
+  const handleToggleSave = useCallback(
+    (id: string) => {
+      // Tap-driven engagement with the stack — see TutorialStackCard's
+      // onInteraction prop doc comment. Called directly (not via a card's
+      // own onInteraction prop) since this handler lives up here, not on
+      // TutorialStackCard itself.
+      handleInteraction()
+      onToggleSave(id)
+    },
+    [handleInteraction, onToggleSave],
+  )
 
   // Reduced-motion equivalent of the normal-motion flip's `isFlipped` —
   // see this file's `handleCardTap`/`TutorialDetailCard` for the
@@ -2347,11 +2366,17 @@ export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggl
     setFlippedIds((prev) => toggleInSet(prev, id))
   }
 
-  function handleCommitStart() {
+  // useCallback, same reasoning as handleInteraction/handleToggleSave above.
+  const handleCommitStart = useCallback(() => {
     setIsAdvancing(true)
-  }
+  }, [])
 
-  function handleAdvance() {
+  // useCallback: activeCardIndex/total are the only real reactive
+  // dependencies (dragProgress/activeIndex are stable MotionValue refs,
+  // tuning is a stable module constant — see their own declarations above)
+  // — so this only actually gets a new identity when the active card
+  // itself changes, not on every TutorialStack re-render.
+  const handleAdvance = useCallback(() => {
     // % total, not % tutorials.length — see this component's own module
     // comment above. The only way to actually reach `next === 0` from
     // `activeCardIndex === tutorials.length` (the Start Over slot) is
@@ -2405,7 +2430,37 @@ export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggl
       activeIndex.set(liveValue)
       animateValue(activeIndex, next, { type: 'spring', bounce: 0, duration: tuning.flyOffDuration })
     }
-  }
+  }, [activeCardIndex, total, activeIndex, dragProgress, tuning])
+
+  // Memoized (code review finding, paired with TutorialStackCard's own
+  // memo — see its comment): these used to be fresh object/closure
+  // literals built inline in the .map/JSX below on every TutorialStack
+  // render, which defeated that memo regardless of cause — including the
+  // idle swipe-hint interval's hintTrigger bump, which only the front
+  // card's own effect ever actually reacts to. Recomputing only when
+  // tutorials/savedIds (or the now-stable handleToggleSave) actually
+  // change keeps every non-front card's props referentially identical
+  // across a hint tick, so memo can correctly skip re-rendering them.
+  const cardVariants = useMemo(
+    () =>
+      tutorials.map(
+        (tutorial): TutorialStackCardVariant => ({
+          kind: 'tutorial',
+          tutorial,
+          saved: savedIds.has(tutorial.id),
+          onToggleSave: () => handleToggleSave(tutorial.id),
+        }),
+      ),
+    [tutorials, savedIds, handleToggleSave],
+  )
+  const startOverVariant = useMemo(
+    (): TutorialStackCardVariant => ({
+      kind: 'start-over',
+      firstTutorial: tutorials[0],
+      firstTutorialSaved: savedIds.has(tutorials[0].id),
+    }),
+    [tutorials, savedIds],
+  )
 
   if (reduceMotion) {
     return (
@@ -2482,7 +2537,7 @@ export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggl
       {tutorials.map((tutorial, index) => (
         <TutorialStackCard
           key={tutorial.id}
-          variant={{ kind: 'tutorial', tutorial, saved: savedIds.has(tutorial.id), onToggleSave: () => handleToggleSave(tutorial.id) }}
+          variant={cardVariants[index]}
           index={index}
           total={total}
           isLocked={isAdvancing}
@@ -2493,7 +2548,16 @@ export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggl
           activeCardIndex={activeCardIndex}
           onSelect={onSelect}
           onAdvance={handleAdvance}
-          hintTrigger={hintTrigger}
+          // Only the front card's own value actually changes tick to tick
+          // (code review finding, see TutorialStackCard's own memo
+          // comment) — every other card gets a constant 0 (the "never
+          // triggered" sentinel this prop already used, see hintTrigger's
+          // own declaration above), so its props stay referentially
+          // identical across a hint tick and memo can skip it entirely,
+          // instead of every card receiving the same live-incrementing
+          // number and re-rendering regardless of whether it's the one
+          // the nudge is even for.
+          hintTrigger={index === activeCardIndex ? hintTrigger : 0}
           onInteraction={handleInteraction}
           lookType={lookType}
         />
@@ -2506,7 +2570,7 @@ export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggl
           one tutorial, so tutorials[0] is never undefined in practice. */}
       <TutorialStackCard
         key="start-over"
-        variant={{ kind: 'start-over', firstTutorial: tutorials[0], firstTutorialSaved: savedIds.has(tutorials[0].id) }}
+        variant={startOverVariant}
         index={tutorials.length}
         total={total}
         isLocked={isAdvancing}
@@ -2516,7 +2580,8 @@ export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggl
         dragProgress={dragProgress}
         activeCardIndex={activeCardIndex}
         onAdvance={handleAdvance}
-        hintTrigger={hintTrigger}
+        // Same gating as the regular cards' own hintTrigger above.
+        hintTrigger={tutorials.length === activeCardIndex ? hintTrigger : 0}
         onInteraction={handleInteraction}
         lookType={lookType}
       />
