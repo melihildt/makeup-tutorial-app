@@ -801,16 +801,16 @@ CSS and JS level. Two minor, additive "missed opportunities" were noted
 but not turned into plans (not asked for): `ProductsPreview`'s 3
 thumbnails could use a 30-80ms stagger when a card flips to its back
 face, and the header info/profile icon buttons have no press feedback at
-all. **The info half of that second item is now resolved, as a side
-effect of wiring the info icon up to a real feature rather than a
-follow-up audit fix** — it's a real `<button>` now (was a bare `<div>`)
+all. **Both halves of that second item are now resolved** — the info
+icon as a side effect of wiring it up to a real feature, the profile/user
+icon likewise once `onOpenAccount` was wired up (`Add Account and My
+Products screens`, commit `dc6f0a1`). Both are real `<button>`s now
+(`src/components/HomeScreen.tsx`, "Account"/"About" `aria-label`s)
 carrying `.header-icon-button`, the same press/hover feedback class
-`ScreenHeader.tsx`'s four buttons already use (see plan 009). **The
-profile/user icon is still a bare, unwired `<div>` with no press feedback
-and no click handler** — still open, still exactly the gap this note
-originally flagged, just narrower now than "both icons." See
-`plans/README.md` for the full summary table, execution notes, and
-dependencies between plans.
+`ScreenHeader.tsx`'s four buttons already use (see plan 009) —
+re-confirmed live (2026-09-02): the `:active` rule
+(`transform: scale(0.93)`) applies to both. See `plans/README.md` for
+the full summary table, execution notes, and dependencies between plans.
 
 ## Testing notes — important limitation
 
