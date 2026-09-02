@@ -563,7 +563,17 @@ export function TutorialLookCard({ tutorial, onSelect, disabled, detailsOpacity,
               e.stopPropagation()
               onToggleSave?.()
             }}
-            className="relative shrink-0"
+            // Accessibility audit (2026-09-02, finding #8): this button had
+            // no size of its own — its hit area was just whatever the inner
+            // 20px glyph span (below) happened to render at, well under
+            // WCAG 2.5.5's 44x44 target for the primary "save this look"
+            // action on every card. size-[44px] here, centering the glyph,
+            // rather than growing the glyph itself: the 24px of px-6
+            // padding on this card's content column gives room on the
+            // right, and items-start on the parent row means the extra
+            // height only extends downward, past the last content in the
+            // card — nothing below it to collide with.
+            className="relative flex size-[44px] shrink-0 items-center justify-center"
           >
             <span
               key={saved ? 'saved' : 'unsaved'}

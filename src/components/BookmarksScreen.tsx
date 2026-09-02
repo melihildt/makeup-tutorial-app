@@ -6,6 +6,7 @@ import { Toast, useToast } from './Toast'
 import { ScrollEndFade, useAtScrollEnd, useHasOverflow } from './ScrollEndFade'
 import { EASE_OUT_QUART, type Tutorial, type TutorialLevel } from './TutorialCard'
 import { getRoleButtonProps } from './rowActivation'
+import { useEscapeToClose } from './useEscapeToClose'
 
 type BookmarksScreenProps = {
   tutorials: Tutorial[]
@@ -272,6 +273,10 @@ export function BookmarksScreen({
   const [toastOpen, showToast, hideToast] = useToast()
   const { ref: scrollerRef, atEnd, onScroll, recheck } = useAtScrollEnd<HTMLDivElement>()
   const savedTutorials = tutorials.filter((tutorial) => savedTutorialIds.has(tutorial.id))
+  // Accessibility audit (2026-09-02, finding #7) — see useEscapeToClose's
+  // own doc comment. No guard needed here the way MyProductsScreen's own
+  // call needs one: Toast has no Escape handling of its own to conflict with.
+  useEscapeToClose(onClose)
 
   // Code review finding: useAtScrollEnd only recomputes `atEnd` on a real
   // onScroll event or once at mount (ScrollEndFade.tsx) — it has no way to
@@ -355,7 +360,7 @@ export function BookmarksScreen({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+            className="header-icon-button flex size-[44px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
             // --color-info-overlay-heading, not --color-tutorial-card-text
             // — see InfoOverlay.tsx's own close-button comment for why.
             style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-info-overlay-heading)' }}

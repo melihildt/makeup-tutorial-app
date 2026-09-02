@@ -83,13 +83,14 @@ export function ScreenHeader({
       <button
         type="button"
         onClick={onBack}
-        className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+        aria-label="Back"
+        className="header-icon-button flex size-[44px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
         style={HEADER_CHIP_STYLE}
       >
         <BackIcon />
       </button>
 
-      {/* Outer group: content-sized (two 40px buttons) — matching Figma
+      {/* Outer group: content-sized (two 44px buttons) — matching Figma
           exactly (was rgba(255,255,255,0.2) under the old pill), now via
           --color-header-icon-bg rather than a re-typed rgba(255,255,255,0.6)
           literal: design-system audit (2026-09-02) caught this duplicating
@@ -101,8 +102,21 @@ export function ScreenHeader({
           border-[--color-header-toggle-group-border] — this wrapper's own
           0.5px #E2E0DF stroke (node 896:9721), distinct from the #DAD8D7
           border on the individual chip buttons inside it; verify pass
-          (2026-09-01) found it missing entirely. */}
-      <div className="relative flex h-[40px] shrink-0 items-center rounded-[--radius-filter-chip] border-[0.5px] border-solid border-[--color-header-toggle-group-border] bg-[--color-header-icon-bg]">
+          (2026-09-01) found it missing entirely.
+
+          Accessibility audit (2026-09-02, finding #9): every chip in this
+          header — including this track — was 40px, short of WCAG 2.5.5's
+          44x44 target size. Bumped uniformly to 44px (buttons, track, and
+          the sliding highlight below) rather than adding invisible hit-slop
+          padding: these buttons ARE their own visible chip (no separate
+          icon-vs-hit-area layering to exploit the way CheckIndicator's
+          wrapper button has), and this segmented track packs Search/Widget
+          edge-to-edge with no gap, so an invisible-padding approach would
+          have made their hit areas overlap and produce an ambiguous tap
+          zone right at the seam. A uniform, real size increase avoids that
+          and keeps every chip in this row visually consistent with each
+          other, same as before. */}
+      <div className="relative flex h-[44px] shrink-0 items-center rounded-[--radius-filter-chip] border-[0.5px] border-solid border-[--color-header-toggle-group-border] bg-[--color-header-icon-bg]">
         {/* Sliding highlight — a real segmented-control toggle, not two
             buttons independently mounting/unmounting their own chip. Was
             the latter through several rounds of trying to fix a border/
@@ -147,7 +161,7 @@ export function ScreenHeader({
             this element), just isn't what drives the cross-screen slide. */}
         <div
           aria-hidden="true"
-          className="header-toggle-highlight pointer-events-none absolute left-0 top-0 size-[40px] rounded-[--radius-filter-chip]"
+          className="header-toggle-highlight pointer-events-none absolute left-0 top-0 size-[44px] rounded-[--radius-filter-chip]"
           style={{
             background: 'var(--color-header-icon-bg)',
             boxShadow: 'inset 0 0 0 0.5px var(--color-header-icon-border)',
@@ -159,7 +173,8 @@ export function ScreenHeader({
           type="button"
           onClick={onSelectStepView}
           aria-pressed={!isListView}
-          className="header-icon-button relative flex size-[40px] items-center justify-center rounded-[--radius-filter-chip]"
+          aria-label="Show step view"
+          className="header-icon-button relative flex size-[44px] items-center justify-center rounded-[--radius-filter-chip]"
         >
           <SearchIcon active={!isListView} />
         </button>
@@ -167,7 +182,8 @@ export function ScreenHeader({
           type="button"
           onClick={onSelectListView}
           aria-pressed={isListView}
-          className="header-icon-button relative flex size-[40px] items-center justify-center rounded-[--radius-filter-chip]"
+          aria-label="Show all steps"
+          className="header-icon-button relative flex size-[44px] items-center justify-center rounded-[--radius-filter-chip]"
         >
           <WidgetIcon active={isListView} />
         </button>
@@ -176,7 +192,8 @@ export function ScreenHeader({
       <button
         type="button"
         onClick={onDone}
-        className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+        aria-label="Exit tutorial"
+        className="header-icon-button flex size-[44px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
         style={HEADER_CHIP_STYLE}
       >
         <DoneIcon />

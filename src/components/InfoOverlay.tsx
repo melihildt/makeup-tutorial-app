@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { EASE_OUT_QUART } from './TutorialCard'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { AtIcon, CloseIcon, LinkIcon } from './icons'
+import { useEscapeToClose } from './useEscapeToClose'
 import infoCardTexture from '../assets/home/about-image@2x.png'
 
 // Local mirror of tokens.css's --ease-in-out, same "CSS var + JS-array
@@ -285,11 +286,17 @@ function CopyEmailButton() {
  */
 export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
   const reduceMotion = useReducedMotion()
+  // Accessibility audit (2026-09-02, finding #7) — see useEscapeToClose's
+  // own doc comment for why this is a shared hook, not a local effect.
+  useEscapeToClose(onClose, open)
 
   return (
     <AnimatePresence>
       {open && (
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-label="About"
           // md:py-6 — without it, this overlay's header sits flush at the
           // very top on desktop instead of matching HomeScreen's own
           // 24px inset (the whole reason HomeScreen has md:py-6 at all —
@@ -363,7 +370,7 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+              className="header-icon-button flex size-[44px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
               // Spreads the shared chip style (code review finding #7)
               // rather than substituting it outright — this button also
               // needs `color` set (CloseIcon's path uses fill="currentColor"),
