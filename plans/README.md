@@ -274,6 +274,70 @@ Shade row correctly appears/disappears rather than rendering blank).
 | 047 | [Idle-hint nudge: align spring bounce to the file's 0.15 convention](047-idle-nudge-bounce-consistency.md) | LOW | Cohesion & tokens | Home (tutorial card stack) | DONE |
 | 048 | [Promote EASE_IN_OUT to a shared export, matching EASE_OUT_QUART's pattern](048-export-ease-in-out.md) | LOW | Cohesion & tokens | About/Info overlay (+ any future consumer) | DONE |
 | 049 | [StepScreen's product-card spring: convert stiffness/damping/mass to bounce/duration](049-stepscreen-spring-api-consistency.md) | LOW | Cohesion & tokens | Tutorial step | DONE |
+| 050 | [Give Back the same rapid-tap guard Next already has](050-back-button-rapid-tap-guard.md) | HIGH | Interruptibility | Tutorial step | DONE |
+| 051 | [AllStepsView sticky header: cross-fade the frost via opacity, not background-color/backdrop-filter](051-allstepsview-header-frost-crossfade.md) | HIGH | Performance | All steps view | DONE |
+| 052 | [LookSelectorChip: cross-fade the selected border/glow via opacity, not border-color/box-shadow](052-lookselectorchip-border-shadow-crossfade.md) | MEDIUM | Performance | Home | TODO |
+| 053 | [Replay the tutorial stack's entrance on every filter switch, not just once per session](053-stack-entrance-per-filter.md) | MEDIUM | Missed opportunity | Home | TODO |
+| 054 | [Fade the selected chip's texture/tint layer in and out instead of hard-mounting it](054-lookselectorchip-texture-fade.md) | LOW-MEDIUM | Missed opportunity | Home | TODO |
+
+## Sixth audit, remainder (050-054)
+
+The 3 confirmed findings and 2 missed opportunities from the sixth audit
+(above) that weren't selected in the first pass — the user came back and
+asked for the rest to become plans too, so all 5 are now written up, against
+commit `3ecf622` (post-040-049-execution).
+
+**050 and 051 executed**, directly in the working tree, in the same session
+they were written (no drift found from the `3ecf622` citations). 052-054
+remain TODO.
+
+- **050 executed exactly as planned** — `handleBackClick` added to
+  `StepScreen.tsx` next to `handleNextClick`, `ScreenHeader`'s `onBack` now
+  wired to it instead of the raw `onBack` prop. Live-verified: rapid-clicked
+  Back 4x in a row from step 3 — the guard absorbed the extra taps (landed
+  cleanly on step 1 rather than over/under-shooting or strobing), and a
+  plain single tap from step 1 still exits the tutorial back to Home
+  correctly.
+- **051 executed exactly as planned** — the sticky wrapper's `background`/
+  `backdropFilter`/`WebkitBackdropFilter` and their transitions removed;
+  `relative` added to its className; the new frost `<div>` inserted before
+  `<ScreenHeader>`. Live-verified via computed styles: the sticky wrapper's
+  own `transition` is now `transform, opacity` only (no `background-color`/
+  `backdrop-filter`); the new frost layer's `backdropFilter` (`blur(16px)`)
+  is constant/untransitioned, and only its own `opacity` transitions,
+  correctly reading `1` when scrolled and `0` at the top of the list, with
+  the header's buttons still rendering on top of it.
+- Mechanical check for both: `npx tsc --noEmit` clean, `npm run build`
+  clean. (Console showed a few stale `InvalidStateError: Transition was
+  aborted because of invalid state` entries during manual testing — same
+  pre-existing View Transitions API artifact from mistimed test clicks
+  documented in the 040-049 batch above, not a regression from either of
+  these two plans.)
+
+- **050** (Back button rapid-tap guard) has no dependency on anything else
+  in this batch or the prior one — independent, any time.
+- **051** (AllStepsView frost crossfade) and **052**
+  (LookSelectorChip border/glow crossfade) are independent of each other
+  (different files) and of 050 — both any time.
+- **053** (stack entrance per filter) and **054** (chip texture fade) both
+  touch Home-screen filter-selection code but different files/functions —
+  053 is `TutorialCard.tsx`'s `TutorialStack` (the module-level entrance
+  flag), 054 is `HomeScreen.tsx`'s `LookSelectorChip` (the texture/tint
+  layer) — independent of each other.
+- **052 and 054 both touch `HomeScreen.tsx`'s `LookSelectorChip`, in
+  overlapping code** — 052 restructures the button's layering (adds a
+  content-clip wrapper around the texture/tint block among other changes);
+  054 converts that same texture/tint block from a plain conditional mount
+  to an `AnimatePresence`-wrapped fade. **Run 052 before 054** if executing
+  both: 054's own Boundaries section already says to apply its conversion
+  "wherever [the block] currently sits" if 052 has landed first, so that
+  order works cleanly. Running 054 first and 052 second also works (052's
+  own Steps operate on the same `{selected && (...)}` content regardless of
+  whether it's already wrapped in `AnimatePresence`), but re-verify 052's
+  own current-code citation against whatever 054 left behind before editing,
+  per this file's own "re-locate by content, not line number" convention.
+  Either order is safer than running both blind/parallel against the
+  original file content.
 
 ## Sixth audit (040-049)
 

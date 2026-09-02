@@ -225,6 +225,11 @@ export function StepScreen({
     onNextStep?.()
   }
 
+  function handleBackClick() {
+    if (isAnimatingContentRef.current) return
+    onBack?.()
+  }
+
   // Guards the edge case where the user taps Back (or anything else that
   // changes `step`) during the ~150ms window while the card is still
   // folding away after Finish. A plain `isFinalStep`/`step === 7` check
@@ -333,7 +338,7 @@ export function StepScreen({
     >
       <ScreenHeader
         activeView="step"
-        onBack={onBack}
+        onBack={handleBackClick}
         onDone={onDone}
         onSelectListView={onSelectListView}
       />
