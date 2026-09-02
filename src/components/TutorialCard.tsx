@@ -197,7 +197,30 @@ export type Tutorial = {
 // rather than syncing to what's arguably just that reference sheet's own
 // unrelated default/placeholder text for an unfilled slot.
 export const TUTORIALS: Tutorial[] = [
-  // — Day —
+  // — Day — (order: Carry-On Glow, Olivia Hour first/second per user request,
+  // then the remaining two in their original relative order)
+  {
+    id: 'the-carry-on-glow',
+    title: 'The Carry-On Glow',
+    brand: 'Westman Gucci',
+    lookType: 'day',
+    durationMinutes: 15,
+    hasContent: false,
+    images: [carryOnImgSmall, carryOnImgBig],
+    level: 'easy',
+    productsUsedCount: 5,
+  },
+  {
+    id: 'the-olivia-hour',
+    title: 'The Olivia Hour',
+    brand: 'Hourglass',
+    lookType: 'day',
+    durationMinutes: 20,
+    hasContent: false,
+    images: [oliviaImgSmall, oliviaImgBig],
+    level: 'easy',
+    productsUsedCount: 5,
+  },
   {
     id: 'everyday-mattes',
     title: 'Everyday Mattes',
@@ -219,28 +242,6 @@ export const TUTORIALS: Tutorial[] = [
     images: [daisyImgSmall, daisyImgBig],
     level: 'experienced',
     productsUsedCount: 9,
-  },
-  {
-    id: 'the-olivia-hour',
-    title: 'The Olivia Hour',
-    brand: 'Hourglass',
-    lookType: 'day',
-    durationMinutes: 20,
-    hasContent: false,
-    images: [oliviaImgSmall, oliviaImgBig],
-    level: 'easy',
-    productsUsedCount: 5,
-  },
-  {
-    id: 'the-carry-on-glow',
-    title: 'The Carry-On Glow',
-    brand: 'Westman Gucci',
-    lookType: 'day',
-    durationMinutes: 15,
-    hasContent: false,
-    images: [carryOnImgSmall, carryOnImgBig],
-    level: 'easy',
-    productsUsedCount: 5,
   },
   // — Night —
   {
@@ -277,7 +278,30 @@ export const TUTORIALS: Tutorial[] = [
     level: 'experienced',
     productsUsedCount: 9,
   },
-  // — Glam —
+  // — Glam — (order: Dior first, Zendaya second per user request, then the
+  // remaining three in their original relative order)
+  {
+    id: 'dior-couture-fall-12',
+    title: "Dior Couture, Fall '12",
+    brand: 'Pat McGrath',
+    lookType: 'glam',
+    durationMinutes: 30,
+    hasContent: false,
+    images: [diorImgSmall, diorImgBig],
+    level: 'medium',
+    productsUsedCount: 7,
+  },
+  {
+    id: 'zendaya-x-odyssey',
+    title: 'Zendaya x Odyssey',
+    brand: 'Ernesto Casillas',
+    lookType: 'glam',
+    durationMinutes: 45,
+    hasContent: false,
+    images: [zendayaImgSmall, zendayaImgBig],
+    level: 'experienced',
+    productsUsedCount: 10,
+  },
   {
     id: 'mia-odyssey',
     title: 'Mia for The Odyssey',
@@ -315,17 +339,6 @@ export const TUTORIALS: Tutorial[] = [
     productsUsedCount: 8,
   },
   {
-    id: 'dior-couture-fall-12',
-    title: "Dior Couture, Fall '12",
-    brand: 'Pat McGrath',
-    lookType: 'glam',
-    durationMinutes: 30,
-    hasContent: false,
-    images: [diorImgSmall, diorImgBig],
-    level: 'medium',
-    productsUsedCount: 7,
-  },
-  {
     id: 'porcelain-dolls',
     title: 'Porcelain Dolls',
     brand: 'Pat McGrath',
@@ -335,17 +348,6 @@ export const TUTORIALS: Tutorial[] = [
     images: [dollsImgSmall, dollsImgBig],
     level: 'experienced',
     productsUsedCount: 11,
-  },
-  {
-    id: 'zendaya-x-odyssey',
-    title: 'Zendaya x Odyssey',
-    brand: 'Erneste Casillas',
-    lookType: 'glam',
-    durationMinutes: 45,
-    hasContent: false,
-    images: [zendayaImgSmall, zendayaImgBig],
-    level: 'experienced',
-    productsUsedCount: 10,
   },
 ]
 
