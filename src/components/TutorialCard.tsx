@@ -394,10 +394,13 @@ function ImagePair({ tutorial }: { tutorial: Tutorial }) {
   // a directional warm-brown shadow (0px 4px 20px rgba(67,48,35,0.2)) — a
   // fresh pull shows both photos now use this app's own soft ambient
   // shadow family instead (no y-offset, near-black at low alpha), just a
-  // wider blur (24px) than --shadow-card's 8px and no spread, distinct
-  // from any existing token so kept local like this file's other
-  // hand-tuned shadows (see ProductsPreview's own `shadow` const below).
-  const shadow = '0px 0px 24px 0px rgba(14, 11, 6, 0.03)'
+  // wider blur (24px) than --shadow-card's 8px and no spread. Design-system
+  // audit (2026-09-02): this pass's own "distinct from any existing token"
+  // claim was wrong — it's byte-identical to --shadow-product-detail-image,
+  // so it now reads that token directly instead of re-typing its value.
+  // ProductsPreview's own `shadow` const below is a genuinely different
+  // value (0px 2px 8px 0px rgba(67,48,35,0.1)) and stays local.
+  const shadow = 'var(--shadow-product-detail-image)'
   return (
     <div className="relative h-[219px] w-full">
       {/* Shorter image, right side. Exact values from the Figma inspector
@@ -635,25 +638,22 @@ const PLACEHOLDER_PRODUCT_IMAGES = [
   previewMeritBrushImg,
 ]
 
-/** "Saturated notes" for a coming-soon thumbnail's colored blur — three
- *  passes at the user's own request each time. First: vivid, varied hues
- *  (rose red/amber/blue/plum/sage/orchid), well past the source Figma
- *  mock's own near-pastel tints (rgba(240,224,227,0.5) etc, node
- *  754:11030). Second, per the user's follow-up: pulled all the way back
- *  to a washed-out beige/greige/taupe family — same warm neutral hues, but
- *  low enough saturation it read closer to the page's own ink/cream tokens
- *  than as a colored note at all. This third pass keeps that same warm
- *  beige/terracotta/caramel hue family (no blue/plum/sage — this stays a
- *  neutral palette, not the first pass's rainbow) but with noticeably more
- *  pigment in each color — the middle ground the user asked for between
- *  the two previous passes, not a full reversion to either. */
+/** "Saturated notes" for a coming-soon thumbnail's colored blur — the
+ *  three-pass tuning history (vivid rainbow → washed-out neutral → the
+ *  current warm beige/terracotta/caramel middle ground) now lives with the
+ *  values themselves in tokens.css (--color-coming-soon-tint-1 through -6),
+ *  promoted there by the design-system audit (2026-09-02, finding #3) once
+ *  the palette stabilized — same move every other multi-pass-tuned value in
+ *  this app already made. Order matters: `pickDistinct` below indexes into
+ *  this array by position, so it stays an ordered array of var() refs
+ *  rather than six independently-named lookups. */
 const COMING_SOON_TINTS = [
-  'rgba(206, 156, 96, 0.5)', // gold sand
-  'rgba(176, 128, 92, 0.5)', // clay
-  'rgba(150, 98, 68, 0.5)', // mocha
-  'rgba(198, 126, 108, 0.5)', // dusty rose
-  'rgba(180, 148, 96, 0.5)', // bronze
-  'rgba(210, 156, 88, 0.5)', // caramel
+  'var(--color-coming-soon-tint-1)', // gold sand
+  'var(--color-coming-soon-tint-2)', // clay
+  'var(--color-coming-soon-tint-3)', // mocha
+  'var(--color-coming-soon-tint-4)', // dusty rose
+  'var(--color-coming-soon-tint-5)', // bronze
+  'var(--color-coming-soon-tint-6)', // caramel
 ]
 
 /** Cheap, dependency-free string hash — good enough to turn a tutorial's
