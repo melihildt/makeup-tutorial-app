@@ -3,7 +3,7 @@ import { fn } from 'storybook/test'
 import { CARD_HEIGHT, CARD_WIDTH, TUTORIALS, TutorialDetailCard } from './TutorialCard'
 
 const softSmokeyEye = TUTORIALS.find((t) => t.id === 'soft-smokey-eye')!
-const midnightVelvet = TUTORIALS.find((t) => t.id === 'midnight-velvet')!
+const dakotaAfterDark = TUTORIALS.find((t) => t.id === 'dakota-after-dark')!
 
 const meta = {
   title: 'Tutorial Card/TutorialDetailCard',
@@ -31,26 +31,26 @@ export const WithContent: Story = {
   args: { tutorial: softSmokeyEye },
 }
 
-// hasContent: false (the other 11 of 12) — blurred/tinted placeholder
+// hasContent: false (the other 12 of 13) — blurred/tinted placeholder
 // thumbnails (a real photo from the app's own set + a warm, randomized-but-
 // stable tint, see ProductsPreview's own doc comment) and a disabled
 // "Coming soon" pill instead of "Start Tutorial". This is the state most
 // tutorials are in right now.
 export const ComingSoon: Story = {
-  args: { tutorial: midnightVelvet },
+  args: { tutorial: dakotaAfterDark },
 }
 
 // The three TutorialLevel values — same tutorial, level swapped, to compare
 // the level pill's bar-icon fill side by side without hunting for a
 // specific tutorial per level in TUTORIALS.
 export const LevelEasy: Story = {
-  args: { tutorial: { ...midnightVelvet, level: 'easy' } },
+  args: { tutorial: { ...dakotaAfterDark, level: 'easy' } },
 }
 export const LevelMedium: Story = {
-  args: { tutorial: { ...midnightVelvet, level: 'medium' } },
+  args: { tutorial: { ...dakotaAfterDark, level: 'medium' } },
 }
 export const LevelExperienced: Story = {
-  args: { tutorial: { ...midnightVelvet, level: 'experienced' } },
+  args: { tutorial: { ...dakotaAfterDark, level: 'experienced' } },
 }
 
 // The product-preview pop-in's entrance (product-preview-pop-in, index.css)

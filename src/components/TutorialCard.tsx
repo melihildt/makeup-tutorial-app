@@ -17,6 +17,32 @@ import autumnImage1 from '../assets/looks/autumn-hermes-1.jpg'
 import autumnImage2 from '../assets/looks/autumn-hermes-2.jpg'
 import mattesImage1 from '../assets/looks/everyday-mattes-1.jpg'
 import mattesImage2 from '../assets/looks/everyday-mattes-2.jpg'
+// V3 (2026-09-01): 9 new real photo pairs the user exported directly to
+// looks/, one per new TUTORIALS entry below — real per-look photography
+// finally lands for the 8 cards that used to just reuse the 4 originals as
+// round-robin filler (see TUTORIALS' own comment for the removal). Each
+// pair is [smaller, bigger] to match ImagePair's own [0]=shorter/right,
+// [1]=taller/left slots — the user's own export naming has "_01" as the
+// bigger image and "_02" as the smaller one, so the import order below is
+// intentionally reversed from the filename numbers.
+import daisyImgSmall from '../assets/looks/DayDaisy_02.png'
+import daisyImgBig from '../assets/looks/DayDaisy_01.png'
+import oliviaImgSmall from '../assets/looks/DayOlivia_02.png'
+import oliviaImgBig from '../assets/looks/DayOlivia_01.png'
+import carryOnImgSmall from '../assets/looks/DayWestmanAtelier_02.png'
+import carryOnImgBig from '../assets/looks/DayWestmanAtelier_01.png'
+import yslImgSmall from '../assets/looks/NightYSL_02.png'
+import yslImgBig from '../assets/looks/NightYSL_01.png'
+import dakotaImgSmall from '../assets/looks/NightDakotaJohnson_02.png'
+import dakotaImgBig from '../assets/looks/NightDakotaJohnson_01.png'
+import gildedImgSmall from '../assets/looks/GlamNikki_Makeup__02.png'
+import gildedImgBig from '../assets/looks/GlamNikki_Makeup__01.png'
+import diorImgSmall from '../assets/looks/GlamDior_Pat_McGrath__02.png'
+import diorImgBig from '../assets/looks/GlamDior_Pat_McGrath__01.png'
+import dollsImgSmall from '../assets/looks/GlamDolls_Pat_McGrath__02.png'
+import dollsImgBig from '../assets/looks/GlamDolls_Pat_McGrath__01.png'
+import zendayaImgSmall from '../assets/looks/GlamZendayaxOdyssey_02.png'
+import zendayaImgBig from '../assets/looks/GlamZendayaxOdyssey_01.png'
 // V2 (2026-09-01): swapped for the user's own fresh export, matched to the
 // redesigned Day/Night/Glam LookSelectorChip colors (HomeScreen.tsx's
 // LOOK_TYPES) rather than the old set's per-filter branding. New home
@@ -78,12 +104,12 @@ export function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
  * Only "Soft Smokey Eye" has a real tutorial behind it (TutorialFlow is
  * hard-coded to that content, and doesn't even take a tutorial id — see
  * `hasContent`'s own comment) — every other entry is still a decorative
- * tap. The original four have real photos of their own (see `images`);
- * the eight added to fill Day/Night/Glam out to four cards each (see
- * `lookType`) reuse those same four image pairs as dummy placeholders
- * until real per-look photography lands — looking real now (and, since
- * HomeScreen actually filters on `lookType`, sorted into the right chip
- * now too), not functional yet.
+ * tap, even though every one of them now has real per-look photography
+ * (V3, 2026-09-01 — see this file's own import comment): the 4 originals,
+ * plus 9 more the user exported directly, replacing the round-robin
+ * filler cards that used to pad Day/Night/Glam out to an even four each by
+ * reusing the originals' own photos. The set isn't evenly split per chip
+ * anymore (4 Day/3 Night/6 Glam) — see `TUTORIALS`' own comment.
  */
 /** Node 674:3974 ("Icons", the level pill's own icon) — 'easy' lights only
  *  the shortest of the three ascending bars, 'medium' adds the middle one,
@@ -146,16 +172,30 @@ export type Tutorial = {
   productImages?: [string, string, string]
 }
 
-// Four cards per Day/Night/Glam chip (see HomeScreen's filter row and
-// Tutorial's own `lookType` doc comment) — the real ask this data set now
-// has to satisfy. Only the original four tutorials have real photography
-// (src/assets/looks); the eight new ones added to fill out every chip to
-// four reuse those same four image pairs round-robin rather than block on
-// new photography, since the user is gathering real per-look images/copy
-// separately and asked for dummy data to unblock the filter itself in the
-// meantime. Swap `images`/`title`/`brand`/etc. in place per card once real
-// assets land — `id`, `lookType`, and the shape of each entry aren't
-// expected to change.
+// V3 (2026-09-01): the eight round-robin filler cards that used to pad
+// Day/Night/Glam out to four each by reusing the 4 originals' own photos
+// (Sunlit Glow, Fresh Face Five, Golden Hour Glow, Midnight Velvet, After
+// Dark Liner, Noir Romance, Red Carpet Ready, Diamond Cut) are gone — the
+// user exported 9 real, per-look photo pairs (see this file's own import
+// comment) to replace them, sourced from a fresh Figma reference (node
+// 936:17278/937:17278, "Cards") that also supplied each new card's real
+// "By" credit line. Titles are this app's own editorial pass over that
+// same reference sheet's working titles — user-reviewed and approved/
+// adjusted per card (2026-09-01 chat), not a straight Figma pull; the "By"
+// credits themselves are untouched Figma text. Levels/productsUsedCount
+// are still placeholder invented values (same reasoning as `level`'s own
+// doc comment above — no real content behind any of these but Soft Smokey
+// Eye yet), loosely scaled to each card's now-real duration.
+//
+// The 4 originals (Everyday Mattes, Soft Smokey Eye, Mia for The Odyssey,
+// Autumn by Hermès) are kept exactly as they were — including Soft Smokey
+// Eye's own brand/duration, even though the same Figma reference sheet
+// shows a "Night_3" card with this look's title but a different byline
+// ("By Pat McGrath") and duration (25 min matches, but that's this card's
+// existing value) — the one real functional tutorial (`hasContent: true`)
+// stays untouched per the user's explicit "keep the 4 originals" ask,
+// rather than syncing to what's arguably just that reference sheet's own
+// unrelated default/placeholder text for an unfilled slot.
 export const TUTORIALS: Tutorial[] = [
   // — Day —
   {
@@ -170,37 +210,37 @@ export const TUTORIALS: Tutorial[] = [
     productsUsedCount: 5,
   },
   {
-    id: 'sunlit-glow',
-    title: 'Sunlit Glow',
-    brand: 'Rare Beauty',
+    id: 'lancome-for-daisy',
+    title: 'Lancome for Daisy',
+    brand: 'Nikki_Makeup and Lancome',
     lookType: 'day',
-    durationMinutes: 12,
+    durationMinutes: 45,
     hasContent: false,
-    images: [lookImage2, lookImage1],
-    level: 'easy',
-    productsUsedCount: 4,
+    images: [daisyImgSmall, daisyImgBig],
+    level: 'experienced',
+    productsUsedCount: 9,
   },
   {
-    id: 'fresh-face-five',
-    title: 'Fresh Face Five',
-    brand: 'Glossier',
+    id: 'the-olivia-hour',
+    title: 'The Olivia Hour',
+    brand: 'Hourglass',
     lookType: 'day',
-    durationMinutes: 10,
+    durationMinutes: 20,
     hasContent: false,
-    images: [miaImage1, miaImage2],
+    images: [oliviaImgSmall, oliviaImgBig],
     level: 'easy',
     productsUsedCount: 5,
   },
   {
-    id: 'golden-hour-glow',
-    title: 'Golden Hour Glow',
-    brand: 'Rhode',
+    id: 'the-carry-on-glow',
+    title: 'The Carry-On Glow',
+    brand: 'Westman Gucci',
     lookType: 'day',
-    durationMinutes: 18,
+    durationMinutes: 15,
     hasContent: false,
-    images: [autumnImage1, autumnImage2],
-    level: 'medium',
-    productsUsedCount: 7,
+    images: [carryOnImgSmall, carryOnImgBig],
+    level: 'easy',
+    productsUsedCount: 5,
   },
   // — Night —
   {
@@ -216,37 +256,26 @@ export const TUTORIALS: Tutorial[] = [
     productImages: [previewEyeshadowImg, previewMascaraImg, previewHighlightImg],
   },
   {
-    id: 'midnight-velvet',
-    title: 'Midnight Velvet',
-    brand: 'Pat McGrath Labs',
+    id: 'ysl-for-hailey',
+    title: 'YSL for Hailey',
+    brand: 'Morgane Martini',
     lookType: 'night',
-    durationMinutes: 30,
+    durationMinutes: 35,
     hasContent: false,
-    images: [mattesImage1, mattesImage2],
-    level: 'experienced',
-    productsUsedCount: 10,
-  },
-  {
-    id: 'after-dark-liner',
-    title: 'After Dark Liner',
-    brand: 'Charlotte Tilbury',
-    lookType: 'night',
-    durationMinutes: 20,
-    hasContent: false,
-    images: [autumnImage2, autumnImage1],
-    level: 'medium',
-    productsUsedCount: 6,
-  },
-  {
-    id: 'noir-romance',
-    title: 'Noir Romance',
-    brand: 'YSL Beauté',
-    lookType: 'night',
-    durationMinutes: 22,
-    hasContent: false,
-    images: [miaImage2, miaImage1],
+    images: [yslImgSmall, yslImgBig],
     level: 'medium',
     productsUsedCount: 7,
+  },
+  {
+    id: 'dakota-after-dark',
+    title: 'Dakota After Dark',
+    brand: 'Merit and Georgie Eisdell',
+    lookType: 'night',
+    durationMinutes: 45,
+    hasContent: false,
+    images: [dakotaImgSmall, dakotaImgBig],
+    level: 'experienced',
+    productsUsedCount: 9,
   },
   // — Glam —
   {
@@ -275,26 +304,48 @@ export const TUTORIALS: Tutorial[] = [
     productsUsedCount: 9,
   },
   {
-    id: 'red-carpet-ready',
-    title: 'Red Carpet Ready',
-    brand: 'Fenty Beauty',
+    id: 'glossed-and-gilded',
+    title: 'Glossed & Gilded',
+    brand: 'Nikki_Makeup',
     lookType: 'glam',
-    durationMinutes: 35,
+    durationMinutes: 40,
     hasContent: false,
-    images: [lookImage2, lookImage1],
+    images: [gildedImgSmall, gildedImgBig],
+    level: 'medium',
+    productsUsedCount: 8,
+  },
+  {
+    id: 'dior-couture-fall-12',
+    title: "Dior Couture, Fall '12",
+    brand: 'Pat McGrath',
+    lookType: 'glam',
+    durationMinutes: 30,
+    hasContent: false,
+    images: [diorImgSmall, diorImgBig],
+    level: 'medium',
+    productsUsedCount: 7,
+  },
+  {
+    id: 'porcelain-dolls',
+    title: 'Porcelain Dolls',
+    brand: 'Pat McGrath',
+    lookType: 'glam',
+    durationMinutes: 60,
+    hasContent: false,
+    images: [dollsImgSmall, dollsImgBig],
     level: 'experienced',
     productsUsedCount: 11,
   },
   {
-    id: 'diamond-cut',
-    title: 'Diamond Cut',
-    brand: 'Huda Beauty',
+    id: 'zendaya-x-odyssey',
+    title: 'Zendaya x Odyssey',
+    brand: 'Erneste Casillas',
     lookType: 'glam',
-    durationMinutes: 28,
+    durationMinutes: 45,
     hasContent: false,
-    images: [mattesImage1, mattesImage2],
+    images: [zendayaImgSmall, zendayaImgBig],
     level: 'experienced',
-    productsUsedCount: 9,
+    productsUsedCount: 10,
   },
 ]
 
@@ -1173,7 +1224,7 @@ type TutorialStackProps = {
   onSelect?: () => void
   /** The selected Day/Night/Glam filter — see HomeScreen's own LookType.
    *  HomeScreen has already filtered `tutorials` down to this type's own
-   *  four cards before this component ever sees them (see Tutorial's own
+   *  cards before this component ever sees them (see Tutorial's own
    *  `lookType` doc comment) — this prop itself still just drives the
    *  ghost card's own color, threaded straight through to every
    *  TutorialStackCard as `lookType`. */
