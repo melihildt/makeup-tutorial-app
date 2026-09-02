@@ -52,7 +52,7 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
 
   // Shade/Category/Purchase-on info rows (node 896:10489-896:10501,
   // plans/037-product-detail-info-rows.md) — Category is real data
-  // (Product.category already existed, just wasn't shown here); Purchase
+  // (Product.category already existed, just wasn't shown here); Purchased
   // on uses Product.purchasedAt, placeholder data added alongside this
   // section since no real purchase-tracking feature exists yet. Shade
   // reuses the existing Product.shade field, just moved into this row
@@ -65,7 +65,7 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
         [
           displayedProduct.shade ? { label: 'Shade', value: displayedProduct.shade } : null,
           { label: 'Category', value: displayedProduct.category },
-          displayedProduct.purchasedAt ? { label: 'Purchase on', value: displayedProduct.purchasedAt } : null,
+          displayedProduct.purchasedAt ? { label: 'Purchased on', value: displayedProduct.purchasedAt } : null,
         ] as const
       ).filter((row): row is { label: string; value: string } => row !== null)
     : []
@@ -146,7 +146,7 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
               of this screen's own content column (896:10484) shows the
               image→title spacing comes from the "product-name" block's own
               pt-[40px] (node 896:10486), not a shared 24px gap. The other
-              two rows below (Shade/Category/Purchase on) don't take part in
+              two rows below (Shade/Category/Purchased on) don't take part in
               this gap at all — they're separate siblings whose own py-[16px]
               + border already sets their spacing, unaffected by this
               value. */}
