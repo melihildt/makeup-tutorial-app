@@ -257,8 +257,10 @@ function EmptyState() {
  * couldn't stay owned inside TutorialCard.tsx's TutorialStack any more).
  * Tapping a row opens the real tutorial flow if it has one (only
  * "Soft Smokey Eye" does today); tapping any other bookmarked row shows the
- * same "coming soon" Toast MyProductsScreen already uses for its own
- * not-yet-built interactions, rather than silently doing nothing.
+ * same Toast component MyProductsScreen uses for its own not-yet-built
+ * interactions, rather than silently doing nothing — with its own
+ * tutorial-specific wording (Toast's `message` prop) instead of that
+ * screen's generic "still in the discovery phase" copy.
  */
 export function BookmarksScreen({
   tutorials,
@@ -318,7 +320,11 @@ export function BookmarksScreen({
       className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl md:py-6"
       style={{ background: 'var(--gradient-bg-home)' }}
     >
-      <Toast open={toastOpen} onClose={hideToast} />
+      <Toast
+        open={toastOpen}
+        onClose={hideToast}
+        message="We're still adding new tutorials — check back soon."
+      />
       <div
         ref={scrollerRef}
         onScroll={onScroll}

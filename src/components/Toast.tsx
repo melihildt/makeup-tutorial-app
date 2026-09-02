@@ -37,6 +37,12 @@ export function useToast(durationMs = TOAST_DURATION_MS): [boolean, () => void, 
 type ToastProps = {
   open: boolean
   onClose: () => void
+  // Both default to the generic MyProductsScreen copy — BookmarksScreen
+  // overrides `message` with tutorial-specific wording (see its own call
+  // site) since "this feature is still in the discovery phase" reads oddly
+  // for a tutorial that's just unpublished content, not an unbuilt feature.
+  title?: string
+  message?: string
 }
 
 /**
@@ -54,7 +60,12 @@ type ToastProps = {
  * smaller than the real browser viewport, so `fixed` would place this
  * against the wrong box there.
  */
-export function Toast({ open, onClose }: ToastProps) {
+export function Toast({
+  open,
+  onClose,
+  title = 'Coming soon',
+  message = "This feature is still in the discovery phase — it'll be added soon.",
+}: ToastProps) {
   const reduceMotion = useReducedMotion()
 
   return (
@@ -93,10 +104,10 @@ export function Toast({ open, onClose }: ToastProps) {
                 className="text-[14px]"
                 style={{ color: 'var(--color-tutorial-card-text)', fontWeight: 'var(--font-weight-semibold)' }}
               >
-                Coming soon
+                {title}
               </p>
               <p className="mt-[2px] text-[13px]" style={{ color: 'var(--color-text-product)' }}>
-                This feature is still in the discovery phase — it'll be added soon.
+                {message}
               </p>
             </div>
             {/* CloseIcon is a fixed 20x20 native asset (see InfoOverlay.tsx/
