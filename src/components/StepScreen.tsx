@@ -719,46 +719,38 @@ export function StepScreen({
           treat *every* regular step change as a removal-and-insertion too,
           playing the exit animation on every Next/Back — not just on
           Finish, which is the one moment it's meant for. */}
-      <motion.div
-        // Animates this wrapper's own reserved-height collapse instead of
-        // letting it disappear in one frame — this only ever changes
-        // (content.products.length flips from >0 to 0) on the Finish→Done
-        // transition, the rarest and highest-emotion moment in this flow,
-        // so it's worth a real transition rather than a layout snap.
-        //
-        // Two things verified live, both by directly polling the
-        // element's own rendered height across the transition (RAF-level
-        // sampling, not assumed):
-        //
-        // 1. NOT the `layout` prop: tried first, but it does nothing here
-        //    — `layout` uses the FLIP technique, which visually
-        //    compensates a layout change with an inverse transform
-        //    computed as oldSize/newSize; collapsing to a *target* height
-        //    of 0 makes that ratio divide by zero, so there's no valid
-        //    inverse transform to animate from — confirmed the height
-        //    snapped instantly (238→0, zero intermediate frames).
-        // 2. NOT animating `minHeight` via `animate` either: also tried,
-        //    also confirmed snapping instantly with no interpolation —
-        //    Framer Motion doesn't recognize `minHeight` as an animatable
-        //    style key, so it just sets the value directly rather than
-        //    tweening it. Plain `height` (below) IS one of Motion's
-        //    recognized animatable properties (the standard expand/
-        //    collapse pattern) — confirmed this one actually interpolates
-        //    frame-by-frame, not just by reasoning from Motion's docs.
-        //
-        // A real layout-property tween (not FLIP) is what AUDIT.md's
-        // Performance category would normally flag, but this is a
-        // one-shot, rare transition (once per tutorial completion), not a
-        // frequent one, so the tradeoff is deliberate here. `height`
-        // instead of `minHeight` also means this box no longer *grows*
-        // past PRODUCT_SHEET_RESERVED_HEIGHT if some future step's sheet
-        // ever exceeds it (it would clip instead) — matches
-        // PRODUCT_SHEET_RESERVED_HEIGHT's own comment that a future
-        // 3+-product step already needs that constant bumped anyway; no
-        // current step is affected.
-        initial={false}
-        animate={{ height: content.products.length > 0 ? PRODUCT_SHEET_RESERVED_HEIGHT : 0 }}
-        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.35, ease: EASE_OUT_QUART }}
+      {/* Was a motion.div smoothly animating this wrapper's own height
+          238→0 over the same 0.35s as the card's exit below (code review
+          finding: "Done-screen title visibly drifts after Finish"). That
+          animation ran on the WRONG side of onExitComplete: `content`
+          (and so `content.products.length`) only actually flips to the
+          done screen's (productless) value inside onFinish, which
+          onExitComplete calls *after* the card's own exit animation has
+          already finished — so this wrapper's target height never changed
+          until the product card was already fully gone from the DOM. The
+          238→0 tween that followed was therefore animating an already-
+          empty box, with nothing left inside it to visually shrink away;
+          all it actually did was drag out an extra 0.35s of live layout
+          reflow — this wrapper is a flex sibling of the scrollable region
+          above (see this element's own comment above), so as its height
+          shrank frame-by-frame, that region (and the flex-1/justify-center
+          title block inside it) kept re-centering itself against a moving
+          target — concurrently with the step-8 content's own entrance
+          animation, reading as the title still visibly drifting after it
+          had already landed.
+          A plain, unanimated height keyed directly off
+          content.products.length instead resolves this wrapper's layout
+          contribution in the same instant `content` itself changes — i.e.
+          the moment the empty, already-invisible box collapses is the same
+          moment step 8's content first paints, so that content's own
+          entrance animation plays out against a column that's already
+          stable at its final size, with no competing reflow underneath it.
+          The card's own exit (below) already carries 100% of the visible
+          "sheet leaving" motion — this wrapper's height was never actually
+          contributing to that after onExitComplete's ordering is accounted
+          for. */}
+      <div
+        style={{ height: content.products.length > 0 ? PRODUCT_SHEET_RESERVED_HEIGHT : 0 }}
         className={content.products.length > 0 ? 'flex flex-col justify-end' : undefined}
       >
         <AnimatePresence
@@ -853,7 +845,7 @@ export function StepScreen({
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </div>
     </div>
   )
 }

@@ -1,9 +1,9 @@
-import { useLayoutEffect, useState } from 'react'
+import { useLayoutEffect } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { BookmarkIcon, CloseIcon } from './icons'
 import { Toast, useToast } from './Toast'
-import { ScrollEndFade, useAtScrollEnd } from './ScrollEndFade'
+import { ScrollEndFade, useAtScrollEnd, useHasOverflow } from './ScrollEndFade'
 import { EASE_OUT_QUART, type Tutorial, type TutorialLevel } from './TutorialCard'
 import { getRoleButtonProps } from './rowActivation'
 
@@ -270,7 +270,7 @@ export function BookmarksScreen({
   onOpenTutorial,
 }: BookmarksScreenProps) {
   const [toastOpen, showToast, hideToast] = useToast()
-  const { ref: scrollerRef, atEnd, onScroll } = useAtScrollEnd<HTMLDivElement>()
+  const { ref: scrollerRef, atEnd, onScroll, recheck } = useAtScrollEnd<HTMLDivElement>()
   const savedTutorials = tutorials.filter((tutorial) => savedTutorialIds.has(tutorial.id))
 
   // Code review finding: useAtScrollEnd only recomputes `atEnd` on a real
@@ -283,10 +283,10 @@ export function BookmarksScreen({
   // component exists to prevent (its own module comment). AllStepsView and
   // MyProductsScreen never remove rows in place, so they've never hit this;
   // fixed here rather than in the shared hook to avoid touching two
-  // already-shipped screens for a case only this one has. Feeds `onScroll`
-  // a plain object carrying the real scroller node — all `check()` reads
-  // off it internally — rather than duplicating useAtScrollEnd's own
-  // scrollHeight/scrollTop/clientHeight formula a second time here.
+  // already-shipped screens for a case only this one has. `recheck` (not
+  // faking a UIEvent around `onScroll`, which this used to do) reads the
+  // current scroller node internally — same formula, without needing a
+  // synthetic event object to carry it.
   //
   // hasOverflow (user-reported): the card's own pb-10 exists purely so
   // ScrollEndFade has clean surface to fade against instead of washing
@@ -296,16 +296,18 @@ export function BookmarksScreen({
   // scrolls and the fade is already hidden (atEnd) in that case. Figma's
   // own pull (896:10567) shows a plain, uniform 16px on every side, with no
   // such reserve — this only needs to widen past that when the list
-  // actually overflows. useLayoutEffect, not useEffect, so this resolves
-  // before paint rather than flashing 40px→16px (or the reverse) on mount
-  // or after a save/un-save.
-  const [hasOverflow, setHasOverflow] = useState(false)
+  // actually overflows. useHasOverflow (ScrollEndFade.tsx) rechecks on
+  // mount, on savedTutorials.length changing, AND on the scroller's own
+  // ResizeObserver firing — the last of those is a code review finding:
+  // this used to only recheck on mount/list-length, so a viewport resize
+  // or device rotation that pushed a short, previously-non-overflowing
+  // list past one screen's worth of height left it on the smaller no-
+  // overflow padding, with ScrollEndFade's fade band sitting over real
+  // content.
+  const hasOverflow = useHasOverflow(scrollerRef, [savedTutorials.length])
   useLayoutEffect(() => {
-    const el = scrollerRef.current
-    if (!el) return
-    onScroll({ currentTarget: el } as React.UIEvent<HTMLDivElement>)
-    setHasOverflow(el.scrollHeight > el.clientHeight)
-  }, [savedTutorials.length, scrollerRef, onScroll])
+    recheck()
+  }, [savedTutorials.length, recheck])
 
   return (
     <div

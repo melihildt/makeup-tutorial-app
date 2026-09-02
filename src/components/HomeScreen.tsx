@@ -441,7 +441,23 @@ export function HomeScreen({
           comes back after swiping the first card" bug this fixes, in both
           Chrome and Safari, not the iOS-only rubber-band bounce the
           earlier html/body lock (index.css) was for. */}
-      <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-[--space-sm] pb-2 pt-[--space-2xs]">
+      {/* inert while the About overlay is open (code review finding): this
+          div sits *before* InfoOverlay in DOM order, so without it, Tab
+          from the just-clicked info button lands on the very next
+          focusable element in document order — the Account button right
+          next to it — even though InfoOverlay (an `absolute inset-0`
+          sibling, mounted last) visually covers the whole screen at that
+          point. Activating it (goToAccount) left `aboutOpen` untouched
+          (nothing resets it on navigation), so returning to Home from
+          Account silently popped the overlay back open with no visible
+          trigger. `inert` removes this entire subtree from both focus and
+          pointer interaction while the overlay's showing, which is the
+          general fix — it closes off every route back into this content,
+          not just the one keyboard path that surfaced it. */}
+      <div
+        className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-[--space-sm] pb-2 pt-[--space-2xs]"
+        inert={infoOpen}
+      >
         <div className="flex flex-col gap-10">
           {/* items-start, not items-center — found while double-checking the
               screen-edge margin guideline (tokens.css, Figma node
