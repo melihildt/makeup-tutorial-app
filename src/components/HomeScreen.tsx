@@ -565,11 +565,18 @@ export function HomeScreen({
           </div>
 
           <div className="flex flex-col gap-4">
+            {/* Copy fix (2026-09-02): Figma's own text node (932:15409,
+                oddly named "Brand + Product Name" in the layer tree) reads
+                "Which type of look you want today?" — missing "do" and
+                more formal than the friendly Day/Night/Glam chips below it
+                call for. Deliberate copy improvement over Figma's source
+                text, not a mismatch to reconcile — the design file carries
+                the same wording if you want the two back in sync. */}
             <p
               className="text-[16px]"
               style={{ color: 'var(--color-tutorial-card-text)', fontWeight: 'var(--font-weight-medium)' }}
             >
-              Which type of look you want today?
+              What look are you going for today?
             </p>
             <div className="flex items-center gap-2">
               {LOOK_TYPES.map((type) => (
