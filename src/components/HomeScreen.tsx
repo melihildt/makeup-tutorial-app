@@ -498,7 +498,7 @@ export function HomeScreen({
                 type="button"
                 onClick={() => onInfoOpenChange(true)}
                 aria-label="About"
-                className="header-icon-button flex size-[40px] items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+                className="header-icon-button flex size-[44px] items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
                 style={HEADER_CHIP_STYLE}
               >
                 <InfoIcon />
@@ -507,7 +507,7 @@ export function HomeScreen({
                 type="button"
                 onClick={onOpenAccount}
                 aria-label="Account"
-                className="header-icon-button flex size-[40px] items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+                className="header-icon-button flex size-[44px] items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
                 style={HEADER_CHIP_STYLE}
               >
                 <UserIcon />

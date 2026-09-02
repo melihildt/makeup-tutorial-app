@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { EASE_OUT_QUART } from './TutorialCard'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { CloseIcon } from './icons'
+import { useEscapeToClose } from './useEscapeToClose'
 import type { Product } from '../data/stepContent'
 
 type ProductDetailOverlayProps = {
@@ -41,6 +42,9 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
   const reduceMotion = useReducedMotion()
   const [displayedProduct, setDisplayedProduct] = useState(product)
   const open = product !== null
+  // Accessibility audit (2026-09-02, finding #7) — see useEscapeToClose's
+  // own doc comment for why this is a shared hook, not a local effect.
+  useEscapeToClose(onClose, open)
 
   useEffect(() => {
     if (product) setDisplayedProduct(product)
@@ -70,6 +74,9 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
     <AnimatePresence>
       {open && (
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-label={displayedProduct ? `Product detail: ${displayedProduct.brand} ${displayedProduct.name}` : 'Product detail'}
           // md:py-6 — see InfoOverlay.tsx's own comment on this same class:
           // without it this overlay's header sits flush at the very top on
           // desktop instead of matching MyProductsScreen's own 24px inset
@@ -123,7 +130,7 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
               type="button"
               onClick={onClose}
               aria-label="Close product detail"
-              className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+              className="header-icon-button flex size-[44px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
               // --color-info-overlay-heading, not --color-tutorial-card-text
               // — see InfoOverlay.tsx's own close-button comment for why.
               style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-info-overlay-heading)' }}

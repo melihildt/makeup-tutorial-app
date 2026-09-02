@@ -5,6 +5,7 @@ import { Toast, useToast } from './Toast'
 import { ScrollEndFade, useAtScrollEnd, useHasOverflow } from './ScrollEndFade'
 import { ProductDetailOverlay } from './ProductDetailOverlay'
 import { getRoleButtonProps } from './rowActivation'
+import { useEscapeToClose } from './useEscapeToClose'
 import { getMyProducts, type Product } from '../data/stepContent'
 
 type MyProductsScreenProps = {
@@ -153,6 +154,12 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
   const { ref: scrollerRef, atEnd, onScroll } = useAtScrollEnd<HTMLDivElement>()
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const groups = getMyProducts()
+  // Accessibility audit (2026-09-02, finding #7) — see useEscapeToClose's
+  // own doc comment. Gated on `!selectedProduct`: ProductDetailOverlay
+  // below wires its own Escape-to-close, and without this guard both
+  // listeners would fire on the same keypress — closing the product detail
+  // AND this whole screen at once instead of one dismissal per press.
+  useEscapeToClose(onClose, !selectedProduct)
 
   // hasOverflow (user-reported): the card's own pb-10 exists purely so
   // ScrollEndFade has clean surface to fade against instead of washing over
@@ -209,7 +216,7 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
               type="button"
               onClick={showToast}
               aria-label="Add product"
-              className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+              className="header-icon-button flex size-[44px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
               // --color-info-overlay-heading, not --color-tutorial-card-text
               // — see PlusIcon's own comment in icons.tsx for why (same
               // fillOpacity bug as every close-button's CloseIcon).
@@ -221,7 +228,7 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+              className="header-icon-button flex size-[44px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
               // --color-info-overlay-heading, not --color-tutorial-card-text
               // — see InfoOverlay.tsx's own close-button comment for why.
               style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-info-overlay-heading)' }}

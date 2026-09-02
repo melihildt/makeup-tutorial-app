@@ -1,5 +1,6 @@
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { BookmarkGlyphIcon, BoxIcon, CalculatorIcon, ChevronRightIcon, CloseIcon } from './icons'
+import { useEscapeToClose } from './useEscapeToClose'
 
 type AccountScreenProps = {
   onClose: () => void
@@ -132,6 +133,13 @@ function AccountRow({ icon, label, onClick, trailing }: AccountRowProps) {
  * over Home the way InfoOverlay.tsx is.
  */
 export function AccountScreen({ onClose, onOpenMyProducts, onOpenBookmarks }: AccountScreenProps) {
+  // Accessibility audit (2026-09-02, finding #7) — see useEscapeToClose's
+  // own doc comment for why this is a shared hook, not a local effect, and
+  // why this screen (mounted only while it's the active `Screen`, no
+  // separate `open` boolean) doesn't need a second argument the way
+  // InfoOverlay/ProductDetailOverlay do.
+  useEscapeToClose(onClose)
+
   return (
     <div
       className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl md:py-6"
@@ -161,7 +169,7 @@ export function AccountScreen({ onClose, onOpenMyProducts, onOpenBookmarks }: Ac
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="header-icon-button flex size-[40px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
+            className="header-icon-button flex size-[44px] shrink-0 items-center justify-center rounded-[--radius-filter-chip] border-[0.5px] border-solid"
             // --color-info-overlay-heading, not --color-tutorial-card-text
             // — see InfoOverlay.tsx's own close-button comment for why.
             style={{ ...HEADER_CHIP_STYLE, color: 'var(--color-info-overlay-heading)' }}

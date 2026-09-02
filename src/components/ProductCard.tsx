@@ -90,7 +90,17 @@ export function ProductCard({ image, brand, name, shade, checked, animate = true
           disabled={!onToggleChecked}
           aria-pressed={checked}
           aria-label={`${checked ? 'Uncheck' : 'Check'} ${brand} ${name}`}
-          className={`flex shrink-0 items-center justify-center border-0 bg-transparent p-0 disabled:cursor-default ${shade ? 'self-start' : ''}`}
+          // Accessibility audit (2026-09-02, finding #9): this button's own
+          // hit area used to be exactly CheckIndicator's 36px box (p-0, no
+          // explicit size) — short of WCAG 2.5.5's 44x44 target. Sized to
+          // size-[44px] here instead of growing --size-check-indicator
+          // itself: that token is a Figma-pixel-matched asset size used
+          // elsewhere too (StepScreen's own product rows), not this
+          // button's own hit-area choice to make alone. The row has enough
+          // vertical room (63-72px product image height) for the extra 8px
+          // without affecting layout; self-start still aligns this button's
+          // own top edge to the column top when a shade line is present.
+          className={`flex size-[44px] shrink-0 items-center justify-center border-0 bg-transparent disabled:cursor-default ${shade ? 'self-start' : ''}`}
         >
           <CheckIndicator checked={checked} animate={animate} />
         </button>
