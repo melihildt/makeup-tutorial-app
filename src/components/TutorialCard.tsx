@@ -2298,22 +2298,37 @@ const TutorialStackCard = memo(function TutorialStackCard({
 // TutorialStack unmount/remount (App.tsx swaps HomeScreen out entirely
 // while TutorialFlow is showing, so a fresh TutorialStack instance mounts
 // every time you return to Home), only resetting on an actual page
-// reload. That's what makes the entrance below genuinely "first load of
-// the session," not "every time you come back from a tutorial" — a
-// useRef inside the component wouldn't survive the remount, this has to
-// live outside it.
-let hasPlayedStackEntrance = false
+// reload. Tracks *which* filter's deck last played its entrance, not just
+// whether one ever has (plans/053) — returning to Home on the SAME filter
+// you left (e.g. after a tutorial) skips the entrance, same as before;
+// switching to a DIFFERENT filter (Day/Night/Glam) always gets one, since
+// key={selectedType} (HomeScreen.tsx) already forces a full remount with a
+// genuinely different deck of cards on every such switch — that's a real
+// "new content" moment, not a repeat view of the same screen. A useRef
+// inside the component wouldn't survive the remount, this has to live
+// outside it.
+let lastEntranceLookType: LookType | null = null
 
 export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggleSave }: TutorialStackProps) {
   const reduceMotion = useReducedMotion()
-  // Lazy initializer runs exactly once per mount, reading *and* flipping
-  // the module flag together — the next TutorialStack instance (a return
-  // from TutorialFlow) sees it already true and skips the entrance.
-  const [playEntrance] = useState(() => {
-    if (hasPlayedStackEntrance) return false
-    hasPlayedStackEntrance = true
-    return true
-  })
+  // Read-only comparison, deliberately kept pure (no mutation here) —
+  // React 18 StrictMode double-invokes lazy useState initializers in dev,
+  // and an initializer that both reads *and* writes
+  // `lastEntranceLookType` in the same call would see its own write on
+  // the second, StrictMode-only invocation and silently flip the result
+  // (confirmed live while building this: the entrance stopped replaying
+  // on repeat filter switches in dev, though a production build — no
+  // double-invoke there — wouldn't have shown it). The actual write
+  // happens exactly once, safely, in the effect below instead. Compares
+  // by lookType, not a plain boolean (plans/053): a mount for the same
+  // filter as last time (a tutorial round-trip) skips the entrance; a
+  // mount for a *different* filter (an actual Day/Night/Glam switch)
+  // always gets one, even if that filter has already been visited
+  // earlier this session.
+  const [playEntrance] = useState(() => lastEntranceLookType !== lookType)
+  useEffect(() => {
+    lastEntranceLookType = lookType
+  }, [lookType])
   // +1 for the Start Over slot (index === tutorials.length) — see this
   // component's own module comment above for why that's a real slot in
   // the cycle now instead of a plain `% tutorials.length` wrap.

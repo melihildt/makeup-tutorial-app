@@ -276,9 +276,9 @@ Shade row correctly appears/disappears rather than rendering blank).
 | 049 | [StepScreen's product-card spring: convert stiffness/damping/mass to bounce/duration](049-stepscreen-spring-api-consistency.md) | LOW | Cohesion & tokens | Tutorial step | DONE |
 | 050 | [Give Back the same rapid-tap guard Next already has](050-back-button-rapid-tap-guard.md) | HIGH | Interruptibility | Tutorial step | DONE |
 | 051 | [AllStepsView sticky header: cross-fade the frost via opacity, not background-color/backdrop-filter](051-allstepsview-header-frost-crossfade.md) | HIGH | Performance | All steps view | DONE |
-| 052 | [LookSelectorChip: cross-fade the selected border/glow via opacity, not border-color/box-shadow](052-lookselectorchip-border-shadow-crossfade.md) | MEDIUM | Performance | Home | TODO |
-| 053 | [Replay the tutorial stack's entrance on every filter switch, not just once per session](053-stack-entrance-per-filter.md) | MEDIUM | Missed opportunity | Home | TODO |
-| 054 | [Fade the selected chip's texture/tint layer in and out instead of hard-mounting it](054-lookselectorchip-texture-fade.md) | LOW-MEDIUM | Missed opportunity | Home | TODO |
+| 052 | [LookSelectorChip: cross-fade the selected border/glow via opacity, not border-color/box-shadow](052-lookselectorchip-border-shadow-crossfade.md) | MEDIUM | Performance | Home | DONE |
+| 053 | [Replay the tutorial stack's entrance on every filter switch, not just once per session](053-stack-entrance-per-filter.md) | MEDIUM | Missed opportunity | Home | DONE (one correction — see note below) |
+| 054 | [Fade the selected chip's texture/tint layer in and out instead of hard-mounting it](054-lookselectorchip-texture-fade.md) | LOW-MEDIUM | Missed opportunity | Home | DONE |
 
 ## Sixth audit, remainder (050-054)
 
@@ -287,9 +287,50 @@ The 3 confirmed findings and 2 missed opportunities from the sixth audit
 asked for the rest to become plans too, so all 5 are now written up, against
 commit `3ecf622` (post-040-049-execution).
 
-**050 and 051 executed**, directly in the working tree, in the same session
-they were written (no drift found from the `3ecf622` citations). 052-054
-remain TODO.
+**All five (050-054) now executed**, directly in the working tree (no drift
+found from the `3ecf622` citations). 052 and 054 were applied together, in
+that order, exactly per the sequencing note below (052's content-clip
+wrapper landed first, 054's `AnimatePresence` conversion applied inside it).
+053 uncovered a real bug in its own Target code — see below.
+
+- **052 executed exactly as planned** — the button's `border`/`overflow-
+  hidden`/`boxShadow`/`borderColor` moved into two new layered `<div>`s (a
+  constant unselected base, a `selected`-gated opacity-crossfaded overlay),
+  and the texture/tint block wrapped in its own content-clip `<div>`. Live-
+  verified: tapping between Day/Night/Glam still shows the correct
+  border/glow per chip, the glow still renders past the rounded corners
+  uncropped, and the texture layer still clips correctly to the chip shape.
+- **054 executed exactly as planned** — the texture/tint block (now inside
+  052's content-clip wrapper) converted from `{selected && (<div>...)}` to
+  `<AnimatePresence>` wrapping a `motion.div` with an opacity
+  `initial`/`animate`/`exit`. Live-verified: switching filters now shows the
+  outgoing chip's texture visibly fading out (not popping off) while the
+  incoming one fades in, synced with 052's border/glow crossfade.
+- **053 executed, but with a real bug found and fixed during verification**
+  — the plan's own Target code (`useState(() => { if
+  (lastEntranceLookType === lookType) return false; lastEntranceLookType =
+  lookType; return true })`) mutates the module-level variable *inside* the
+  lazy initializer it also reads from. React 18 StrictMode (enabled in this
+  app's `main.tsx`) double-invokes `useState` lazy initializers in dev —
+  confirmed live via a temporary diagnostic log, which showed the
+  initializer firing twice per mount, with the *second* call seeing its own
+  first call's write and flipping the result. Net effect: the entrance
+  silently stopped replaying on repeat filter switches in the dev preview,
+  exactly the bug this plan was meant to fix, reintroduced by the fix
+  itself (production builds wouldn't double-invoke, so this specific
+  failure mode was dev-only — but the dev server is what's reachable from a
+  phone on the LAN for real-device testing, so it mattered). **Fixed** by
+  splitting the read from the write: the lazy initializer now only *reads*
+  `lastEntranceLookType` (pure, safe under double-invoke), and the mutation
+  moved into a `useEffect(() => { lastEntranceLookType = lookType },
+  [lookType])`, which is idempotent under double-invoke (assigning the same
+  value twice is harmless). Re-verified live after the fix: a temporary
+  diagnostic log confirmed `playEntrance` now stays correctly `true` on a
+  repeat filter switch, and a screenshot caught the Day deck's own entrance
+  visibly mid-fade-in on switching back to it from Night — confirming the
+  fix works end-to-end, not just at the state level.
+- Mechanical check across all three: `npx tsc --noEmit` clean, `npm run
+  build` clean throughout, including after the 053 correction.
 
 - **050 executed exactly as planned** — `handleBackClick` added to
   `StepScreen.tsx` next to `handleNextClick`, `ScreenHeader`'s `onBack` now

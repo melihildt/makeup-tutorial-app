@@ -1,6 +1,6 @@
 # 053 — Replay the tutorial stack's entrance on every filter switch, not just once per session
 
-- **Status**: TODO
+- **Status**: DONE (Target below corrected during execution — see plans/README.md)
 - **Commit**: 3ecf622
 - **Severity**: MEDIUM
 - **Category**: Missed opportunity (AUDIT.md §8)
@@ -96,18 +96,33 @@ let lastEntranceLookType: LookType | null = null
 
 export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggleSave }: TutorialStackProps) {
   const reduceMotion = useReducedMotion()
-  // Lazy initializer runs exactly once per mount, reading *and* updating
-  // the module value together. Compares by lookType, not a plain boolean
-  // (plans/053): a mount for the same filter as last time (a tutorial
-  // round-trip) skips the entrance; a mount for a *different* filter (an
-  // actual Day/Night/Glam switch) always gets one, even if that filter has
-  // already been visited earlier this session.
-  const [playEntrance] = useState(() => {
-    if (lastEntranceLookType === lookType) return false
+  // Read-only comparison, deliberately kept pure (no mutation here) —
+  // React 18 StrictMode double-invokes lazy useState initializers in dev,
+  // and an initializer that both reads *and* writes
+  // `lastEntranceLookType` in the same call would see its own write on
+  // the second, StrictMode-only invocation and silently flip the result
+  // (confirmed live while building this: the entrance stopped replaying
+  // on repeat filter switches in dev, though a production build — no
+  // double-invoke there — wouldn't have shown it). The actual write
+  // happens exactly once, safely, in the effect below instead. Compares
+  // by lookType, not a plain boolean (plans/053): a mount for the same
+  // filter as last time (a tutorial round-trip) skips the entrance; a
+  // mount for a *different* filter (an actual Day/Night/Glam switch)
+  // always gets one, even if that filter has already been visited
+  // earlier this session.
+  const [playEntrance] = useState(() => lastEntranceLookType !== lookType)
+  useEffect(() => {
     lastEntranceLookType = lookType
-    return true
-  })
+  }, [lookType])
 ```
+
+**Corrected during execution** — the version above (read-only initializer +
+a `useEffect` doing the one write) is what actually shipped; the version
+originally in this section (an initializer that read *and* wrote
+`lastEntranceLookType` in one call) has a real bug under React 18
+StrictMode's dev-mode double-invoke of lazy `useState` initializers — see
+`plans/README.md`'s own execution note on this plan for the full story
+(confirmed live via a temporary diagnostic log, fixed, and re-verified).
 
 No other line changes — the rest of `TutorialStack` (the entrance
 `motion.div`, `total`, `activeCardIndex`, etc.) is untouched, since
