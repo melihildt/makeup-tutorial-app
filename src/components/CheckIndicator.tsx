@@ -1,5 +1,3 @@
-import type { CSSProperties } from 'react'
-
 type CheckIndicatorProps = {
   checked: boolean
   /** Play the mount animation (draw-in, ring fade, pop)? Defaults true.
@@ -73,7 +71,6 @@ export function CheckIndicator({ checked, animate = true }: CheckIndicatorProps)
             r={16.5}
             stroke="var(--check-stroke-checked)"
             strokeWidth="var(--check-stroke-checked-width)"
-            style={animate ? { animation: 'check-ring-in var(--duration-base) var(--ease-out-quart)' } : undefined}
           />
           <path
             d={CHECKMARK_PATH}
@@ -81,15 +78,7 @@ export function CheckIndicator({ checked, animate = true }: CheckIndicatorProps)
             stroke="var(--check-stroke-checked)"
             strokeWidth="var(--check-stroke-checked-width)"
             strokeLinecap="round"
-            style={
-              {
-                strokeDasharray: CHECKMARK_PATH_LENGTH,
-                ...(animate && {
-                  '--check-draw-length': CHECKMARK_PATH_LENGTH,
-                  animation: 'check-draw var(--duration-base) var(--ease-out-quart) forwards',
-                }),
-              } as CSSProperties
-            }
+            strokeDasharray={CHECKMARK_PATH_LENGTH}
           />
         </>
       ) : (
@@ -101,7 +90,6 @@ export function CheckIndicator({ checked, animate = true }: CheckIndicatorProps)
           strokeWidth="var(--check-stroke-unchecked-width)"
           strokeDasharray="var(--check-stroke-unchecked-dash)"
           strokeLinecap="square"
-          style={animate ? { animation: 'check-ring-in var(--duration-base) var(--ease-out-quart)' } : undefined}
         />
       )}
     </svg>

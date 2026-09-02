@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { TUTORIALS, TutorialStack } from './TutorialCard'
+import { AnimatePresence, motion } from 'framer-motion'
+import { DURATION, EASE_OUT_QUART, TUTORIALS, TutorialStack } from './TutorialCard'
 import { InfoOverlay } from './InfoOverlay'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { DiamondIcon, InfoIcon, MoonIcon, SunIcon, UserIcon } from './icons'
@@ -220,38 +221,86 @@ export function LookSelectorChip({
       // (deprecated — see its own tokens.css comment). Selected shadow's
       // ambient component is its own fresh-pulled value (16px blur), also
       // distinct from the old --shadow-filter-chip's 8px.
-      className="relative flex h-[46px] flex-1 select-none items-center justify-between overflow-hidden rounded-[--radius-filter-chip] border border-solid p-3 active:scale-[0.97]"
-      style={{
-        borderColor: selected ? borderSelected : 'var(--color-filter-chip-border)',
-        boxShadow: selected ? `0px 0px 4px ${glow}, 0px 0px 16px 0px rgba(14, 11, 6, 0.03)` : 'var(--shadow-card-elevated)',
-        transition:
-          'border-color var(--duration-instant) var(--ease-out-quart), box-shadow var(--duration-instant) var(--ease-out-quart), transform var(--duration-instant) var(--ease-out-quart)',
-      }}
+      className="relative flex h-[46px] flex-1 select-none items-center justify-between rounded-[--radius-filter-chip] p-3 active:scale-[0.97]"
+      style={{ transition: 'transform var(--duration-instant) var(--ease-out-quart)' }}
     >
-      {/* Photo-texture background + two-layer colored tint — same shared
-          woven texture asset per option (see src/assets/filter-chips), a
-          flat `overlayTint`/`overlayBlend` layer, then a `gradient` layer
-          on top (see LOOK_TYPES' own comment for why this is two layers
-          now, and why they're not simply `tint`/`blend` under new names).
-          Verify pass (2026-09-01, Home redesign, node 644:2630): only
-          rendered for the *selected* chip now — a fresh pull of all six
-          Type×Selected states shows the resting/unselected chip as a
-          plain translucent card with no texture or tint at all, not this
-          layer at a dimmed opacity. */}
-      {selected && (
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-white" />
-          <img alt="" src={texture} className="absolute inset-0 size-full object-cover object-bottom" />
-          <div className="absolute inset-0" style={{ background: overlayTint, mixBlendMode: overlayBlend }} />
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `linear-gradient(to left, ${gradient.from}, ${gradient.to})`,
-              mixBlendMode: gradient.blend,
-            }}
-          />
-        </div>
-      )}
+      {/* Base (unselected) border/shadow — plans/052. Constant, never
+          animated; the button used to animate border-color/box-shadow
+          directly between this value and the selected one below, which are
+          both paint-triggering (AUDIT.md's Performance category). Not
+          overflow-hidden itself, unlike the content-clip wrapper further
+          down — so this layer's own box-shadow can render outward past the
+          chip's rounded corners instead of being cut off at them. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-[--radius-filter-chip] border border-solid"
+        style={{ borderColor: 'var(--color-filter-chip-border)', boxShadow: 'var(--shadow-card-elevated)' }}
+      />
+      {/* Selected-state border/glow overlay — same shape, carries the
+          selected values as constants; only its own opacity cross-fades
+          (compositor-only) instead of border-color/box-shadow animating
+          directly. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-[--radius-filter-chip] border border-solid"
+        style={{
+          borderColor: borderSelected,
+          boxShadow: `0px 0px 4px ${glow}, 0px 0px 16px 0px rgba(14, 11, 6, 0.03)`,
+          opacity: selected ? 1 : 0,
+          transition: 'opacity var(--duration-instant) var(--ease-out-quart)',
+        }}
+      />
+      {/* Content-clip layer — the photo-texture/tint layer below relies on
+          being clipped to the chip's rounded rect, which used to come from
+          the button's own overflow-hidden (removed above, so the border/glow
+          layers can render past the corners). Gets its own overflow-hidden +
+          rounded-[--radius-filter-chip] instead, same "give this its own
+          explicit clip" pattern the press-flash sweep below already uses for
+          the identical reason (see that element's own comment). */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[--radius-filter-chip]">
+        {/* Photo-texture background + two-layer colored tint — same shared
+            woven texture asset per option (see src/assets/filter-chips), a
+            flat `overlayTint`/`overlayBlend` layer, then a `gradient` layer
+            on top (see LOOK_TYPES' own comment for why this is two layers
+            now, and why they're not simply `tint`/`blend` under new names).
+            Verify pass (2026-09-01, Home redesign, node 644:2630): only
+            rendered for the *selected* chip now — a fresh pull of all six
+            Type×Selected states shows the resting/unselected chip as a
+            plain translucent card with no texture or tint at all, not this
+            layer at a dimmed opacity. */}
+        <AnimatePresence>
+          {selected && (
+            <motion.div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              // Opacity-only, so this stays correct even under prefers-
+              // reduced-motion without a separate branch — AUDIT.md's
+              // Accessibility category calls for keeping opacity/color
+              // feedback and dropping movement, not zeroing every
+              // animation; there's no movement here to drop.
+              // duration-instant/ease-out-quart match the chip's own
+              // border/glow crossfade (plans/052, the same tap), so both
+              // halves of the selection change land in sync rather than at
+              // two different speeds.
+              transition={{ duration: DURATION.instant, ease: EASE_OUT_QUART }}
+            >
+              <div className="absolute inset-0 bg-white" />
+              <img alt="" src={texture} className="absolute inset-0 size-full object-cover object-bottom" />
+              <div className="absolute inset-0" style={{ background: overlayTint, mixBlendMode: overlayBlend }} />
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(to left, ${gradient.from}, ${gradient.to})`,
+                  mixBlendMode: gradient.blend,
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       {/* Press-flash sweep — see chip-flash-sweep's own comment (index.css)
           for the exact background-position direction/opacity reasoning.
           key={flashCount} forces a fresh mount on every press so the CSS

@@ -68,14 +68,6 @@ body {
   from { opacity: 0; transform: scale(0.92); }
   to { opacity: 1; transform: scale(1); }
 }
-@keyframes check-draw {
-  /* Checkmark stroke reveal — CHECKMARK_PATH_LENGTH (CheckIndicator.tsx)
-     feeds --check-draw-length so the dash starts fully retracted and
-     draws in to its real length, never a guessed/approximate one. */
-  from { stroke-dashoffset: var(--check-draw-length, 19); }
-  to { stroke-dashoffset: 0; }
-}
-
 /* Press-flash sweep on HomeScreen's LookSelectorChip (Glam only for now,
    per the exact gradient the user supplied — Day/Night can get their own
    once given). A "shimmer" in the strict sense is a loading-state sheen;
@@ -133,7 +125,7 @@ body {
 .action-button {
   transition: transform var(--duration-instant) var(--ease-out-quart);
 }
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .action-button:hover {
     transform: scale(1.02);
   }
@@ -179,7 +171,7 @@ body {
     transform var(--duration-instant) var(--ease-out-quart),
     opacity var(--duration-base) var(--ease-out-quart);
 }
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .header-icon-button:hover svg {
     transform: scale(1.05);
   }
@@ -318,7 +310,7 @@ body {
    gets its own independent group here. */
 ::view-transition-group(header-toggle-highlight) {
   animation-duration: var(--duration-base);
-  animation-timing-function: var(--ease-out-quart);
+  animation-timing-function: var(--ease-in-out);
 }
 /* The View Transitions API's default behavior isn't just "animate named
    elements" — with no other config, it *also* cross-fades the entire

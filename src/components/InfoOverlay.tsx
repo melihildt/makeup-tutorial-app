@@ -1,18 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { EASE_OUT_QUART } from './TutorialCard'
+import { DURATION, EASE_IN_OUT, EASE_OUT_QUART, heroEntranceTransition } from './TutorialCard'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { AtIcon, CloseIcon, LinkIcon } from './icons'
 import { useEscapeToClose } from './useEscapeToClose'
 import infoCardTexture from '../assets/home/about-image@2x.png'
-
-// Local mirror of tokens.css's --ease-in-out, same "CSS var + JS-array
-// mirror" pattern EASE_OUT_QUART (imported above) uses for its own
-// --ease-out-quart token — kept local rather than exported from
-// TutorialCard.tsx since this file is currently the only consumer; promote
-// it to a shared location the same way EASE_OUT_QUART itself was only once
-// a second file actually needed it (see plans/006, plans/README.md).
-const EASE_IN_OUT = [0.77, 0, 0.175, 1] as const
 
 // Figma: node 730:5706 ("Home/Info"), file Tech-Experimentation — shown when
 // the home screen's info icon (HomeScreen.tsx) is tapped. The source frame
@@ -248,10 +240,10 @@ function CopyEmailButton() {
           transition={
             shakeOnFailure
               ? {
-                  opacity: { duration: 0.2, ease: EASE_OUT_QUART },
+                  opacity: { duration: DURATION.base, ease: EASE_OUT_QUART },
                   transform: { duration: 0.3, ease: EASE_IN_OUT },
                 }
-              : { duration: 0.2, ease: EASE_OUT_QUART }
+              : { duration: DURATION.base, ease: EASE_OUT_QUART }
           }
         >
           {label}
@@ -326,7 +318,7 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: reduceMotion ? 0.2 : 0.35, ease: EASE_OUT_QUART }}
+          transition={{ duration: reduceMotion ? DURATION.base : DURATION.layout, ease: EASE_OUT_QUART }}
         >
           {/* Header row — same px-[--space-sm] pt-[--space-2xs] inset as
               every other screen's header now (see tokens.css's own note,
@@ -424,17 +416,9 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
               animate={{
                 opacity: 1,
                 transform: 'scale(1)',
-                transition: { duration: reduceMotion ? 0.2 : 0.35, ease: EASE_OUT_QUART, delay: reduceMotion ? 0 : 0.06 },
+                transition: heroEntranceTransition(!!reduceMotion).animateTransition,
               }}
-              exit={
-                reduceMotion
-                  ? { opacity: 0, transition: { duration: 0.2, ease: EASE_OUT_QUART, delay: 0 } }
-                  : {
-                      opacity: 0,
-                      transform: 'scale(0.96)',
-                      transition: { duration: 0.35, ease: EASE_OUT_QUART, delay: 0 },
-                    }
-              }
+              exit={heroEntranceTransition(!!reduceMotion).exit}
             >
               {/* No rounding class here, unlike an earlier pass — the
                   parent's own overflow-hidden + rounded-[24px] is the only

@@ -80,6 +80,51 @@ import { BookmarkIcon, BookmarkOutlineIcon, LevelIcon, LockIcon, RotateRightIcon
  *  curve for a Framer animation (see App.tsx) rather than retyping it. */
 export const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const
 
+// Mirrors tokens.css's --duration-instant/--duration-base/--duration-layout
+// (seconds, since Framer Motion's `duration` reads seconds not ms) — the
+// same "token → shared JS const" promotion EASE_OUT_QUART above already
+// gets, extended to cover durations too (see plans/044). Only the three
+// durations that are actually reused as literals across multiple files are
+// included here — --duration-shimmer and --duration-step-content are each
+// consumed purely through CSS `var(...)`, never hand-typed as a JS number
+// anywhere, so they don't need a JS mirror.
+export const DURATION = {
+  instant: 0.15, // --duration-instant (150ms)
+  base: 0.2, // --duration-base (200ms)
+  layout: 0.35, // --duration-layout (350ms)
+} as const
+
+// --ease-in-out (tokens.css) — AUDIT.md's strong ease-in-out for on-screen
+// movement and symmetric back-and-forth motion. Promoted here from its
+// original home in InfoOverlay.tsx (CopyEmailButton's failure shake, the
+// first consumer) once a second consumer needed it — see plans/048.
+export const EASE_IN_OUT = [0.77, 0, 0.175, 1] as const
+
+// Shared hero-entrance animate/exit transition — identical values were
+// independently hand-typed in InfoOverlay.tsx (its own card entrance) and
+// ProductDetailOverlay.tsx (its hero image entrance); a function rather than
+// a plain object since the reduceMotion branch changes both the values and
+// which properties are present, not just numbers within a fixed shape (see
+// plans/046). DURATION.layout = --duration-layout, DURATION.base =
+// --duration-base, 0.06s delay = the deliberate stagger behind each
+// surface's own backdrop fade-in.
+export function heroEntranceTransition(reduceMotion: boolean) {
+  return {
+    animateTransition: {
+      duration: reduceMotion ? DURATION.base : DURATION.layout,
+      ease: EASE_OUT_QUART,
+      delay: reduceMotion ? 0 : 0.06,
+    },
+    exit: reduceMotion
+      ? { opacity: 0, transition: { duration: DURATION.base, ease: EASE_OUT_QUART, delay: 0 } }
+      : {
+          opacity: 0,
+          transform: 'scale(0.96)',
+          transition: { duration: DURATION.layout, ease: EASE_OUT_QUART, delay: 0 },
+        },
+  } as const
+}
+
 /** Toggles `value`'s membership in `set`, returning a new Set (never
  *  mutates the input) — shared by this file's own `flippedIds` toggle
  *  (below) and App.tsx's `toggleSavedTutorial`, rather than each hand-
@@ -2002,9 +2047,9 @@ const TutorialStackCard = memo(function TutorialStackCard({
   useEffect(() => {
     if (!isFrontCard || variant.kind !== 'tutorial' || hintTrigger === 0) return
     const NUDGE_DISTANCE = 18
-    const nudge = animateValue(dragY, -NUDGE_DISTANCE, { type: 'spring', bounce: 0.35, duration: 0.35 })
+    const nudge = animateValue(dragY, -NUDGE_DISTANCE, { type: 'spring', bounce: 0.15, duration: 0.35 })
     nudge.then(() => {
-      animateValue(dragY, 0, { type: 'spring', bounce: 0.25, duration: 0.4 })
+      animateValue(dragY, 0, { type: 'spring', bounce: 0.15, duration: 0.4 })
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on hintTrigger alone: isFrontCard/dragY are stable-enough refs for this component instance, re-running on their identity isn't the intent here.
   }, [hintTrigger])
@@ -2253,22 +2298,37 @@ const TutorialStackCard = memo(function TutorialStackCard({
 // TutorialStack unmount/remount (App.tsx swaps HomeScreen out entirely
 // while TutorialFlow is showing, so a fresh TutorialStack instance mounts
 // every time you return to Home), only resetting on an actual page
-// reload. That's what makes the entrance below genuinely "first load of
-// the session," not "every time you come back from a tutorial" — a
-// useRef inside the component wouldn't survive the remount, this has to
-// live outside it.
-let hasPlayedStackEntrance = false
+// reload. Tracks *which* filter's deck last played its entrance, not just
+// whether one ever has (plans/053) — returning to Home on the SAME filter
+// you left (e.g. after a tutorial) skips the entrance, same as before;
+// switching to a DIFFERENT filter (Day/Night/Glam) always gets one, since
+// key={selectedType} (HomeScreen.tsx) already forces a full remount with a
+// genuinely different deck of cards on every such switch — that's a real
+// "new content" moment, not a repeat view of the same screen. A useRef
+// inside the component wouldn't survive the remount, this has to live
+// outside it.
+let lastEntranceLookType: LookType | null = null
 
 export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggleSave }: TutorialStackProps) {
   const reduceMotion = useReducedMotion()
-  // Lazy initializer runs exactly once per mount, reading *and* flipping
-  // the module flag together — the next TutorialStack instance (a return
-  // from TutorialFlow) sees it already true and skips the entrance.
-  const [playEntrance] = useState(() => {
-    if (hasPlayedStackEntrance) return false
-    hasPlayedStackEntrance = true
-    return true
-  })
+  // Read-only comparison, deliberately kept pure (no mutation here) —
+  // React 18 StrictMode double-invokes lazy useState initializers in dev,
+  // and an initializer that both reads *and* writes
+  // `lastEntranceLookType` in the same call would see its own write on
+  // the second, StrictMode-only invocation and silently flip the result
+  // (confirmed live while building this: the entrance stopped replaying
+  // on repeat filter switches in dev, though a production build — no
+  // double-invoke there — wouldn't have shown it). The actual write
+  // happens exactly once, safely, in the effect below instead. Compares
+  // by lookType, not a plain boolean (plans/053): a mount for the same
+  // filter as last time (a tutorial round-trip) skips the entrance; a
+  // mount for a *different* filter (an actual Day/Night/Glam switch)
+  // always gets one, even if that filter has already been visited
+  // earlier this session.
+  const [playEntrance] = useState(() => lastEntranceLookType !== lookType)
+  useEffect(() => {
+    lastEntranceLookType = lookType
+  }, [lookType])
   // +1 for the Start Over slot (index === tutorials.length) — see this
   // component's own module comment above for why that's a real slot in
   // the cycle now instead of a plain `% tutorials.length` wrap.
@@ -2483,7 +2543,7 @@ export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggl
         className="mx-auto flex w-[338px] flex-col gap-4"
         initial={playEntrance ? { opacity: 0 } : false}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.2, ease: EASE_OUT_QUART }}
+        transition={{ duration: DURATION.base, ease: EASE_OUT_QUART }}
       >
         {tutorials.map((tutorial) =>
           flippedIds.has(tutorial.id) ? (
@@ -2542,7 +2602,7 @@ export function TutorialStack({ tutorials, onSelect, lookType, savedIds, onToggl
       style={{ width: CARD_WIDTH, height: CARD_HEIGHT, perspective: 1000 }}
       initial={playEntrance ? { opacity: 0, transform: 'translateY(16px) scale(0.96)' } : false}
       animate={{ opacity: 1, transform: 'translateY(0px) scale(1)' }}
-      transition={{ duration: 0.35, ease: EASE_OUT_QUART }}
+      transition={{ duration: DURATION.layout, ease: EASE_OUT_QUART }}
     >
       {tutorials.map((tutorial, index) => (
         <TutorialStackCard

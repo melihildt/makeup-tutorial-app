@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { EASE_OUT_QUART } from './TutorialCard'
+import { DURATION, EASE_OUT_QUART, heroEntranceTransition } from './TutorialCard'
 import { HEADER_CHIP_STYLE } from './ScreenHeader'
 import { CloseIcon } from './icons'
 import { useEscapeToClose } from './useEscapeToClose'
@@ -96,7 +96,7 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: reduceMotion ? 0.2 : 0.35, ease: EASE_OUT_QUART }}
+          transition={{ duration: reduceMotion ? DURATION.base : DURATION.layout, ease: EASE_OUT_QUART }}
         >
           {/* Header — identical shape/tokens to InfoOverlay's own (see its
               comment for the items-start/px-[--space-sm] reasoning) and to
@@ -186,13 +186,9 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
                   animate={{
                     opacity: 1,
                     transform: 'scale(1)',
-                    transition: { duration: reduceMotion ? 0.2 : 0.35, ease: EASE_OUT_QUART, delay: reduceMotion ? 0 : 0.06 },
+                    transition: heroEntranceTransition(!!reduceMotion).animateTransition,
                   }}
-                  exit={
-                    reduceMotion
-                      ? { opacity: 0, transition: { duration: 0.2, ease: EASE_OUT_QUART, delay: 0 } }
-                      : { opacity: 0, transform: 'scale(0.96)', transition: { duration: 0.35, ease: EASE_OUT_QUART, delay: 0 } }
-                  }
+                  exit={heroEntranceTransition(!!reduceMotion).exit}
                 >
                   {displayedProduct.image && (
                     <img src={displayedProduct.image} alt="" className="size-full object-contain" />

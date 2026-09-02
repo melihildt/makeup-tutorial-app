@@ -4,7 +4,7 @@ import { EyeIllustration } from './EyeIllustration'
 import { ProductCard } from './ProductCard'
 import { ScreenHeader } from './ScreenHeader'
 import { ActionButton } from './ActionButton'
-import { EASE_OUT_QUART } from './TutorialCard'
+import { DURATION, EASE_OUT_QUART } from './TutorialCard'
 import radialNoiseUrl from '../assets/icons/v2/radial-noise.svg'
 import { STEP_CONTENT, TOTAL_STEPS } from '../data/stepContent'
 
@@ -225,6 +225,11 @@ export function StepScreen({
     onNextStep?.()
   }
 
+  function handleBackClick() {
+    if (isAnimatingContentRef.current) return
+    onBack?.()
+  }
+
   // Guards the edge case where the user taps Back (or anything else that
   // changes `step`) during the ~150ms window while the card is still
   // folding away after Finish. A plain `isFinalStep`/`step === 7` check
@@ -252,16 +257,26 @@ export function StepScreen({
   // that only ever catches `animation-duration`/`transition-duration`.
   // Motion needs telling separately.
   const prefersReducedMotion = useReducedMotion()
+  // bounce/duration, not stiffness/damping/mass — matches every other
+  // spring in this app (TutorialCard.tsx's DEFAULT_MOTION_TUNING), see
+  // plans/049. stiffness: 300, damping: 26, mass: 0.9 converts to
+  // approximately duration: 0.5s, bounce: 0.15 (Framer Motion's spring
+  // visualizer, https://www.framer.com/motion/, confirms this pairing
+  // renders within visually-identical settle time and overshoot of the
+  // original physics params for this displacement range). 0.15 bounce
+  // matches this app's own established spring-bounce convention
+  // (DEFAULT_MOTION_TUNING's flyOffBounce/flipBounce/tapFlipBounce, all
+  // 0.15) rather than introducing a fourth ad hoc value.
   const cardSpring = prefersReducedMotion
     ? { duration: 0 }
-    : { type: 'spring' as const, stiffness: 300, damping: 26, mass: 0.9 }
+    : { type: 'spring' as const, duration: 0.5, bounce: 0.15 }
   // Deliberately not a spring — see the "Exit animations are faster than
   // entrances" guidance this app's motion work has followed throughout;
   // a bounce on the way *out* also tends to read as the card resisting
   // leaving, rather than a clean exit. Same curve as --ease-out-quart/
   // --duration-instant (tokens.css), just expressed as plain numbers
   // since Motion's transition prop doesn't read CSS custom properties.
-  const cardExitTransition = prefersReducedMotion ? { duration: 0 } : { duration: 0.15, ease: EASE_OUT_QUART }
+  const cardExitTransition = prefersReducedMotion ? { duration: 0 } : { duration: DURATION.instant, ease: EASE_OUT_QUART }
 
   if (!content) {
     return null
@@ -323,7 +338,7 @@ export function StepScreen({
     >
       <ScreenHeader
         activeView="step"
-        onBack={onBack}
+        onBack={handleBackClick}
         onDone={onDone}
         onSelectListView={onSelectListView}
       />

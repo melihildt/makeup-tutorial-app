@@ -242,24 +242,35 @@ export function AllStepsView({
             different vertical position in each view on mobile — a visible
             jump switching between them. */}
         <div
-          className="sticky top-0 z-10 pb-2 pt-[--space-2xs] md:pt-6"
+          className="relative sticky top-0 z-10 pb-2 pt-[--space-2xs] md:pt-6"
           style={{
-            background: isScrolled ? 'var(--color-list-header-bg)' : 'transparent',
-            // 'blur(0px)', not 'none', for the off state — both render
-            // identically (no visible blur), but only the former lets the
-            // backdrop-filter transition below actually animate: 'none' and
-            // a blur() function aren't interpolatable, so animating between
-            // them would just snap instead of smoothly fading the frost in.
-            backdropFilter: isScrolled ? 'blur(var(--blur-list-header))' : 'blur(0px)',
-            WebkitBackdropFilter: isScrolled ? 'blur(var(--blur-list-header))' : 'blur(0px)',
             transform: isHeaderHidden ? 'translateY(-100%)' : 'translateY(0)',
             opacity: isHeaderHidden ? 0 : 1,
             pointerEvents: isHeaderHidden ? 'none' : 'auto',
             transition:
-              'transform var(--duration-base) var(--ease-out-quart), opacity var(--duration-base) var(--ease-out-quart), background-color var(--duration-base) var(--ease-out-quart), backdrop-filter var(--duration-base) var(--ease-out-quart)',
+              'transform var(--duration-base) var(--ease-out-quart), opacity var(--duration-base) var(--ease-out-quart)',
           }}
           inert={isHeaderHidden}
         >
+          {/* Frost layer, separated out (plans/051): background/backdrop-filter
+              are both paint-triggering properties, expensive to animate directly
+              and fired on every scroll-direction change. This layer's own
+              background+blur are now CONSTANT — only its opacity cross-fades
+              in/out, a compositor-only property, same as the wrapper's own
+              transform/opacity above. Absolutely positioned behind ScreenHeader
+              (DOM order — a plain sibling before it, no z-index needed) so the
+              header's own buttons stay visually on top and fully interactive. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: 'var(--color-list-header-bg)',
+              backdropFilter: 'blur(var(--blur-list-header))',
+              WebkitBackdropFilter: 'blur(var(--blur-list-header))',
+              opacity: isScrolled ? 1 : 0,
+              transition: 'opacity var(--duration-base) var(--ease-out-quart)',
+            }}
+          />
           <ScreenHeader
             activeView="list"
             onBack={onBack}
