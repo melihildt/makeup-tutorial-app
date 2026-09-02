@@ -150,7 +150,10 @@ export const LOOK_TYPES: Array<{
     overlayBlend: 'soft-light',
     gradient: { from: 'rgba(136, 39, 255, 0.15)', to: 'rgba(32, 120, 167, 0.15)', blend: 'color-burn' },
     glow: 'rgba(104, 141, 182, 0.2)',
-    borderSelected: 'rgba(44, 41, 38, 0.5)',
+    // Figma re-pull (node 644:2624, 2026-09-01): border-[rgba(32,120,167,0.3)]
+    // — no longer matches the shared ink-based value the other two types
+    // don't use either (see this field's own doc comment above).
+    borderSelected: 'rgba(32, 120, 167, 0.3)',
     deepTint: '#0c2560',
     flash: { peak: '#0079ff' },
     Icon: MoonIcon,
