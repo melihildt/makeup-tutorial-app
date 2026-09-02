@@ -234,6 +234,35 @@
   --color-coming-soon-button-bg: #e2e0df; /* Verify pass (2026-09-01): BigCard's own "Coming soon" CTA (node 903:12079, "Back-button"), a fresh pull of the live Home/DaySelected mock — was rgba(44,41,38,0.1), a flat "BeNoApp/Interactive Components/3" swatch instead. Same pull also shows no border on this button at all (was border-[0.5px] rgba(44,41,38,0.1) — removed). */
   --color-coming-soon-text: #656462; /* Same 903:12079 pull — "Coming soon" label, flat "BeNoApp/Chips Text Accessible/1" swatch (same value as --color-tutorial-card-byline above, but a genuinely different element/node, kept as its own token per this file's one-token-per-meaning convention). Was --color-tutorial-card-text at opacity-80. */
   --color-coming-soon-icon: #848281; /* Same 903:12079 pull — the lock icon's own fill, flat "BeNoApp/Chips Text (Solid)/2" swatch. Was --color-tutorial-card-text at opacity-80 (sourced from an older, unrelated reference node, 754:11046 — see LockIcon's own comment in icons.tsx). */
+
+  /* Coming-soon thumbnail tints (TutorialCard.tsx's comingSoonThumbnail) —
+     the colored blur laid over a coming-soon tutorial's placeholder photos.
+     NOT Figma-sourced (node 754:11030's own reference mock uses near-pastel
+     tints, rgba(240,224,227,0.5) etc. — this app's own palette diverged on
+     purpose): three passes at the user's own request, each a full palette
+     swap, not a tuning of one color. First: vivid, varied hues (rose red/
+     amber/blue/plum/sage/orchid), well past the source mock's pastels.
+     Second, per the user's follow-up: pulled all the way back to a
+     washed-out beige/greige/taupe family — same warm neutral hues, but low
+     enough saturation it read closer to the page's own ink/cream tokens
+     than as a colored note at all. This third (current) pass keeps that
+     warm beige/terracotta/caramel hue family (no blue/plum/sage — stays a
+     neutral palette, not the first pass's rainbow) but with noticeably more
+     pigment in each color — the middle ground the user asked for between
+     the two previous passes, not a full reversion to either. Promoted here
+     from a local TutorialCard.tsx const (design-system audit, 2026-09-02,
+     finding #3) — every other multi-pass-tuned value in this file made the
+     same move once it stabilized; this one just hadn't yet. Order matters:
+     TutorialCard.tsx's `pickDistinct` indexes into these by position, not
+     by name, so read them as an ordered set rather than six independent
+     tokens. */
+  --color-coming-soon-tint-1: rgba(206, 156, 96, 0.5); /* gold sand */
+  --color-coming-soon-tint-2: rgba(176, 128, 92, 0.5); /* clay */
+  --color-coming-soon-tint-3: rgba(150, 98, 68, 0.5); /* mocha */
+  --color-coming-soon-tint-4: rgba(198, 126, 108, 0.5); /* dusty rose */
+  --color-coming-soon-tint-5: rgba(180, 148, 96, 0.5); /* bronze */
+  --color-coming-soon-tint-6: rgba(210, 156, 88, 0.5); /* caramel */
+
   --color-card-behind-tint: #e3b345; /* deprecated: CardBehind (TutorialCard.tsx) now uses a real ghost-texture photo asset (GHOST_TEXTURES) directly instead of this flat swatch + blend-mode tint */
   --color-product-placeholder: #e5e5e7; /* ProductsPreview (TutorialCard.tsx) — the flipped card's product-photo thumbnails, before real product photography exists. Not an invented color: this is Figma's own placeholder-gray fill for the same not-yet-real image slots in the source design. */
   --radius-tutorial-card: 32px;
