@@ -43,14 +43,14 @@ export const ComingSoon: Story = {
 // The three TutorialLevel values — same tutorial, level swapped, to compare
 // the level pill's bar-icon fill side by side without hunting for a
 // specific tutorial per level in TUTORIALS.
-export const LevelEasy: Story = {
-  args: { tutorial: { ...dakotaAfterDark, level: 'easy' } },
+export const LevelBeginner: Story = {
+  args: { tutorial: { ...dakotaAfterDark, level: 'beginner' } },
 }
-export const LevelMedium: Story = {
-  args: { tutorial: { ...dakotaAfterDark, level: 'medium' } },
+export const LevelIntermediate: Story = {
+  args: { tutorial: { ...dakotaAfterDark, level: 'intermediate' } },
 }
-export const LevelExperienced: Story = {
-  args: { tutorial: { ...dakotaAfterDark, level: 'experienced' } },
+export const LevelAdvanced: Story = {
+  args: { tutorial: { ...dakotaAfterDark, level: 'advanced' } },
 }
 
 // The product-preview pop-in's entrance (product-preview-pop-in, index.css)
