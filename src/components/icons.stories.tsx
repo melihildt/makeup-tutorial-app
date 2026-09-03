@@ -133,14 +133,14 @@ function AllIcons() {
         <IconCell name="RotateRightIcon">
           <RotateRightIcon />
         </IconCell>
-        <IconCell name="LevelIcon (easy)">
-          <LevelIcon level="easy" />
+        <IconCell name="LevelIcon (beginner)">
+          <LevelIcon level="beginner" />
         </IconCell>
-        <IconCell name="LevelIcon (medium)">
-          <LevelIcon level="medium" />
+        <IconCell name="LevelIcon (intermediate)">
+          <LevelIcon level="intermediate" />
         </IconCell>
-        <IconCell name="LevelIcon (experienced)">
-          <LevelIcon level="experienced" />
+        <IconCell name="LevelIcon (advanced)">
+          <LevelIcon level="advanced" />
         </IconCell>
         <IconCell name="LockIcon">
           <LockIcon />

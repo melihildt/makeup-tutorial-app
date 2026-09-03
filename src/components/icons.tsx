@@ -486,8 +486,8 @@ export function RotateRightIcon() {
  *  data pulled via download_assets (5 distinct bar/state SVGs: two heights
  *  each have a solid-filled and a hollow-outline version, the shortest bar
  *  only ever has a filled version), not hand-approximated. Ascending bars
- *  (short/medium/tall) light up left-to-right with level: 'easy' fills
- *  only the shortest, 'medium' adds the middle one, 'experienced' fills
+ *  (short/medium/tall) light up left-to-right with level: 'beginner' fills
+ *  only the shortest, 'intermediate' adds the middle one, 'advanced' fills
  *  all three — the shortest bar is *always* filled regardless of level,
  *  same as a real signal-strength icon never shows zero bars lit. Every
  *  bar (filled or not) shares the exact same color/opacity
@@ -495,8 +495,8 @@ export function RotateRightIcon() {
  *  purely a solid-vs-hollow capsule shape, not a color or opacity change,
  *  so there's no separate "dim" fill value to theme here. */
 export function LevelIcon({ level }: { level: TutorialLevel }) {
-  const mediumFilled = level === 'medium' || level === 'experienced'
-  const tallFilled = level === 'experienced'
+  const mediumFilled = level === 'intermediate' || level === 'advanced'
+  const tallFilled = level === 'advanced'
   return (
     <svg width={14} height={14} viewBox="0 0 14 14" fill="none" aria-hidden="true">
       {/* Shortest bar (h7) — always filled, every level. */}
@@ -506,8 +506,8 @@ export function LevelIcon({ level }: { level: TutorialLevel }) {
         fill="var(--color-tutorial-card-text)"
         fillOpacity={0.5}
       />
-      {/* Middle bar (h10.5) — filled from 'medium' up; hollow outline for
-          'easy'. */}
+      {/* Middle bar (h10.5) — filled from 'intermediate' up; hollow outline
+          for 'beginner'. */}
       <path
         transform="translate(5.25, 3.5)"
         d={
@@ -518,7 +518,7 @@ export function LevelIcon({ level }: { level: TutorialLevel }) {
         fill="var(--color-tutorial-card-text)"
         fillOpacity={0.5}
       />
-      {/* Tallest bar (h14) — filled only at 'experienced'; hollow outline
+      {/* Tallest bar (h14) — filled only at 'advanced'; hollow outline
           otherwise. */}
       <path
         transform="translate(10.5, 0)"

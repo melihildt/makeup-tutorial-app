@@ -156,10 +156,16 @@ export function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
  * reusing the originals' own photos. The set isn't evenly split per chip
  * anymore (4 Day/3 Night/6 Glam) — see `TUTORIALS`' own comment.
  */
-/** Node 674:3974 ("Icons", the level pill's own icon) — 'easy' lights only
- *  the shortest of the three ascending bars, 'medium' adds the middle one,
- *  'experienced' fills all three. See LevelIcon's own comment. */
-export type TutorialLevel = 'easy' | 'medium' | 'experienced'
+/** Node 674:3974 ("Icons", the level pill's own icon) — 'beginner' lights
+ *  only the shortest of the three ascending bars, 'intermediate' adds the
+ *  middle one, 'advanced' fills all three. See LevelIcon's own comment.
+ *
+ *  Copy fix (2026-09-02): was 'easy' | 'medium' | 'experienced' (shown as
+ *  EASY/MEDIUM/EXPERIENCED) — user-requested rename to the more standard
+ *  Beginner/Intermediate/Advanced tiering. Still placeholder values per
+ *  Tutorial['level']'s own doc comment; this only changes the vocabulary,
+ *  not which of the 13 tutorials sits at which tier. */
+export type TutorialLevel = 'beginner' | 'intermediate' | 'advanced'
 
 export type Tutorial = {
   id: string
@@ -252,7 +258,7 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 15,
     hasContent: false,
     images: [carryOnImgSmall, carryOnImgBig],
-    level: 'easy',
+    level: 'beginner',
     productsUsedCount: 5,
   },
   {
@@ -263,7 +269,7 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 20,
     hasContent: false,
     images: [oliviaImgSmall, oliviaImgBig],
-    level: 'easy',
+    level: 'beginner',
     productsUsedCount: 5,
   },
   {
@@ -274,7 +280,7 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 15,
     hasContent: false,
     images: [mattesImage2, mattesImage1],
-    level: 'easy',
+    level: 'beginner',
     productsUsedCount: 5,
   },
   {
@@ -285,7 +291,7 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 45,
     hasContent: false,
     images: [daisyImgSmall, daisyImgBig],
-    level: 'experienced',
+    level: 'advanced',
     productsUsedCount: 9,
   },
   // — Night —
@@ -297,7 +303,7 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 25,
     hasContent: true,
     images: [lookImage1, lookImage2],
-    level: 'easy',
+    level: 'beginner',
     productsUsedCount: 8,
     productImages: [previewEyeshadowImg, previewMascaraImg, previewHighlightImg],
   },
@@ -309,7 +315,7 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 35,
     hasContent: false,
     images: [yslImgSmall, yslImgBig],
-    level: 'medium',
+    level: 'intermediate',
     productsUsedCount: 7,
   },
   {
@@ -320,7 +326,7 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 45,
     hasContent: false,
     images: [dakotaImgSmall, dakotaImgBig],
-    level: 'experienced',
+    level: 'advanced',
     productsUsedCount: 9,
   },
   // — Glam — (order: Dior first, Zendaya second per user request, then the
@@ -333,7 +339,7 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 30,
     hasContent: false,
     images: [diorImgSmall, diorImgBig],
-    level: 'medium',
+    level: 'intermediate',
     productsUsedCount: 7,
   },
   {
@@ -344,7 +350,7 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 45,
     hasContent: false,
     images: [zendayaImgSmall, zendayaImgBig],
-    level: 'experienced',
+    level: 'advanced',
     productsUsedCount: 10,
   },
   {
@@ -358,7 +364,7 @@ export const TUTORIALS: Tutorial[] = [
     // shorter slot, images[1] is the left/taller one — reversing the pair
     // moves what was on the left over to the right, and vice versa.
     images: [miaImage2, miaImage1],
-    level: 'medium',
+    level: 'intermediate',
     productsUsedCount: 6,
   },
   {
@@ -369,7 +375,7 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 15,
     hasContent: false,
     images: [autumnImage2, autumnImage1],
-    level: 'experienced',
+    level: 'advanced',
     productsUsedCount: 9,
   },
   {
@@ -380,7 +386,7 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 40,
     hasContent: false,
     images: [gildedImgSmall, gildedImgBig],
-    level: 'medium',
+    level: 'intermediate',
     productsUsedCount: 8,
   },
   {
@@ -391,7 +397,7 @@ export const TUTORIALS: Tutorial[] = [
     durationMinutes: 60,
     hasContent: false,
     images: [dollsImgSmall, dollsImgBig],
-    level: 'experienced',
+    level: 'advanced',
     productsUsedCount: 11,
   },
 ]

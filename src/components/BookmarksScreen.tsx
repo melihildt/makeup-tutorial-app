@@ -39,13 +39,14 @@ type BookmarksScreenProps = {
 //
 // 2. The row's own third line replaces Figma's "25 min · Easy/Intermediate/
 //    Hard" with "{duration} min · {level}" pulled from the real Tutorial
-//    data (TutorialCard.tsx) — Figma's difficulty wording doesn't exist
-//    anywhere in this app's actual data model (TutorialLevel is
-//    'easy'/'medium'/'experienced', shown as EASY/MEDIUM/EXPERIENCED on
-//    the flipped card, not "Intermediate"/"Hard"), so this uses the app's
-//    own real vocabulary instead of copying Figma's placeholder text
-//    verbatim (same reasoning as My Products' own step-name/shade
-//    mismatches — see its module comment).
+//    data (TutorialCard.tsx) — this app's own data model, not a straight
+//    copy of Figma's placeholder text (same reasoning as My Products' own
+//    step-name/shade mismatches — see its module comment). TutorialLevel
+//    was originally 'easy'/'medium'/'experienced' (EASY/MEDIUM/EXPERIENCED
+//    on the flipped card); renamed 2026-09-02, per the user's own ask, to
+//    'beginner'/'intermediate'/'advanced' — closer to Figma's own wording
+//    (still not identical: Figma's top tier reads "Hard", this app's reads
+//    "Advanced").
 //
 // No design exists for the empty-state case (Figma's own pull only shows
 // four bookmarks already saved) — per the user's own ask to add one
