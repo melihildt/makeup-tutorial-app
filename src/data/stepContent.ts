@@ -56,12 +56,12 @@ export const TOTAL_STEPS = 7
 // pulls for every step (docs/figma-step-screen-restyle.md, "Why steps 2-6
 // weren't pulled" — later revisited when the user asked to double-check the
 // whole flow's product sheet): titles, descriptions, brand/name/shade text
-// all matched exactly, byte for byte. The one real mismatch found was
-// `checked`, not copy — Figma shows the *first* product pre-checked on
-// every step that has one (1, 2, 3, 5, 7; steps 4 and 6 only have a single
-// product, in the design's own "Product 2" layout slot, and that slot is
-// never pre-checked), but only steps 1 and 7 had that reflected here.
-// Steps 2/3/5's first product is now `checked: true` to match.
+// all matched exactly, byte for byte. Figma itself shows the *first* product
+// pre-checked on every step that has one (1, 2, 3, 5, 7; steps 4 and 6 only
+// have a single product, in the design's own "Product 2" layout slot, and
+// that slot is never pre-checked) — but per the user's own call, every
+// product here now ships `checked: false` so a tutorial always starts fully
+// unchecked, a deliberate departure from that Figma default.
 // Product photos live in src/assets/product-images (added directly, not
 // fetched from Figma — those asset URLs expire in ~7 days). ProductCard
 // falls back to its placeholder box for any product left without an
@@ -76,7 +76,7 @@ export const STEP_CONTENT: Record<number, StepContent> = {
       {
         brand: 'MERIT',
         name: 'The Minimalist',
-        checked: true,
+        checked: false,
         image: concealerImg,
         category: 'Concealer',
         purchasedAt: '06/2025',
@@ -100,7 +100,7 @@ export const STEP_CONTENT: Record<number, StepContent> = {
         brand: 'Chanel',
         name: 'Les 4 Ombres',
         shade: '79 - Spices',
-        checked: true,
+        checked: false,
         image: eyeshadowImg,
         category: 'Eye Shadows',
         purchasedAt: '11/2024',
@@ -125,7 +125,7 @@ export const STEP_CONTENT: Record<number, StepContent> = {
         brand: 'Chanel',
         name: 'Les 4 Ombres',
         shade: '79 - Spices',
-        checked: true,
+        checked: false,
         image: eyeshadowImg,
         category: 'Eye Shadows',
         purchasedAt: '11/2024',
@@ -166,7 +166,7 @@ export const STEP_CONTENT: Record<number, StepContent> = {
         brand: 'Chanel',
         name: 'Les 4 Ombres',
         shade: '79 - Spices',
-        checked: true,
+        checked: false,
         image: eyeshadowImg,
         category: 'Eye Shadows',
         purchasedAt: '11/2024',
@@ -205,7 +205,7 @@ export const STEP_CONTENT: Record<number, StepContent> = {
       {
         brand: 'Westman Atelier',
         name: 'Eye Pencil',
-        checked: true,
+        checked: false,
         image: eyelinerImg,
         category: 'Eyeliner and Mascara',
         purchasedAt: '01/2025',
