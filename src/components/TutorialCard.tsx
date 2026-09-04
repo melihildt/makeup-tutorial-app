@@ -467,6 +467,7 @@ function ImagePair({ tutorial }: { tutorial: Tutorial }) {
             src={tutorial.images[0]}
             className="h-[166.44px] w-[143px] rounded-[20px] object-cover"
             style={{ boxShadow: shadow }}
+            draggable={false}
           />
         </div>
       </div>
@@ -479,6 +480,7 @@ function ImagePair({ tutorial }: { tutorial: Tutorial }) {
             src={tutorial.images[1]}
             className="h-[213px] w-[143px] rounded-[20px] object-cover"
             style={{ boxShadow: shadow }}
+            draggable={false}
           />
         </div>
       </div>
@@ -826,7 +828,7 @@ function ProductsPreview({ tutorial, justRevealed = false }: { tutorial: Tutoria
       className="h-[108px] w-[96px] shrink-0 overflow-hidden rounded-[18px] border-[3px] border-solid border-white"
       style={{ background: 'var(--color-product-placeholder)', boxShadow: shadow, transform: rotateDeg ? `rotate(${rotateDeg}deg)` : undefined }}
     >
-      {image && <img src={image} alt="" className="size-full object-cover" />}
+      {image && <img src={image} alt="" className="size-full object-cover" draggable={false} />}
     </div>
   )
   // No real tutorial yet (see Tutorial's own `hasContent` doc comment) —
@@ -845,7 +847,7 @@ function ProductsPreview({ tutorial, justRevealed = false }: { tutorial: Tutoria
       className="relative h-[108px] w-[96px] shrink-0 overflow-hidden rounded-[18px] border-[3px] border-solid border-white"
       style={{ boxShadow: shadow, transform: rotateDeg ? `rotate(${rotateDeg}deg)` : undefined }}
     >
-      <img src={image} alt="" className="absolute inset-0 size-full object-cover" />
+      <img src={image} alt="" className="absolute inset-0 size-full object-cover" draggable={false} />
       {/* backdrop-blur (not a blur on the img itself): blurring the img
           directly would also have to fight this div's own rounded-corner
           clip re-revealing a hard edge at the seam. inset-0, flush with the
@@ -1169,7 +1171,7 @@ export function CardBehind({
         backfaceVisibility: 'hidden',
       }}
     >
-      <img alt="" src={GHOST_TEXTURES[lookType]} className="size-full object-cover" />
+      <img alt="" src={GHOST_TEXTURES[lookType]} className="size-full object-cover" draggable={false} />
     </motion.div>
   )
 }
@@ -1225,7 +1227,7 @@ function StartOverCard({
           this component is fully unmounted and remounted on every filter
           tap with the new lookType already baked in — the effect's
           isFirstRender guard swallowed the only invocation it ever got. */}
-      <img alt="" src={GHOST_TEXTURES[lookType]} className="absolute inset-0 size-full object-cover" />
+      <img alt="" src={GHOST_TEXTURES[lookType]} className="absolute inset-0 size-full object-cover" draggable={false} />
       {/* Icon + label fade in on the same detailsOpacity band the front
           card's own title/byline use elsewhere — a card entering the peek
           slot behind the actual front card is already just this same
