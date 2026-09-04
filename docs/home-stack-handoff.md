@@ -657,14 +657,20 @@ so the fade is numerically real but not perceptually visible, and the
 all that's left to notice — cutting to nothing from there reads as
 abrupt.
 
-Two changes were made on that theory, both worth keeping, **neither
-confirmed to close the gap** per the user's own retest:
+Two changes were made on that theory, **neither confirmed to close the
+gap** per the user's own retest:
 
 - A low-alpha dark border on `TutorialDetailCard`'s root
   (`rgba(44, 41, 38, 0.1)`, reusing `StartTutorialButton`'s own existing
   border value) — a dark element fading against a light background stays
   perceptible further into a fade than a near-white fill blending into a
-  near-white background does, regardless of alpha.
+  near-white background does, regardless of alpha. **Removed 2026-09-04**:
+  the user noticed it as a plain visual mismatch (the flipped card had a
+  stroke the front face never has, even at rest, not just mid-fly-off) and
+  asked for it back out. It was never confirmed to help the fly-off issue
+  either, so nothing proven is being given up — the fly-off issue is still
+  open, and if it resurfaces this specific fix shouldn't be re-tried
+  without new evidence it actually works.
 - Real product photos (3, reused from the step-by-step flow's own
   photography in `src/data/stepContent.ts`) on Soft Smokey Eye's
   `CardBack`, replacing its flat gray placeholder swatches — gives the
