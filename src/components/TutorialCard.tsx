@@ -1023,21 +1023,15 @@ function ComingSoonButton() {
  *  which point the ordinary ghost-reveal opacity is already 1 regardless,
  *  so there's no crossfade band left to narrow.
  *
- *  `border` (new) — pure diagnostic finding, not a guess: real on-device
- *  logging (Safari Web Inspector, a whole session's worth) proved
- *  flightOpacity/flightScale/cardBackOpacity all animate identically and
- *  correctly for this face during a fly-off, same as the front face's —
- *  no code asymmetry left to find. The user's "it just disappears" was a
- *  *contrast* problem, not a timing one: --color-surface (#ffffff) fading
- *  against this app's own page gradient (bottoms out at #fbf7f5, near-
- *  identical to white) crosses below perceptible well before its opacity
- *  numerically reaches 0 — while the front face's photo stays trackable
- *  through nearly the whole fade. A low-alpha *dark* border keeps enough
- *  contrast to stay visible much further into the fade than a near-white
- *  fill can (blending dark-over-light shows clearly at low alpha; near-
- *  white-over-near-white doesn't, regardless of alpha) — same rgba this
- *  card's own CTA button already uses (StartTutorialButton's borderColor),
- *  reused here rather than inventing a second value. */
+ *  A low-alpha dark `border` was tried here (now removed, 2026-09-04) as a
+ *  diagnostic fix for a separate deferred bug — see
+ *  docs/home-stack-handoff.md's "Known deferred issues" and this repo's
+ *  cardback-flyoff-abrupt notes — where this face's swipe-away read as
+ *  abruptly disappearing vs. the front face's visible fade. It was never
+ *  confirmed to close that gap, and it gave this face a visible stroke the
+ *  front face (TutorialLookCard) doesn't have even at rest, which read as
+ *  a mismatch — so it's gone. If the abrupt-disappear issue resurfaces,
+ *  don't reach for this again without new evidence it helps. */
 // Exported (Storybook) so its own states — hasContent true/false, each
 // TutorialLevel — can be reviewed in isolation without driving
 // TutorialStack's drag/flip gesture to reach them; still module-private to
@@ -1060,12 +1054,11 @@ export function TutorialDetailCard({
   return (
     <div
       {...getRoleButtonProps(onFlipBack, disabled)}
-      className={`relative flex h-full w-[338px] flex-col items-center gap-1 overflow-hidden border-[0.5px] border-solid pb-6 text-left active:scale-[0.97] has-[button:active]:scale-100 ${disabled ? '' : 'cursor-pointer'}`}
+      className={`relative flex h-full w-[338px] flex-col items-center gap-1 overflow-hidden pb-6 text-left active:scale-[0.97] has-[button:active]:scale-100 ${disabled ? '' : 'cursor-pointer'}`}
       style={{
         background: 'var(--color-surface)',
         borderRadius: 'var(--radius-tutorial-card)',
         boxShadow: 'var(--shadow-tutorial-card)',
-        borderColor: 'rgba(44, 41, 38, 0.1)',
         transition: 'transform var(--duration-instant) var(--ease-out-quart)',
       }}
     >
