@@ -153,12 +153,12 @@ export function AllStepsView({
     // problem. Doesn't affect the header's `sticky` behavior — that's
     // scoped to its actual scrolling ancestor (the overflow-y-auto div
     // below), not this outer one.
-    // md:rounded-2xl, not rounded-2xl: on mobile the frame fills the real
+    // md:rounded-[--radius-page-frame], not rounded-2xl: on mobile the frame fills the real
     // viewport edge-to-edge, so rounding it just shows the page backdrop
     // color through the corners instead of a flush square screen — same
     // fix as App.tsx's own wrapper and HomeScreen/StepScreen's roots.
     <div
-      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl"
+      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-[--radius-page-frame]"
       // docs/figma-allsteps-restyle.md: this view is on the same cream
       // palette (#f7e9ca → #f9f3eb) as the home screen's gradient, not the
       // pinkish --gradient-bg-screen this comment originally (and
@@ -231,18 +231,21 @@ export function AllStepsView({
             collapsing nav bar rather than a flat panel popping in and out —
             content sliding underneath it shows through, blurred, while
             it's up. */}
-        {/* pt-[--space-2xs] md:pt-6, not pt-6 — matches StepScreen's own
-            root split (see its comment on the same values): 8px on mobile
-            is the app-wide screen-edge top-margin guideline (tokens.css,
-            Figma node 738:8822) both screens now share; the extra bump to
-            md:pt-6 on desktop only exists to keep this header's position
-            identical to StepScreen's (whose own inset there serves the
-            rounded-corner/backdrop look), not because this sticky header
-            needs it. Without matching them, the toggle would sit at a
-            different vertical position in each view on mobile — a visible
-            jump switching between them. */}
+        {/* pt-[--space-2xs] md:pt-[--space-header-island-clear], not pt-6 —
+            matches StepScreen's own root split (see its comment on the same
+            values): 8px on mobile is the app-wide screen-edge top-margin
+            guideline (tokens.css, Figma node 738:8822) both screens now
+            share; the extra bump on desktop only exists to keep this
+            header's position identical to StepScreen's, not because this
+            sticky header needs it on its own — the token has the full "why
+            this value, not 24" derivation (tokens.css), clearing the
+            dynamic island cutout in App.tsx's device-frame image, which
+            this view sits under too, at the exact same position. Without
+            matching them, the toggle would sit at a different vertical
+            position in each view — a visible jump switching between
+            them. */}
         <div
-          className="relative sticky top-0 z-10 pb-2 pt-[--space-2xs] md:pt-6"
+          className="relative sticky top-0 z-10 pb-2 pt-[--space-2xs] md:pt-[--space-header-island-clear]"
           style={{
             transform: isHeaderHidden ? 'translateY(-100%)' : 'translateY(0)',
             opacity: isHeaderHidden ? 0 : 1,

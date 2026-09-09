@@ -453,7 +453,7 @@ export function HomeScreen({
     // md:py-6, not py-6: this inset only exists to keep the rounded-2xl
     // corners visible against the desktop page backdrop (App.tsx's
     // wrapper) — on mobile the frame fills the real viewport edge-to-edge,
-    // and rounding is dropped there too (md:rounded-2xl, matching App.tsx's
+    // and rounding is dropped there too (md:rounded-[--radius-page-frame], matching App.tsx's
     // own wrapper), so a real device shows a flush, square-cornered screen
     // instead of the backdrop color peeking through rounded corners. That
     // mattered concretely here: node 615:2884 (a real 375x812 device
@@ -461,7 +461,7 @@ export function HomeScreen({
     // height, and the old unconditional py-6 was eating almost 8% of that
     // on top of the header/card/sheet spacing already tuned to fit it.
     <div
-      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl md:py-6"
+      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-[--radius-page-frame] md:py-6"
       style={{ background: 'var(--gradient-bg-home)' }}
     >
       {/* Header + filters + tutorial stack as one scrolling block — flex-1 +
@@ -489,7 +489,21 @@ export function HomeScreen({
           scroll and hand it to the page — which is exactly the "scroll
           comes back after swiping the first card" bug this fixes, in both
           Chrome and Safari, not the iOS-only rubber-band bounce the
-          earlier html/body lock (index.css) was for. */}
+          earlier html/body lock (index.css) was for.
+
+          md:pt-[calc(var(--space-header-island-clear)_-_24px)] overrides the
+          shared 8px top inset at the md: breakpoint only, per the user's own
+          call: with the real iPhone device-frame image (App.tsx), this
+          title row sits under the dynamic island cutout. The -24px is this
+          root's own md:py-6 (below) — that already contributes 24px of the
+          --space-header-island-clear total before this div's own padding
+          even starts, so subtracting it here is what keeps the two layers
+          adding up to that one shared target instead of overshooting it;
+          every other top-level screen with this same two-layer shape
+          (Account/My Products/Bookmarks/InfoOverlay/ProductDetailOverlay)
+          uses the identical calc() for the same reason — see the token's
+          own tokens.css comment for the full derivation. Mobile has no such
+          neighbor above the screen's own edge, so it keeps the shared 8px. */}
       {/* inert while the About overlay is open (code review finding): this
           div sits *before* InfoOverlay in DOM order, so without it, Tab
           from the just-clicked info button lands on the very next
@@ -504,7 +518,7 @@ export function HomeScreen({
           general fix — it closes off every route back into this content,
           not just the one keyboard path that surfaced it. */}
       <div
-        className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-[--space-sm] pb-2 pt-[--space-2xs]"
+        className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-[--space-sm] pb-2 pt-[--space-2xs] md:pt-[calc(var(--space-header-island-clear)_-_24px)]"
         inert={infoOpen}
       >
         <div className="flex flex-col gap-10">

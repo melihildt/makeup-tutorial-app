@@ -177,7 +177,7 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
 
   return (
     <div
-      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-2xl md:py-6"
+      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden md:h-full md:rounded-[--radius-page-frame] md:py-6"
       style={{ background: 'var(--gradient-bg-home)' }}
     >
       <Toast open={toastOpen} onClose={hideToast} />
@@ -188,10 +188,16 @@ export function MyProductsScreen({ onClose }: MyProductsScreenProps) {
           from inside the overlay can reach those buttons even though the
           overlay visually covers them. `inert` removes the whole subtree
           from focus/pointer interaction while the overlay's showing. */}
+      {/* md:pt-[calc(...)]: clears the device-frame image's dynamic island
+          (App.tsx) — see HomeScreen.tsx's own comment on the identical
+          override (same two-layer root shape: this md:py-6 above already
+          contributes 24px of the shared --space-header-island-clear total)
+          and tokens.css's own comment on that token for the full
+          derivation. */}
       <div
         ref={scrollerRef}
         onScroll={onScroll}
-        className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-[--space-sm] pb-2 pt-[--space-2xs]"
+        className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-[--space-sm] pb-2 pt-[--space-2xs] md:pt-[calc(var(--space-header-island-clear)_-_24px)]"
         inert={!!selectedProduct}
       >
         <div className="flex items-start justify-between">

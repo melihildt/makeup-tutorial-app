@@ -301,7 +301,7 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
           // 8px from the frame top instead of HomeScreen's 32px) — not
           // visible below md, where HomeScreen's own py-6 is 0 too, which
           // is why this went unnoticed until now.
-          className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-2xl md:py-6"
+          className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-[--radius-page-frame] md:py-6"
           style={{
             background:
               // 180deg, not 0deg — 0deg ("to top") puts the *first*-listed
@@ -341,7 +341,13 @@ export function InfoOverlay({ open, onClose }: InfoOverlayProps) {
               items-center this file would silently reproduce that exact
               bug the moment the label ever grows — matching HomeScreen's
               fix now closes that gap instead of leaving it latent. */}
-          <div className="flex shrink-0 items-start justify-between px-[--space-sm] pt-[--space-2xs]">
+          {/* md:pt-[calc(...)]: clears the device-frame image's dynamic
+              island (App.tsx) — see HomeScreen.tsx's own comment on the
+              identical override (same two-layer shape: this overlay's own
+              md:py-6 above already contributes 24px of the shared
+              --space-header-island-clear total) and tokens.css's own
+              comment on that token for the full derivation. */}
+          <div className="flex shrink-0 items-start justify-between px-[--space-sm] pt-[--space-2xs] md:pt-[calc(var(--space-header-island-clear)_-_24px)]">
             <p
               style={{
                 fontFamily: 'var(--font-family-serif-card)',

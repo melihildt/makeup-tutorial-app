@@ -7,6 +7,7 @@ import { MyProductsScreen } from './components/MyProductsScreen'
 import { BookmarksScreen } from './components/BookmarksScreen'
 import { TutorialFlow } from './TutorialFlow'
 import { type Screen, type TutorialOrigin, parseRoute, pathForRoute } from './router'
+import iphoneFrame from './assets/frame/iPhone 17.png'
 
 // localStorage-backed saved-tutorial ids — lifted here (not owned inside
 // TutorialCard.tsx's TutorialStack, where it used to live) for two reasons:
@@ -327,14 +328,60 @@ function App() {
     // accidental auto never had anything to actually scroll — that's why
     // this only ever showed up on desktop.
     <div className="flex min-h-dvh w-full flex-col items-center overflow-hidden bg-[--color-page-backdrop] md:justify-center md:py-10">
-      {/* relative + overflow-hidden (already had the latter): the slide
-          needs a positioned ancestor its own size to lay the entering/
-          exiting screen's `absolute inset-0` against, and to actually
-          clip whichever one is currently off to the side mid-transition —
-          without overflow-hidden here the off-screen screen would show up
-          in the page's own horizontal scroll/gutter for the transition's
-          duration. */}
-      <div className="relative h-dvh w-full max-w-[402px] overflow-hidden md:h-[874px] md:max-h-[90dvh] md:rounded-2xl md:shadow-[--shadow-page-frame]">
+      {/* Sizing-only now (h-dvh/max-w-[402px]/md:h-[874px]/md:max-h-[90dvh],
+          same numbers as before) — overflow-hidden, rounding, and the drop
+          shadow all moved onto the screen-mask div nested inside it below,
+          so the iPhone chassis can overhang past this box's own edges
+          without being clipped by an overflow-hidden set here. */}
+      <div className="relative h-dvh w-full max-w-[402px] md:h-[874px] md:max-h-[90dvh]">
+        {/* iPhone chassis — desktop-only decorative hardware frame around the
+            402x874 screen box below, using the user's own real device-frame
+            PNG (src/assets/frame/iPhone 17.png, Lavender — swapped in from
+            an earlier Mist Blue export of the same iPhone 17 model, see git
+            history; both are the base iPhone 17, not the Pro, so they share
+            identical proportions) rather than a hand-drawn approximation.
+            The PNG's screen area is a real transparent cutout, not a flat
+            rectangle — measured directly off *this* image's own alpha
+            channel (not reused from the old Mist Blue file's numbers, since
+            this export turned out to be a different pixel size, 876x1808
+            vs. the old 860x1758): flat-edge scans (away from the rounded
+            corners and the dynamic island) put the hole at x:[36,839]
+            y:[30,1777], i.e. 804x1748. Sized/positioned in % of *this*
+            wrapper's own box (which equals the screen box's own size, one
+            div down) so the cutout lines up exactly with it: width
+            876/804≈108.96%, height 1808/1748≈103.43%, left -36/804≈-4.48%,
+            top -30/1748≈-1.72%. Percentages, not px, so this still lines up
+            if md:max-h-[90dvh] ever clamps the screen box shorter than
+            874px. An <img>'s width/height stretch independently when both
+            are set in %, which is exactly what keeps the cutout aligned in
+            that clamped case even though it distorts the frame art a little
+            — same tradeoff the screen box itself already makes by staying a
+            fixed 402px wide while only its height clamps.
+            pointer-events-none + z-20 (above the screen mask's z-10) since
+            this is a purely visual overlay sitting on top of the live
+            screen, not an interactive element; drop-shadow (not box-shadow)
+            since it needs to hug the image's own non-rectangular silhouette
+            — same numbers as --shadow-page-frame, the shadow this replaced
+            on the screen mask below. */}
+        <img
+          src={iphoneFrame}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -left-[4.48%] -top-[1.72%] z-20 hidden w-[108.96%] max-w-none md:block md:h-[103.43%] md:[filter:drop-shadow(var(--shadow-page-frame))]"
+        />
+        {/* relative + overflow-hidden (already had the latter): the slide
+            needs a positioned ancestor its own size to lay the entering/
+            exiting screen's `absolute inset-0` against, and to actually
+            clip whichever one is currently off to the side mid-transition —
+            without overflow-hidden here the off-screen screen would show up
+            in the page's own horizontal scroll/gutter for the transition's
+            duration. Moved to its own div (was the outer wrapper itself)
+            so the frame image above can overhang past this box's edges
+            without being clipped by this element's own overflow-hidden;
+            shadow moved onto that frame image too, since the "phone" now
+            casts one shadow as a whole rather than the bare screen casting
+            its own independent one nested inside the bezel. */}
+        <div className="relative z-10 h-full w-full overflow-hidden md:rounded-[--radius-page-frame]">
         <AnimatePresence initial={false} custom={{ direction, reduceMotion: !!reduceMotion }}>
           <motion.div
             key={screen}
@@ -387,6 +434,23 @@ function App() {
             )}
           </motion.div>
         </AnimatePresence>
+          {/* Home indicator — overlays the live screen content at its very
+              bottom edge, standard OS-chrome placement (real iOS draws this
+              over app content too, not in a reserved safe area). The frame
+              image's own dynamic island doesn't need the same treatment:
+              its hole's top edge (see that img's own comment) lands exactly
+              at this box's own y=0, so the notch drawn above the hole in
+              the source art already sits entirely outside the screen box
+              and never overlaps real header content — no separate
+              placement math needed here for it. Painted last within this
+              mask, after AnimatePresence, so normal DOM-order stacking puts
+              it above whichever screen is currently mounted without needing
+              an explicit z-index. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-[8px] left-1/2 hidden h-[5px] w-[134px] -translate-x-1/2 rounded-full bg-black/30 md:block"
+          />
+        </div>
       </div>
     </div>
   )
