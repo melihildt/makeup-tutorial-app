@@ -83,7 +83,7 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
           // (inherited from copying InfoOverlay's structure — the bug was
           // already there, just unnoticed on that screen too until a real
           // ≥768px check).
-          className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-2xl md:py-6"
+          className="absolute inset-0 z-20 flex flex-col overflow-hidden md:rounded-[--radius-page-frame] md:py-6"
           style={{
             background:
               // 180deg, not 0deg — same reversed-direction bug as
@@ -100,8 +100,13 @@ export function ProductDetailOverlay({ product, onClose }: ProductDetailOverlayP
         >
           {/* Header — identical shape/tokens to InfoOverlay's own (see its
               comment for the items-start/px-[--space-sm] reasoning) and to
-              AccountScreen/MyProductsScreen's own title row. */}
-          <div className="flex shrink-0 items-start justify-between px-[--space-sm] pt-[--space-2xs]">
+              AccountScreen/MyProductsScreen's own title row. md:pt-[calc(...)]
+              same story too: clears the device-frame image's dynamic island
+              (App.tsx) — this overlay's own md:py-6 above already
+              contributes 24px of the shared --space-header-island-clear
+              total; see tokens.css's own comment on that token for the full
+              derivation. */}
+          <div className="flex shrink-0 items-start justify-between px-[--space-sm] pt-[--space-2xs] md:pt-[calc(var(--space-header-island-clear)_-_24px)]">
             <p
               style={{
                 fontFamily: 'var(--font-family-serif-card)',

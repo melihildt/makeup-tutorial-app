@@ -312,17 +312,31 @@ export function StepScreen({
     // own sticky header intentionally mirrors this exact value (see that
     // file's comment on its own pt-[--space-2xs]) so the header sits at
     // the same vertical position in both views — keep them in sync if this
-    // ever changes again. md:pt-6 md:pb-6 restores the old py-6 but
+    // ever changes again. md:pb-6 restores the old py-6's bottom half but
     // desktop-only, same reasoning as HomeScreen's root: that inset only
     // earns its keep on desktop, where it keeps the rounded corners
     // visible against the page backdrop; on mobile the frame fills the
     // real viewport edge-to-edge and rounding is dropped there too
-    // (md:rounded-2xl), so it reads as a flush square screen —
+    // (md:rounded-[--radius-page-frame]), so it reads as a flush square screen —
     // unconditional py-6 was just costing ~48px of real content height for
     // nothing — concretely part of why the eye illustration was crowding
     // the product card on a real device.
+    //
+    // md:pt-[--space-header-island-clear], not md:pt-6 (24px, py-6's old top
+    // half) — the user's own catch: with the real iPhone device-frame image
+    // (App.tsx), the Search/Widget toggle in ScreenHeader sits horizontally
+    // right under the dynamic island cutout, so 24px wasn't just "close" the
+    // way HomeScreen's off-to-the-side icons were, it put the header's top
+    // 25px *above* the island's own bottom edge — a real overlap. Token has
+    // the full derivation (tokens.css); used directly here (not the
+    // calc(...)-24px form other screens need) since ScreenHeader has no
+    // padding of its own and this root has no separate outer py-6 layer —
+    // whatever this root's pt is *is* the header's top. AllStepsView's own
+    // sticky header must keep matching this value (see its own comment,
+    // same "keep them in sync" note) — it sits under the exact same island,
+    // at the exact same screen position.
     <div
-      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden pt-[--space-2xs] md:h-full md:rounded-2xl md:pb-6 md:pt-6"
+      className="relative mx-auto flex h-dvh w-full max-w-[402px] flex-col overflow-hidden pt-[--space-2xs] md:h-full md:rounded-[--radius-page-frame] md:pb-6 md:pt-[--space-header-island-clear]"
       // V5 (docs/figma-step-screen-restyle.md): background moved off the
       // shared --gradient-bg-screen token (#e6d6d1 → #f5e7de → #fbf7f5,
       // still 3-stop) onto --gradient-bg-home (#f7e9ca → #f9f3eb 7.179%,
